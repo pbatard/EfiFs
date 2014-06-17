@@ -19,12 +19,12 @@
  */
 
 #if !defined(__GNUC__) || (__GNUC__ < 4) || (__GNUC__ == 4 && __GNUC_MINOR__ < 7)
-#error gcc 4.7 or later is required for the compilation of this EFI driver.
+#error gcc 4.7 or later is required for the compilation of this driver.
 #endif
 
 /* Having GNU_EFI_USE_MS_ABI avoid the need for that ugly uefi_call_wrapper */
 #if !defined(__MAKEWITH_GNUEFI) || !defined(GNU_EFI_USE_MS_ABI)
-#error gnu-efi, with option GNU_EFI_USE_MS_ABI, is required for the compilation of this EFI driver.
+#error gnu-efi, with option GNU_EFI_USE_MS_ABI, is required for the compilation of this driver.
 #endif
 
 #include <efi.h>
@@ -52,9 +52,30 @@
 #define ARRAYSIZE(A)     (sizeof(A)/sizeof((A)[0]))
 #endif
 
-// TODO: Logging print according to LogLevel
+/*
+ *Logging
+ */
+
+#define FS_LOGLEVEL_SILENT      0
+#define FS_LOGLEVEL_ERROR       1
+#define FS_LOGLEVEL_WARNING     2
+#define FS_LOGLEVEL_INFO        3
+#define FS_LOGLEVEL_DEBUG       4
+#define FS_LOGLEVEL_EXTRA       5
+
+typedef UINTN (*Print_t) (IN CHAR16 *fmt, ... );
+
+UINTN PrintNone(IN CHAR16 *fmt, ... ) { return 0; }
+
+Print_t PrintError = PrintNone;
+Print_t PrintWarning = PrintNone;
+Print_t PrintInfo = PrintNone;
+Print_t PrintDebug = PrintNone;
+Print_t PrintExtra = PrintNone;
+Print_t* PrintTable[] = { &PrintError, &PrintWarning, &PrintInfo, &PrintDebug, &PrintExtra };
+
 void
-PrintError(EFI_STATUS Status, const CHAR16 *Format, ...)
+PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...)
 {
 	CHAR16 StatusString[64];
 	va_list ap;
@@ -66,13 +87,6 @@ PrintError(EFI_STATUS Status, const CHAR16 *Format, ...)
 	Print(L": [%d] %s\n", Status, StatusString); 
 }
 
-//#define EFI_DRIVER_DEBUG
-#ifdef EFI_DRIVER_DEBUG
-#define DebugPrint Print
-#else
-#define DebugPrint(...)
-#endif
-
 struct image {
 	CHAR16* name;
 	UINTN len;
@@ -82,8 +96,11 @@ struct image {
 /* We'll use this to simulate a single file entry */
 static struct image fake_image = { L"file.txt", 16, "Hello world!" };
 
-/* Globla driver verbosity level */
-static INTN LogLevel = 0;
+/* Global driver verbosity level */
+#if !defined(DEFAULT_LOGLEVEL)
+#define DEFAULT_LOGLEVEL FS_LOGLEVEL_INFO
+#endif
+static INTN LogLevel = DEFAULT_LOGLEVEL;
 
 /** An image exposed as an EFI file */
 struct efi_file {
@@ -126,7 +143,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE* New,
 	struct efi_file* new_file;
 	struct image* image = &fake_image;
 
-	DebugPrint(L"FileOpen: '%s'\n", Name);
+	PrintDebug(L"FileOpen: '%s'\n", Name);
 
 	/* Initial '\' indicates opening from the root directory */
 	while (*Name == L'\\') {
@@ -158,7 +175,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE* New,
 			sizeof(new_file->file));
 	new_file->image = &fake_image;
 	*New = &new_file->file;
-	DebugPrint(L"EFIFILE %s opened\n", FileName(new_file));
+	PrintDebug(L"EFIFILE %s opened\n", FileName(new_file));
 
 	return EFI_SUCCESS;
 }
@@ -174,14 +191,14 @@ FileClose(EFI_FILE_HANDLE This)
 {
 	struct efi_file* file = container_of(This, struct efi_file, file);
 
-	DebugPrint(L"FileClose\n");
+	PrintDebug(L"FileClose\n");
 
 	/* Do nothing if this is the root */
 	if (file->image == NULL)
 		return EFI_SUCCESS;
 
 	/* Close file */
-	DebugPrint(L"EFIFILE %s closed\n", FileName(file));
+	PrintDebug(L"EFIFILE %s closed\n", FileName(file));
 	FreePool(file);
 
 	return EFI_SUCCESS;
@@ -253,7 +270,7 @@ FileInfo(struct image* image, UINTN *Len, VOID* Data)
 	const CHAR16* Name;
 	const EFI_TIME Time = { 1970, 01, 01, 00, 00, 00, 0, 0, 0, 0, 0};
 
-	DebugPrint(L"FileInfo\n");
+	PrintDebug(L"FileInfo\n");
 
 	/* Populate file information */
 	SetMem(&Info, 0, sizeof(Info));
@@ -285,7 +302,7 @@ static EFI_STATUS
 FileReadDir(struct efi_file* file, UINTN* Len, VOID* Data)
 {
 
-	DebugPrint(L"FileReadDir\n");
+	PrintDebug(L"FileReadDir\n");
 
 	EFI_STATUS Status;
 	struct image *image;
@@ -322,7 +339,7 @@ FileRead(EFI_FILE_HANDLE This, UINTN* Len, VOID* Data)
 	struct efi_file *file = container_of(This, struct efi_file, file);
 	UINTN Remaining;
 
-	DebugPrint(L"FileRead\n");
+	PrintDebug(L"FileRead\n");
 
 	/* If this is the root directory, then construct a directory entry */
 	if (file->image == NULL)
@@ -332,7 +349,7 @@ FileRead(EFI_FILE_HANDLE This, UINTN* Len, VOID* Data)
 	Remaining = (file->image->len - file->pos);
 	if (*Len > Remaining)
 		*Len = Remaining;
-	DebugPrint(L"EFIFILE %s read [%#08zx,%#08zx]\n", FileName(file),
+	PrintDebug(L"EFIFILE %s read [%#08zx,%#08zx]\n", FileName(file),
 			file->pos, file->pos + *Len );
 	CopyMem(Data, &file->image->data[file->pos], *Len);
 	file->pos += *Len;
@@ -369,11 +386,11 @@ FileSetPosition(EFI_FILE_HANDLE This, UINT64 Position)
 {
 	struct efi_file *file = container_of(This, struct efi_file, file);
 
-	DebugPrint(L"FileSetPosition\n");
+	PrintDebug(L"FileSetPosition\n");
 
 	/* If this is the root directory, reset to the start */
 	if (file->image == NULL) {
-		DebugPrint(L"EFIFILE root directory rewound\n");
+		PrintDebug(L"EFIFILE root directory rewound\n");
 		file->pos = 0;
 		return EFI_SUCCESS;
 	}
@@ -393,7 +410,7 @@ FileSetPosition(EFI_FILE_HANDLE This, UINT64 Position)
 
 	/* Set position */
 	file->pos = Position;
-	DebugPrint(L"EFIFILE %s position set to %#08zx\n",
+	PrintDebug(L"EFIFILE %s position set to %#08zx\n",
 			FileName(file), file->pos );
 
 	return EFI_SUCCESS;
@@ -411,7 +428,7 @@ FileGetPosition(EFI_FILE_HANDLE This, UINT64* Position)
 {
 	struct efi_file* file = container_of(This, struct efi_file, file);
 
-	DebugPrint(L"FileGetPosition\n");
+	PrintDebug(L"FileGetPosition\n");
 
 	*Position = file->pos;
 	return EFI_SUCCESS;
@@ -435,19 +452,19 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID* Type,
 	struct image* image = &fake_image;
 	CHAR16 GuidString[36];
 
-	DebugPrint(L"FileGetInfo\n");
+	PrintDebug(L"FileGetInfo\n");
 
 	/* Determine information to return */
 	if (CompareMem(Type, &GenericFileInfo, sizeof(*Type)) == 0) {
 
 		/* Get file information */
-		DebugPrint(L"EFIFILE %s get file information\n", FileName(file));
+		PrintDebug(L"EFIFILE %s get file information\n", FileName(file));
 		return FileInfo(file->image, Len, Data);
 
 	} else if (CompareMem(Type, &FileSystemInfo, sizeof(*Type)) == 0) {
 
 		/* Get file system information */
-		DebugPrint(L"EFIFILE %s get file system information\n", FileName(file));
+		PrintDebug(L"EFIFILE %s get file system information\n", FileName(file));
 		SetMem(&FSInfo, 0, sizeof(FSInfo));
 		FSInfo.ReadOnly = 1;
 		FSInfo.VolumeSize += image->len;
@@ -494,7 +511,7 @@ FileSetInfo(EFI_FILE_HANDLE This, EFI_GUID* Type, UINTN Len, VOID* Data)
 static EFI_STATUS EFIAPI
 FileFlush(EFI_FILE_HANDLE This)
 {
-	DebugPrint(L"EFIFILE %s flushed\n", FileName(
+	PrintDebug(L"EFIFILE %s flushed\n", FileName(
 			container_of(This, struct efi_file, file)));
 	return EFI_SUCCESS;
 }
@@ -527,7 +544,7 @@ static struct efi_file efi_file_root = {
 static EFI_STATUS EFIAPI
 FileOpenVolume(EFI_FILE_IO_INTERFACE *This, EFI_FILE_HANDLE *Root)
 {
-	DebugPrint(L"FileOpenVolume\n");
+	PrintDebug(L"FileOpenVolume\n");
 
 	*Root = &efi_file_root.file;
 	return EFI_SUCCESS;
@@ -562,11 +579,11 @@ FSInstall(EFI_HANDLE Handle)
 			&FileSystemProtocol, &FileIOInterface,
 			NULL);
 	if (EFI_ERROR(Status)) {
-		PrintError(Status, L"Could not install simple file system protocol");
+		PrintStatusError(Status, L"Could not install simple file system protocol");
 		return Status;
 	}
 
-	DebugPrint(L"FileInstall SUCCESS\n");
+	PrintDebug(L"FileInstall SUCCESS\n");
 	return EFI_SUCCESS;
 }
 
@@ -641,14 +658,14 @@ FSBindingStart (EFI_DRIVER_BINDING_PROTOCOL *This,
 	EFI_STATUS Status;
 	EFI_DISK_IO *DiskIo = NULL;
 
-	DebugPrint(L"FSBindingStart\n");
+	PrintDebug(L"FSBindingStart\n");
 
 	/* Get access to the Disk IO Protocol we need */
 	Status = BS->OpenProtocol(ControllerHandle, &DiskIoProtocol,
 			(VOID **) &DiskIo, This->DriverBindingHandle,
 			ControllerHandle, EFI_OPEN_PROTOCOL_BY_DRIVER);
 	if (EFI_ERROR(Status)) {
-		PrintError(Status, L"Could not access the DiskIo protocol");
+		PrintStatusError(Status, L"Could not access the DiskIo protocol");
 		return Status;
 	}
 
@@ -662,7 +679,7 @@ FSBindingStop(EFI_DRIVER_BINDING_PROTOCOL *This,
 		EFI_HANDLE ControllerHandle, UINTN NumberOfChildren,
 		EFI_HANDLE *ChildHandleBuffer)
 {
-	DebugPrint(L"FSBindingStop\n");
+	PrintDebug(L"FSBindingStop\n");
 
 	FSUninstall(ControllerHandle);
 
@@ -720,7 +737,7 @@ FSDriverUninstall(EFI_HANDLE ImageHandle)
 			&ComponentName2Protocol, &FSComponentName2,
 			NULL);
 
-	DebugPrint(L"FS driver uninstalled.\n");
+	PrintDebug(L"FS driver uninstalled.\n");
 	return EFI_SUCCESS;
 }
 
@@ -731,35 +748,28 @@ FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	EFI_STATUS Status;
 	EFI_LOADED_IMAGE *LoadedImage = NULL;
 	CHAR16 LogVar[4];
-	UINTN LogVarSize = ARRAYSIZE(LogVar);
+	UINTN i, LogVarSize = sizeof(LogVar);
 
 	// TODO: prevent the driver from being loaded twice
 
 	InitializeLib(ImageHandle, SystemTable);
 
-	/* You can control the verbosity of this driver output by setting the shell environment
-	 * variable FS_LOGGING to the values:
-	 * 0 = no output (silent)
-	 * 1 = errors
-	 * 2 = warnings
-	 * 3 = info
-	 * 4 = debug
-	 * 5 = maximum verbosity
+	/* You can control the verbosity of the driver output by setting the shell environment
+	 * variable FS_LOGGING to one of the values defined in the FS_LOGLEVEL constants
 	 */
 	Status = RT->GetVariable(L"FS_LOGGING", &ShellVariable, NULL, &LogVarSize, LogVar);
-	/* http://wiki.phoenix.com/wiki/index.php/EFI_RUNTIME_SERVICES#GetVariable.28.29 */
-	if (Status == EFI_SUCCESS) {
-		Print(L"FS_LOGGING=%s\n", LogVar);
+	if (Status == EFI_SUCCESS)
 		LogLevel = Atoi(LogVar);
-		Print(L"FS_LOGGING=%d\n", LogLevel);
-	}
+	for (i=0; i<ARRAYSIZE(PrintTable); i++)
+		*PrintTable[i] = (i < LogLevel)?Print:PrintNone;
+	PrintExtra(L"LogLevel = %d\n", LogLevel);
 
 	/* Grab a handle to this image, so that we can add an unload to our driver */
 	Status = BS->OpenProtocol(ImageHandle, &LoadedImageProtocol,
 			(VOID **) &LoadedImage, ImageHandle,
 			NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 	if (EFI_ERROR(Status)) {
-		PrintError(Status, L"Could not open loaded image protocol");
+		PrintStatusError(Status, L"Could not open loaded image protocol");
 		return Status;
 	}
 
@@ -774,14 +784,14 @@ FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 			&ComponentName2Protocol, &FSComponentName2,
 			NULL);
 	if (EFI_ERROR(Status)) {
-		PrintError(Status, L"Could not bind driver");
+		PrintStatusError(Status, L"Could not bind driver");
 		return Status;
 	}
 
 	/* Register the uninstall callback */
 	LoadedImage->Unload = FSDriverUninstall;
 
-	DebugPrint(L"FS driver installed.\n");
+	PrintDebug(L"FS driver installed.\n");
 	return EFI_SUCCESS;
 }
 
