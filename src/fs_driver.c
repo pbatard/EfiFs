@@ -18,15 +18,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#if !defined(__GNUC__) || (__GNUC__ < 4) || (__GNUC__ == 4 && __GNUC_MINOR__ < 7)
-#error gcc 4.7 or later is required for the compilation of this driver.
-#endif
-
-/* Having GNU_EFI_USE_MS_ABI avoid the need for that ugly uefi_call_wrapper */
-#if !defined(__MAKEWITH_GNUEFI) || !defined(GNU_EFI_USE_MS_ABI)
-#error gnu-efi, with option GNU_EFI_USE_MS_ABI, is required for the compilation of this driver.
-#endif
-
 #include <efi.h>
 #include <efilib.h>
 #include <efistdarg.h>
@@ -35,38 +26,16 @@
 #include <edk2/ComponentName2.h>
 #include <edk2/ShellVariableGuid.h>
 
-// TODO: add these into a header
-#undef offsetof
-#if defined(__GNUC__) && (__GNUC__ > 3)
-#define offsetof(TYPE, MEMBER) __builtin_offsetof(TYPE, MEMBER)
-#else
-#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
-#endif
+#include "fs_driver.h"
 
-#undef container_of
-#define container_of(ptr, type, member) ({                  \
-	const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
-	(type *)( (char *)__mptr - offsetof(type,member) );})
+/* These ones are not defined in gnu-efi yet */
+EFI_GUID DriverBindingProtocol = EFI_DRIVER_BINDING_PROTOCOL_GUID;
+EFI_GUID ComponentNameProtocol = EFI_COMPONENT_NAME_PROTOCOL_GUID;
+EFI_GUID ComponentName2Protocol = EFI_COMPONENT_NAME2_PROTOCOL_GUID;
+EFI_GUID ShellVariable = SHELL_VARIABLE_GUID;
 
-#ifndef ARRAYSIZE
-#define ARRAYSIZE(A)     (sizeof(A)/sizeof((A)[0]))
-#endif
-
-/*
- *Logging
- */
-
-#define FS_LOGLEVEL_SILENT      0
-#define FS_LOGLEVEL_ERROR       1
-#define FS_LOGLEVEL_WARNING     2
-#define FS_LOGLEVEL_INFO        3
-#define FS_LOGLEVEL_DEBUG       4
-#define FS_LOGLEVEL_EXTRA       5
-
-typedef UINTN (*Print_t) (IN CHAR16 *fmt, ... );
-
-UINTN PrintNone(IN CHAR16 *fmt, ... ) { return 0; }
-
+/* Logging */
+static UINTN PrintNone(IN CHAR16 *fmt, ... ) { return 0; }
 Print_t PrintError = PrintNone;
 Print_t PrintWarning = PrintNone;
 Print_t PrintInfo = PrintNone;
@@ -74,18 +43,11 @@ Print_t PrintDebug = PrintNone;
 Print_t PrintExtra = PrintNone;
 Print_t* PrintTable[] = { &PrintError, &PrintWarning, &PrintInfo, &PrintDebug, &PrintExtra };
 
-void
-PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...)
-{
-	CHAR16 StatusString[64];
-	va_list ap;
-
-	StatusToString(StatusString, Status);
-	va_start(ap, Format);
-	VPrint((CHAR16 *)Format, ap);
-	va_end(ap);
-	Print(L": [%d] %s\n", Status, StatusString); 
-}
+/* Global driver verbosity level */
+#if !defined(DEFAULT_LOGLEVEL)
+#define DEFAULT_LOGLEVEL FS_LOGLEVEL_INFO
+#endif
+static INTN LogLevel = DEFAULT_LOGLEVEL;
 
 struct image {
 	CHAR16* name;
@@ -96,13 +58,7 @@ struct image {
 /* We'll use this to simulate a single file entry */
 static struct image fake_image = { L"file.txt", 16, "Hello world!" };
 
-/* Global driver verbosity level */
-#if !defined(DEFAULT_LOGLEVEL)
-#define DEFAULT_LOGLEVEL FS_LOGLEVEL_INFO
-#endif
-static INTN LogLevel = DEFAULT_LOGLEVEL;
-
-/** An image exposed as an EFI file */
+/* An image exposed as an EFI file */
 struct efi_file {
 	/** EFI file protocol */
 	EFI_FILE file;
@@ -113,6 +69,27 @@ struct efi_file {
 };
 
 static struct efi_file efi_file_root;
+
+
+/**
+ * Print an error message along with a human readable EFI status code
+ *
+ * @v Status		EFI status code
+ * @v Format		A non '\n' terminated error message string
+ * @v ...			Any extra parameters
+ */
+void
+PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...)
+{
+	CHAR16 StatusString[64];
+	va_list ap;
+
+	StatusToString(StatusString, Status);
+	va_start(ap, Format);
+	VPrint((CHAR16 *)Format, ap);
+	va_end(ap);
+	PrintError(L": [%d] %s\n", Status, StatusString); 
+}
 
 /**
  * Get EFI file name (for debugging)
@@ -159,13 +136,13 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE* New,
 
 	/* Fail unless opening from the root */
 	if (file->image) {
-		Print(L"EFIFILE %s is not a directory\n", FileName(file));
+		PrintError(L"EFIFILE %s is not a directory\n", FileName(file));
 		return EFI_NOT_FOUND;
 	}
 
 	/* Fail unless opening read-only */
 	if (Mode != EFI_FILE_MODE_READ) {
-		Print(L"EFIFILE %s cannot be opened in mode %#08llx\n", image->name, Mode);
+		PrintError(L"EFIFILE %s cannot be opened in mode %#08llx\n", image->name, Mode);
 		return EFI_WRITE_PROTECTED;
 	}
 
@@ -215,7 +192,7 @@ FileDelete(EFI_FILE_HANDLE This)
 {
 	struct efi_file* file = container_of(This, struct efi_file, file);
 
-	Print(L"EFIFILE %s cannot be deleted\n", FileName(file));
+	PrintError(L"EFIFILE %s cannot be deleted\n", FileName(file));
 
 	/* Close file */
 	FileClose(This);
@@ -234,7 +211,8 @@ FileDelete(EFI_FILE_HANDLE This)
  * @v Data			Data buffer
  * @ret Status		EFI status code
  */
-static EFI_STATUS FileVarlen(UINT64* Base, UINT64 BaseLen,
+static EFI_STATUS
+FileVarlen(UINT64* Base, UINT64 BaseLen,
 		const CHAR16* Name, UINT64* Len, VOID* Data)
 {
 	UINTN NameLen;
@@ -364,12 +342,12 @@ FileRead(EFI_FILE_HANDLE This, UINTN* Len, VOID* Data)
  * @v Data			Data buffer
  * @ret Status		EFI status code
  */
-static EFI_STATUS EFIAPI 
+static EFI_STATUS EFIAPI
 FileWrite(EFI_FILE_HANDLE This, UINTN* Len, VOID* Data)
 {
 	struct efi_file* file = container_of(This, struct efi_file, file);
 
-	Print(L"EFIFILE %s cannot write [%#08zx, %#08zx]\n", FileName(file),
+	PrintError(L"EFIFILE %s cannot write [%#08zx, %#08zx]\n", FileName(file),
 			file->pos, file->pos + *Len);
 	return EFI_WRITE_PROTECTED;
 }
@@ -403,7 +381,7 @@ FileSetPosition(EFI_FILE_HANDLE This, UINT64 Position)
 	 * we do not support writes).
 	 */
 	if (Position > file->image->len) {
-		Print(L"EFIFILE %s cannot seek to %#08llx of %#08zx\n",
+		PrintError(L"EFIFILE %s cannot seek to %#08llx of %#08zx\n",
 				FileName(file), Position, file->image->len );
 		return EFI_UNSUPPORTED;
 	}
@@ -472,7 +450,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID* Type,
 				L"Test Volume Label", Len, Data );
 	} else {
 		GuidToString(GuidString, Type);
-		Print(L"EFIFILE %s cannot get information of type %s\n",
+		PrintError(L"EFIFILE %s cannot get information of type %s\n",
 				FileName(file), GuidString);
 		return EFI_UNSUPPORTED;
 	}
@@ -494,7 +472,7 @@ FileSetInfo(EFI_FILE_HANDLE This, EFI_GUID* Type, UINTN Len, VOID* Data)
 	CHAR16 GuidString[36];
 
 	GuidToString(GuidString, Type);
-	Print(L"EFIFILE %s cannot set information of type %s\n",
+	PrintError(L"EFIFILE %s cannot set information of type %s\n",
 			FileName(file), GuidString);
 	return EFI_WRITE_PROTECTED;
 }
@@ -556,8 +534,6 @@ static EFI_FILE_IO_INTERFACE FileIOInterface = {
 	.OpenVolume = FileOpenVolume,
 };
 
-static EFI_HANDLE StoredHandle = NULL;
-
 /* Install EFI simple file system protocol */
 /*
  * If successful this will instantiate a new FS#: drive that will
@@ -570,12 +546,10 @@ FSInstall(EFI_HANDLE Handle)
 {
 	EFI_STATUS Status;
 
-	StoredHandle = Handle;
-
 	/* TODO: Check for a magic on the relevant sector */
 
 	/* Install the simple file system protocol */
-	Status = LibInstallProtocolInterfaces (&StoredHandle,
+	Status = LibInstallProtocolInterfaces (&Handle,
 			&FileSystemProtocol, &FileIOInterface,
 			NULL);
 	if (EFI_ERROR(Status)) {
@@ -621,7 +595,7 @@ FSGetControllerName(EFI_COMPONENT_NAME_PROTOCOL *This,
 /*
  * As per http://sourceforge.net/p/tianocore/edk2-MdeModulePkg/ci/master/tree/Universal/Disk/DiskIoDxe/DiskIo.c
  * to check if your driver has a chance to apply to each controller sent during the supported detection phase
- * if by trying to open it with the protocols your driver is meant to consume (here EFIDISK_IO)
+ * if by trying to open it with the protocols your driver is meant to consume (here EFI_DISK_IO)
  */
 static EFI_STATUS EFIAPI
 FSBindingSupported(EFI_DRIVER_BINDING_PROTOCOL *This,
@@ -645,7 +619,7 @@ FSBindingSupported(EFI_DRIVER_BINDING_PROTOCOL *This,
 	// Apparently we get one call for each partition found...
 	DevicePath = DevicePathFromHandle(ControllerHandle);
 	if (DevicePath != NULL)
-		Print(L"BindingSupported: %s\n", DevicePathToStr(DevicePath));
+		PrintDebug(L"BindingSupported: %s\n", DevicePathToStr(DevicePath));
 
 	return Status;
 }
@@ -686,12 +660,6 @@ FSBindingStop(EFI_DRIVER_BINDING_PROTOCOL *This,
 	return EFI_SUCCESS;
 }
 
-/* These ones are not defined in gnu-efi yet */
-EFI_GUID DriverBindingProtocol = EFI_DRIVER_BINDING_PROTOCOL_GUID;
-EFI_GUID ComponentNameProtocol = EFI_COMPONENT_NAME_PROTOCOL_GUID;
-EFI_GUID ComponentName2Protocol = EFI_COMPONENT_NAME2_PROTOCOL_GUID;
-EFI_GUID ShellVariable = SHELL_VARIABLE_GUID;
-
 /*
  * The platform determines whether it will support the older Component
  * Name Protocol or the current Component Name2 Protocol, or both.
@@ -699,8 +667,8 @@ EFI_GUID ShellVariable = SHELL_VARIABLE_GUID;
  * protocols in your driver.
  * 
  * NB: From what I could see, the only difference between Name and Name2
- * is that name uses ISO-639-2 ("eng") whereas name2 uses RFC 4646 ("en")
- * http://www.loc.gov/standards/iso639-2/faq.html#6
+ * is that Name uses ISO-639-2 ("eng") whereas Name2 uses RFC 4646 ("en")
+ * See: http://www.loc.gov/standards/iso639-2/faq.html#6
  */
 static EFI_COMPONENT_NAME_PROTOCOL FSComponentName = {
 	.GetDriverName = FSGetDriverName,
@@ -718,7 +686,14 @@ static EFI_DRIVER_BINDING_PROTOCOL FSDriverBinding = {
 	.Supported = FSBindingSupported,
 	.Start = FSBindingStart,
 	.Stop = FSBindingStop,
-	.Version = 0x02,
+	/* This field is used by the EFI boot service ConnectController() to determine the order
+	 * that driver's Supported() service will be used when a controller needs to be started.
+	 * EFI Driver Binding Protocol instances with higher Version values will be used before
+	 * ones with lower Version values. The Version values of 0x0-0x0f and 
+	 * 0xfffffff0-0xffffffff are reserved for platform/OEM specific drivers. The Version
+	 * values of 0x10-0xffffffef are reserved for IHV-developed drivers. 
+	 */
+	.Version = 0x10,
 	.ImageHandle = NULL,
 	.DriverBindingHandle = NULL
 };
@@ -795,4 +770,5 @@ FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	return EFI_SUCCESS;
 }
 
+/* Designate the driver entrypoint */
 EFI_DRIVER_ENTRY_POINT(FSDriverInstall)

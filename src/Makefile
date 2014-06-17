@@ -40,7 +40,7 @@ include $(SRCDIR)/../Make.common
 $(TARGET): $(SHLIB_TARGET)
 	@echo [OBJ] $@
 	@$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel \
-		   -j .rela -j .reloc --target=$(FORMAT_DRIVER)  $< $@
+		-j .rela -j .reloc --target=$(FORMAT_DRIVER)  $< $@
 	@chmod a-x $(TARGET)
 
 clean:

@@ -82,7 +82,7 @@ FORMAT_DRIVER   = efi-bsdrv-$(ARCH)
 # general rules
 
 %.o: %.c
-	@echo [CC] $@
+	@echo [CC]  $@
 	@$(CC) $(LOCAL_CPPFLAGS) $(CPPFLAGS) $(LOCAL_CFLAGS) $(CFLAGS) -c $< -o $@
 
 # rules for EFI applications
@@ -92,7 +92,7 @@ ifneq (,$(filter %.efi,$(TARGET)))
 SHLIB_TARGET = $(subst .efi,.so,$(TARGET))
 
 $(SHLIB_TARGET): $(OBJS)
-	@echo [LD] $@
+	@echo [LD]  $@
 	@$(LD) $(LOCAL_LDFLAGS) $(LDFLAGS) $(OBJS) -o $@ $(LOCAL_LIBS) $(LIBS)
 
 
@@ -103,7 +103,7 @@ endif
 ifneq (,$(filter %.a,$(TARGET)))
 
 $(TARGET): $(OBJS)
-	@echo [AR] $@
+	@echo [AR]  $@
 	@$(AR) cq $@ $(OBJS)
 
 endif
