@@ -17,9 +17,9 @@ aimed at providing some more useful functionality in the near future.
   Make sure you have at least one disk with a partition that is not being
   handled by any EFI filesystem driver (eg NTFS)
   Boot into the EFI shell and run the following:
-  * `load fs0:\fs_driver_x64.efii` # or wherever your driver was copied
+  * `load fs0:\fs_driver_x64.efi` # or wherever your driver was copied
   * `map -r` # this should make a new fs# available, eg `fs2:`
-  * `dir fs2: # this should list a single read-only `file.txt` file
+  * `dir fs2:` # this should list a single read-only `file.txt` file
   * `edit fs2:\file.txt` # this should display the content of the file
 
 * Notes:
