@@ -1,4 +1,4 @@
-/* efi_driver.h - Wrapper for standalone EFI filesystem drivers */
+/* fs_driver.h - Wrapper for standalone EFI filesystem drivers */
 /*
  *  Copyright © 2014 Pete Batard <pete@akeo.ie>
  *
@@ -15,6 +15,8 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+#include <efi.h>
 
 #pragma once
 
@@ -62,3 +64,8 @@ typedef UINTN (*Print_t) (IN CHAR16 *fmt, ... );
 #define THIS_FS_GUID { \
 	0x3AD33E69, 0x7966, 0x4081, {0x9A, 0x66, 0x9B, 0xA8, 0xE5, 0x4E, 0x06, 0x4B } \
 }
+
+typedef struct {
+	EFI_DISK_IO* DiskIo;
+	EFI_BLOCK_IO* BlockIo;
+} FS_DRIVER_PRIVATE_DATA;

@@ -1,8 +1,8 @@
-/* efi_driver.c - Wrapper for standalone EFI filesystem drivers */
+/* fs_driver.c - Wrapper for standalone EFI filesystem drivers */
 /*
  *  Copyright © 2014 Pete Batard <pete@akeo.ie>
  *  Based on iPXE's efi_driver.c and efi_file.c:
- *  Copyright © 2008,2013 Michael Brown <mbrown@fensystems.co.uk>.
+ *  Copyright © 2011,2013 Michael Brown <mbrown@fensystems.co.uk>.
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -54,6 +54,8 @@ static INTN LogLevel = DEFAULT_LOGLEVEL;
 
 /* Handle for our custom protocol/mutex instance */
 static EFI_HANDLE MutexHandle = NULL;
+
+static FS_DRIVER_PRIVATE_DATA PrivateData = { NULL, NULL };
 
 /* Custom protocol/mutex definition */
 typedef struct {
@@ -541,27 +543,66 @@ FileOpenVolume(EFI_FILE_IO_INTERFACE *This, EFI_FILE_HANDLE *Root)
 }
 
 /** EFI simple file system protocol */
+// TODO: Add our private BlockIO and DiskIO data and instantiate a
+// separate one for each FS
 static EFI_FILE_IO_INTERFACE FileIOInterface = {
 	.Revision = EFI_FILE_IO_INTERFACE_REVISION,
 	.OpenVolume = FileOpenVolume,
 };
 
-/* Install EFI simple file system protocol */
-/*
- * If successful this will instantiate a new FS#: drive that will
- * become on the next 'map -r', but it does NOT call on OpenVolume
- * yet. This will only be done when trying to access a file or the
- * root directory on that volume
+/**
+ * Read the VBR and check its magic
+ *
+ * @v ControllerHandle      Handle for the partition controller
+ * @v DriverBindingHandle   Handle for our current driver
+ * @ret Status              EFI status code
  */
-static EFI_STATUS EFIAPI
-FSInstall(EFI_HANDLE Handle)
+static EFI_STATUS
+FSCheckMagic(VOID)
 {
 	EFI_STATUS Status;
+	const EFI_LBA VbrLba = 0;	/* VBR LBA */
+	const UINT32 MediaAny = 0;	/* Don't care about removable media */
+	const UINT8 NTFSMagic[] = { 'N', 'T', 'F', 'S', ' ', ' ', ' ', ' ' };
+	UINT8 Buffer[512];
 
-	/* TODO: Check for a magic on the relevant sector */
+	/* Read the VBR and check for its magic */
+	Status = PrivateData.BlockIo->ReadBlocks(PrivateData.BlockIo, 
+			MediaAny, VbrLba, sizeof(Buffer), Buffer);
+	if (EFI_ERROR(Status)) {
+		PrintStatusError(Status, L"Could not read VBR");
+		return Status;
+	}
+	if (LogLevel >= FS_LOGLEVEL_EXTRA)
+		DumpHex(0, 0, sizeof(Buffer), Buffer);
 
-	/* Install the simple file system protocol */
-	Status = LibInstallProtocolInterfaces (&Handle,
+	if (CompareMem(&Buffer[3], NTFSMagic, sizeof(NTFSMagic)) != 0)
+		return EFI_NOT_FOUND;
+
+	PrintDebug(L"Found NTFS partition\n");
+	return EFI_SUCCESS;
+}
+
+/**
+ * Install the EFI simple file system protocol
+ * If successful this call instantiates a new FS#: drive, that is made
+ * available on the next 'map -r'. Note that all this call does is add
+ * the FS protocol. OpenVolume won't be called until a process tries
+ * to access a file or the root directory on the volume.
+ */
+static EFI_STATUS
+FSInstall(EFI_HANDLE ControllerHandle)
+{
+	EFI_STATUS Status;
+	EFI_DEVICE_PATH *DevicePath = NULL;
+
+	/* Don't install the filesystem unless it has the right VBR */
+	Status = FSCheckMagic();
+	if (EFI_ERROR(Status))
+		return Status;
+
+	/* Install the simple file system protocol. */
+	Status = LibInstallProtocolInterfaces(&ControllerHandle,
 			&FileSystemProtocol, &FileIOInterface,
 			NULL);
 	if (EFI_ERROR(Status)) {
@@ -569,15 +610,18 @@ FSInstall(EFI_HANDLE Handle)
 		return Status;
 	}
 
-	PrintDebug(L"FileInstall SUCCESS\n");
+	DevicePath = DevicePathFromHandle(ControllerHandle);
+	if (DevicePath != NULL)
+		PrintInfo(L"FSInstall: %s\n", DevicePathToStr(DevicePath));
+
 	return EFI_SUCCESS;
 }
 
 /* Uninstall EFI simple file system protocol */
-static void EFIAPI
-FSUninstall (EFI_HANDLE Handle)
+static void
+FSUninstall(EFI_HANDLE ControllerHandle)
 {
-	LibUninstallProtocolInterfaces(Handle,
+	LibUninstallProtocolInterfaces(ControllerHandle,
 			&FileSystemProtocol, &FileIOInterface,
 			NULL);
 }
@@ -607,8 +651,8 @@ FSGetControllerName(EFI_COMPONENT_NAME_PROTOCOL *This,
 /*
  * http://sourceforge.net/p/tianocore/edk2-MdeModulePkg/ci/master/tree/Universal/Disk/DiskIoDxe/DiskIo.c
  * To check if your driver has a chance to apply to the controllers sent during
- * the supported detection phase, try to open the protocols it is meant to
- * consume (here EFI_DISK_IO)
+ * the supported detection phase, try to open the child protocols they are meant
+ * to consume in exclusive access (here EFI_DISK_IO).
  */
 static EFI_STATUS EFIAPI
 FSBindingSupported(EFI_DRIVER_BINDING_PROTOCOL *This,
@@ -617,48 +661,75 @@ FSBindingSupported(EFI_DRIVER_BINDING_PROTOCOL *This,
 {
 	EFI_STATUS Status;
 	EFI_DISK_IO *DiskIo;
-	EFI_DEVICE_PATH *DevicePath = NULL;
 
+	/* Don't handle this unless we can get exclusive access to DiskIO through it */
 	Status = BS->OpenProtocol(ControllerHandle,
-			&DiskIoProtocol, (VOID **) &DiskIo,
+			&DiskIoProtocol, (VOID**) &DiskIo,
 			This->DriverBindingHandle, ControllerHandle,
 			EFI_OPEN_PROTOCOL_BY_DRIVER);
 	if (EFI_ERROR(Status))
 		return Status;
 
+	PrintDebug(L"FSBindingSupported\n");
+
+	/* The whole concept of BindingSupported is to hint at what we may
+	 * actually support, but not check if the target is valid or
+	 * initialize anything, so we must close all protocols we opened.
+	 */
 	BS->CloseProtocol(ControllerHandle, &DiskIoProtocol,
 			This->DriverBindingHandle, ControllerHandle);
 
-	// Apparently we get one call for each partition found...
-	DevicePath = DevicePathFromHandle(ControllerHandle);
-	if (DevicePath != NULL)
-		PrintDebug(L"BindingSupported: %s\n", DevicePathToStr(DevicePath));
-
-	return Status;
+	return EFI_SUCCESS;
 }
 
 static EFI_STATUS EFIAPI
-FSBindingStart (EFI_DRIVER_BINDING_PROTOCOL *This,
+FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 		EFI_HANDLE ControllerHandle,
 		EFI_DEVICE_PATH_PROTOCOL *RemainingDevicePath)
 {
 	EFI_STATUS Status;
-	EFI_DISK_IO *DiskIo = NULL;
 
 	PrintDebug(L"FSBindingStart\n");
+	// TODO: We are currently reuse the same PrivateData (BlockIO, DiskIO) for each of the
+	// file system instances we handle. When all we do with it is a magic check in FSInstall,
+	// it doesn't matter much, but it will when we try to access actual data from different
+	// partitions.
 
-	/* Get access to the Disk IO Protocol we need */
-	Status = BS->OpenProtocol(ControllerHandle, &DiskIoProtocol,
-			(VOID **) &DiskIo, This->DriverBindingHandle,
-			ControllerHandle, EFI_OPEN_PROTOCOL_BY_DRIVER);
+	/* Get access to the Block IO protocol for this controller */
+	Status = BS->OpenProtocol(ControllerHandle,
+			&BlockIoProtocol, (VOID**) &PrivateData.BlockIo,
+			This->DriverBindingHandle, ControllerHandle,
+			/* http://wiki.phoenix.com/wiki/index.php/EFI_BOOT_SERVICES#OpenProtocol.28.29
+			 * EFI_OPEN_PROTOCOL_BY_DRIVER returns Access Denied here, most likely
+			 * because the disk driver has that protocol already open. So we use
+			 * EFI_OPEN_PROTOCOL_GET_PROTOCOL (which doesn't require us to close it)
+			 */
+			EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+	if (EFI_ERROR(Status)) {
+		PrintStatusError(Status, L"Could not access BlockIO protocol");
+		return Status;
+	}
+
+	/* Get exclusive access to the Disk IO protocol */
+	Status = BS->OpenProtocol(ControllerHandle,
+			&DiskIoProtocol, (VOID**) &PrivateData.DiskIo,
+			This->DriverBindingHandle, ControllerHandle,
+			EFI_OPEN_PROTOCOL_BY_DRIVER);
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"Could not access the DiskIo protocol");
 		return Status;
 	}
 
-	FSInstall(ControllerHandle);
+	Status = FSInstall(ControllerHandle);
+	/* Unless we close the DiskIO protocol in case of error, no other
+	 * FS driver will be able to access this partition.
+	 */
+	if (EFI_ERROR(Status)) {
+		BS->CloseProtocol(ControllerHandle, &DiskIoProtocol,
+			This->DriverBindingHandle, ControllerHandle);
+	}
 
-	return EFI_UNSUPPORTED;
+	return Status;
 }
 
 static EFI_STATUS EFIAPI
@@ -669,6 +740,9 @@ FSBindingStop(EFI_DRIVER_BINDING_PROTOCOL *This,
 	PrintDebug(L"FSBindingStop\n");
 
 	FSUninstall(ControllerHandle);
+
+	BS->CloseProtocol(ControllerHandle, &DiskIoProtocol,
+			This->DriverBindingHandle, ControllerHandle);
 
 	return EFI_SUCCESS;
 }
@@ -720,19 +794,33 @@ static EFI_DRIVER_BINDING_PROTOCOL FSDriverBinding = {
 EFI_STATUS EFIAPI
 FSDriverUninstall(EFI_HANDLE ImageHandle)
 {
-	// TODO: close any open device instances
-	/* This is done by calling the boot service DisconnectController() for the driver that
-	 * currently have the protocol interface open with an attribute of
-	 * EFI_OPEN_PROTOCOL_BY_DRIVER or
-	 * EFI_OPEN_PROTOCOL_BY_DRIVER | EFI_OPEN_PROTOCOL_EXCLUSIVE. 
-	 */
+	EFI_STATUS Status;
+	UINTN NumHandles;
+	EFI_HANDLE *Handles;
+	UINTN i;
 
+	/* Enumerate all handles */
+	Status = BS->LocateHandleBuffer(AllHandles, NULL, NULL, &NumHandles, &Handles);
+
+	/* Disconnect controllers linked to our driver. This action will trigger a call to BindingStop */
+	if (Status == EFI_SUCCESS) {
+		for (i=0; i<NumHandles; i++) {
+			/* Make sure to filter on DriverBindingHandle,  else EVERYTHING gets disconnected! */
+			Status = BS->DisconnectController(Handles[i], FSDriverBinding.DriverBindingHandle, NULL);
+			if (Status == EFI_SUCCESS)
+				PrintDebug(L"DisconnectController[%d]\n", i);
+		}
+	} else {
+		PrintStatusError(Status, L"Unable to enumerate handles");
+	}
+	BS->FreePool(Handles);
+
+	/* Now that all controllers are disconnected, we can safely remove our protocols */
 	LibUninstallProtocolInterfaces(ImageHandle,
 			&DriverBindingProtocol, &FSDriverBinding,
 			&ComponentNameProtocol, &FSComponentName,
 			&ComponentName2Protocol, &FSComponentName2,
 			NULL);
-
 
 	/* Uninstall our mutex (we're the only instance that can run this code) */
 	LibUninstallProtocolInterfaces(MutexHandle,
