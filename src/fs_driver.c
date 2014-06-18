@@ -34,6 +34,9 @@ EFI_GUID ComponentNameProtocol = EFI_COMPONENT_NAME_PROTOCOL_GUID;
 EFI_GUID ComponentName2Protocol = EFI_COMPONENT_NAME2_PROTOCOL_GUID;
 EFI_GUID ShellVariable = SHELL_VARIABLE_GUID;
 
+/* We'll try to instantiate a custom protocol as a mutex, so we need a GUID */
+EFI_GUID MutexGUID = THIS_FS_GUID;
+
 /* Logging */
 static UINTN PrintNone(IN CHAR16 *fmt, ... ) { return 0; }
 Print_t PrintError = PrintNone;
@@ -48,6 +51,15 @@ Print_t* PrintTable[] = { &PrintError, &PrintWarning, &PrintInfo, &PrintDebug, &
 #define DEFAULT_LOGLEVEL FS_LOGLEVEL_INFO
 #endif
 static INTN LogLevel = DEFAULT_LOGLEVEL;
+
+/* Handle for our custom protocol/mutex instance */
+static EFI_HANDLE MutexHandle = NULL;
+
+/* Custom protocol/mutex definition */
+typedef struct {
+	INTN Unused;
+} EFI_MUTEX_PROTOCOL;
+static EFI_MUTEX_PROTOCOL MutexProtocol = { 0 };
 
 struct image {
 	CHAR16* name;
@@ -565,7 +577,7 @@ FSInstall(EFI_HANDLE Handle)
 static void EFIAPI
 FSUninstall (EFI_HANDLE Handle)
 {
-	BS->UninstallMultipleProtocolInterfaces(Handle,
+	LibUninstallProtocolInterfaces(Handle,
 			&FileSystemProtocol, &FileIOInterface,
 			NULL);
 }
@@ -593,9 +605,10 @@ FSGetControllerName(EFI_COMPONENT_NAME_PROTOCOL *This,
 }
 
 /*
- * As per http://sourceforge.net/p/tianocore/edk2-MdeModulePkg/ci/master/tree/Universal/Disk/DiskIoDxe/DiskIo.c
- * to check if your driver has a chance to apply to each controller sent during the supported detection phase
- * if by trying to open it with the protocols your driver is meant to consume (here EFI_DISK_IO)
+ * http://sourceforge.net/p/tianocore/edk2-MdeModulePkg/ci/master/tree/Universal/Disk/DiskIoDxe/DiskIo.c
+ * To check if your driver has a chance to apply to the controllers sent during
+ * the supported detection phase, try to open the protocols it is meant to
+ * consume (here EFI_DISK_IO)
  */
 static EFI_STATUS EFIAPI
 FSBindingSupported(EFI_DRIVER_BINDING_PROTOCOL *This,
@@ -700,11 +713,19 @@ static EFI_DRIVER_BINDING_PROTOCOL FSDriverBinding = {
 
 /**
  * Uninstall EFI driver
+ *
+ * @v ImageHandle       Handle identifying the loaded image
+ * @ret Status          EFI status code to return on exit
  */
 EFI_STATUS EFIAPI
 FSDriverUninstall(EFI_HANDLE ImageHandle)
 {
 	// TODO: close any open device instances
+	/* This is done by calling the boot service DisconnectController() for the driver that
+	 * currently have the protocol interface open with an attribute of
+	 * EFI_OPEN_PROTOCOL_BY_DRIVER or
+	 * EFI_OPEN_PROTOCOL_BY_DRIVER | EFI_OPEN_PROTOCOL_EXCLUSIVE. 
+	 */
 
 	LibUninstallProtocolInterfaces(ImageHandle,
 			&DriverBindingProtocol, &FSDriverBinding,
@@ -712,32 +733,74 @@ FSDriverUninstall(EFI_HANDLE ImageHandle)
 			&ComponentName2Protocol, &FSComponentName2,
 			NULL);
 
+
+	/* Uninstall our mutex (we're the only instance that can run this code) */
+	LibUninstallProtocolInterfaces(MutexHandle,
+				&MutexGUID, &MutexProtocol,
+				NULL);
+
 	PrintDebug(L"FS driver uninstalled.\n");
 	return EFI_SUCCESS;
 }
 
-/* Install EFI driver */
+/* You can control the verbosity of the driver output by setting the shell environment
+ * variable FS_LOGGING to one of the values defined in the FS_LOGLEVEL constants
+ */
+static VOID
+SetLogging(VOID)
+{
+	EFI_STATUS Status;
+	CHAR16 LogVar[4];
+	UINTN i, LogVarSize = sizeof(LogVar);
+
+	Status = RT->GetVariable(L"FS_LOGGING", &ShellVariable, NULL, &LogVarSize, LogVar);
+	if (Status == EFI_SUCCESS)
+		LogLevel = Atoi(LogVar);
+
+	for (i=0; i<ARRAYSIZE(PrintTable); i++)
+		*PrintTable[i] = (i < LogLevel)?Print:PrintNone;
+
+	PrintExtra(L"LogLevel = %d\n", LogLevel);
+}
+
+/**
+ * Install EFI driver - Will be the entrypoint for our driver executable
+ * http://wiki.phoenix.com/wiki/index.php/EFI_IMAGE_ENTRY_POINT
+ *
+ * @v ImageHandle       Handle identifying the loaded image
+ * @v SystemTable       Pointers to EFI system calls
+ * @ret Status          EFI status code to return on exit
+ */
 EFI_STATUS EFIAPI
 FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 {
 	EFI_STATUS Status;
 	EFI_LOADED_IMAGE *LoadedImage = NULL;
-	CHAR16 LogVar[4];
-	UINTN i, LogVarSize = sizeof(LogVar);
-
-	// TODO: prevent the driver from being loaded twice
+	VOID* Interface;
 
 	InitializeLib(ImageHandle, SystemTable);
+	SetLogging();
 
-	/* You can control the verbosity of the driver output by setting the shell environment
-	 * variable FS_LOGGING to one of the values defined in the FS_LOGLEVEL constants
+	/* Prevent the driver from being loaded twice by detecting and trying to
+	 * instantiate a custom protocol which we use as a global mutex.
 	 */
-	Status = RT->GetVariable(L"FS_LOGGING", &ShellVariable, NULL, &LogVarSize, LogVar);
-	if (Status == EFI_SUCCESS)
-		LogLevel = Atoi(LogVar);
-	for (i=0; i<ARRAYSIZE(PrintTable); i++)
-		*PrintTable[i] = (i < LogLevel)?Print:PrintNone;
-	PrintExtra(L"LogLevel = %d\n", LogLevel);
+	Status = BS->LocateProtocol(&MutexGUID, NULL, &Interface);
+	if (Status == EFI_SUCCESS) {
+		PrintError(L"This driver has already been installed\n");
+		return EFI_LOAD_ERROR;
+	}
+	/* The only valid status we expect is NOT FOUND here */
+	if (Status != EFI_NOT_FOUND) {
+		PrintStatusError(Status, L"Could not locate global mutex");
+		return Status;
+	}
+	Status = LibInstallProtocolInterfaces(&MutexHandle,
+			&MutexGUID, &MutexProtocol,
+			NULL);
+	if (EFI_ERROR(Status)) {
+		PrintStatusError(Status, L"Could not install global mutex");
+		return Status;
+	}
 
 	/* Grab a handle to this image, so that we can add an unload to our driver */
 	Status = BS->OpenProtocol(ImageHandle, &LoadedImageProtocol,

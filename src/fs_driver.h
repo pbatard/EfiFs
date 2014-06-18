@@ -56,3 +56,9 @@
 #define FS_LOGLEVEL_EXTRA       5
 
 typedef UINTN (*Print_t) (IN CHAR16 *fmt, ... );
+
+/* Set a GUID for this filesystem - Used for our global mutex among other things */
+// TODO: we'll need a separate GUID for each filesystem we want to serve
+#define THIS_FS_GUID { \
+	0x3AD33E69, 0x7966, 0x4081, {0x9A, 0x66, 0x9B, 0xA8, 0xE5, 0x4E, 0x06, 0x4B } \
+}
