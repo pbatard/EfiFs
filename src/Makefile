@@ -30,6 +30,8 @@ ifeq ($(ARCH),x86_64)
 endif
 
 LOCAL_CPPFLAGS  = $(ARCH_C_FLAGS) -I$(SRCDIR) -I$(SRCDIR)/../include
+LOCAL_LIBS      = -lgrub_efi
+LOCAL_LDFLAGS   = -L.
 OBJS            = $(DRIVERNAME).o
 TARGET          = $(DRIVERNAME)_$(FILENAME_CODE).efi
 

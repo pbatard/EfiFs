@@ -37,6 +37,9 @@ EFI_GUID ShellVariable = SHELL_VARIABLE_GUID;
 /* We'll try to instantiate a custom protocol as a mutex, so we need a GUID */
 EFI_GUID MutexGUID = THIS_FS_GUID;
 
+/* Keep a global copy of our ImageHanle */
+EFI_HANDLE EfiImageHandle = NULL;
+
 /* Logging */
 static UINTN PrintNone(IN CHAR16 *fmt, ... ) { return 0; }
 Print_t PrintError = PrintNone;
@@ -612,7 +615,7 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 static void
 FSUninstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 {
-	Print(L"FSUninstall: %s\n", This->Path);
+	PrintDebug(L"FSUninstall: %s\n", This->Path);
 
 	LibUninstallProtocolInterfaces(ControllerHandle,
 			&FileSystemProtocol, &This->FileIOInterface,
@@ -869,6 +872,8 @@ SetLogging(VOID)
 	PrintExtra(L"LogLevel = %d\n", LogLevel);
 }
 
+extern void grub_ntfs_init(void);
+
 /**
  * Install EFI driver - Will be the entrypoint for our driver executable
  * http://wiki.phoenix.com/wiki/index.php/EFI_IMAGE_ENTRY_POINT
@@ -886,6 +891,7 @@ FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 
 	InitializeLib(ImageHandle, SystemTable);
 	SetLogging();
+	EfiImageHandle = ImageHandle;
 
 	/* Prevent the driver from being loaded twice by detecting and trying to
 	 * instantiate a custom protocol which we use as a global mutex.
@@ -934,6 +940,9 @@ FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 
 	/* Register the uninstall callback */
 	LoadedImage->Unload = FSDriverUninstall;
+
+	/* Register the relevant grub module */
+	grub_ntfs_init();
 
 	PrintDebug(L"FS driver installed.\n");
 	return EFI_SUCCESS;

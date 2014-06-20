@@ -72,3 +72,6 @@ typedef struct {
 	EFI_BLOCK_IO* BlockIo;
 	CHAR16 Path[256];
 } EFI_FS;
+
+extern EFI_HANDLE EfiImageHandle;
+extern EFI_GUID ShellVariable;
