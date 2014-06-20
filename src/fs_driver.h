@@ -65,7 +65,10 @@ typedef UINTN (*Print_t) (IN CHAR16 *fmt, ... );
 	0x3AD33E69, 0x7966, 0x4081, {0x9A, 0x66, 0x9B, 0xA8, 0xE5, 0x4E, 0x06, 0x4B } \
 }
 
+/* A file system instance */
 typedef struct {
+	EFI_FILE_IO_INTERFACE FileIOInterface;
 	EFI_DISK_IO* DiskIo;
 	EFI_BLOCK_IO* BlockIo;
-} FS_DRIVER_PRIVATE_DATA;
+	CHAR16 Path[256];
+} EFI_FS;

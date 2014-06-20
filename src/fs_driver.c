@@ -55,8 +55,6 @@ static INTN LogLevel = DEFAULT_LOGLEVEL;
 /* Handle for our custom protocol/mutex instance */
 static EFI_HANDLE MutexHandle = NULL;
 
-static FS_DRIVER_PRIVATE_DATA PrivateData = { NULL, NULL };
-
 /* Custom protocol/mutex definition */
 typedef struct {
 	INTN Unused;
@@ -64,7 +62,7 @@ typedef struct {
 static EFI_MUTEX_PROTOCOL MutexProtocol = { 0 };
 
 struct image {
-	CHAR16* name;
+	CHAR16 *name;
 	UINTN len;
 	char data[16];
 };
@@ -111,7 +109,7 @@ PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...)
  * @v file			EFI file
  * @ret Name		Name
  */
-static const CHAR16* FileName(struct efi_file *file)
+static const CHAR16 *FileName(struct efi_file *file)
 {
 	return file->image?file->image->name:L"<root>";
 }
@@ -127,12 +125,12 @@ static const CHAR16* FileName(struct efi_file *file)
  * @ret Status		EFI status code
  */
 static EFI_STATUS EFIAPI
-FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE* New,
-		CHAR16* Name, UINT64 Mode, UINT64 Attributes)
+FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
+		CHAR16 *Name, UINT64 Mode, UINT64 Attributes)
 {
-	struct efi_file* file = container_of(This, struct efi_file, file);
-	struct efi_file* new_file;
-	struct image* image = &fake_image;
+	struct efi_file *file = container_of(This, struct efi_file, file);
+	struct efi_file *new_file;
+	struct image *image = &fake_image;
 
 	PrintDebug(L"FileOpen: '%s'\n", Name);
 
@@ -180,7 +178,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE* New,
 static EFI_STATUS EFIAPI
 FileClose(EFI_FILE_HANDLE This)
 {
-	struct efi_file* file = container_of(This, struct efi_file, file);
+	struct efi_file *file = container_of(This, struct efi_file, file);
 
 	PrintDebug(L"FileClose\n");
 
@@ -204,7 +202,7 @@ FileClose(EFI_FILE_HANDLE This)
 static EFI_STATUS EFIAPI
 FileDelete(EFI_FILE_HANDLE This)
 {
-	struct efi_file* file = container_of(This, struct efi_file, file);
+	struct efi_file *file = container_of(This, struct efi_file, file);
 
 	PrintError(L"EFIFILE %s cannot be deleted\n", FileName(file));
 
@@ -226,8 +224,8 @@ FileDelete(EFI_FILE_HANDLE This)
  * @ret Status		EFI status code
  */
 static EFI_STATUS
-FileVarlen(UINT64* Base, UINT64 BaseLen,
-		const CHAR16* Name, UINT64* Len, VOID* Data)
+FileVarlen(UINT64 *Base, UINT64 BaseLen,
+		const CHAR16 *Name, UINT64 *Len, VOID *Data)
 {
 	UINTN NameLen;
 
@@ -256,10 +254,10 @@ FileVarlen(UINT64* Base, UINT64 BaseLen,
  * @ret Status		EFI status code
  */
 static EFI_STATUS 
-FileInfo(struct image* image, UINTN *Len, VOID* Data)
+FileInfo(struct image *image, UINTN *Len, VOID *Data)
 {
 	EFI_FILE_INFO Info;
-	const CHAR16* Name;
+	const CHAR16 *Name;
 	const EFI_TIME Time = { 1970, 01, 01, 00, 00, 00, 0, 0, 0, 0, 0};
 
 	PrintDebug(L"FileInfo\n");
@@ -291,7 +289,7 @@ FileInfo(struct image* image, UINTN *Len, VOID* Data)
  * @ret Status		EFI status code
  */
 static EFI_STATUS
-FileReadDir(struct efi_file* file, UINTN* Len, VOID* Data)
+FileReadDir(struct efi_file *file, UINTN *Len, VOID *Data)
 {
 
 	PrintDebug(L"FileReadDir\n");
@@ -326,7 +324,7 @@ FileReadDir(struct efi_file* file, UINTN* Len, VOID* Data)
  * @ret Status		EFI status code
  */
 static EFI_STATUS EFIAPI
-FileRead(EFI_FILE_HANDLE This, UINTN* Len, VOID* Data)
+FileRead(EFI_FILE_HANDLE This, UINTN *Len, VOID *Data)
 {
 	struct efi_file *file = container_of(This, struct efi_file, file);
 	UINTN Remaining;
@@ -357,9 +355,9 @@ FileRead(EFI_FILE_HANDLE This, UINTN* Len, VOID* Data)
  * @ret Status		EFI status code
  */
 static EFI_STATUS EFIAPI
-FileWrite(EFI_FILE_HANDLE This, UINTN* Len, VOID* Data)
+FileWrite(EFI_FILE_HANDLE This, UINTN *Len, VOID *Data)
 {
-	struct efi_file* file = container_of(This, struct efi_file, file);
+	struct efi_file *file = container_of(This, struct efi_file, file);
 
 	PrintError(L"EFIFILE %s cannot write [%#08zx, %#08zx]\n", FileName(file),
 			file->pos, file->pos + *Len);
@@ -416,9 +414,9 @@ FileSetPosition(EFI_FILE_HANDLE This, UINT64 Position)
  * @ret Status		EFI status code
  */
 static EFI_STATUS EFIAPI
-FileGetPosition(EFI_FILE_HANDLE This, UINT64* Position)
+FileGetPosition(EFI_FILE_HANDLE This, UINT64 *Position)
 {
-	struct efi_file* file = container_of(This, struct efi_file, file);
+	struct efi_file *file = container_of(This, struct efi_file, file);
 
 	PrintDebug(L"FileGetPosition\n");
 
@@ -436,12 +434,12 @@ FileGetPosition(EFI_FILE_HANDLE This, UINT64* Position)
  * @ret Status		EFI status code
  */
 static EFI_STATUS EFIAPI
-FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID* Type,
-		UINTN* Len, VOID* Data)
+FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type,
+		UINTN *Len, VOID *Data)
 {
-	struct efi_file* file = container_of(This, struct efi_file, file);
+	struct efi_file *file = container_of(This, struct efi_file, file);
 	EFI_FILE_SYSTEM_INFO FSInfo;
-	struct image* image = &fake_image;
+	struct image *image = &fake_image;
 	CHAR16 GuidString[36];
 
 	PrintDebug(L"FileGetInfo\n");
@@ -480,9 +478,9 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID* Type,
  * @ret Status		EFI status code
  */
 static EFI_STATUS EFIAPI
-FileSetInfo(EFI_FILE_HANDLE This, EFI_GUID* Type, UINTN Len, VOID* Data)
+FileSetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN Len, VOID *Data)
 {
-	struct efi_file* file = container_of(This, struct efi_file, file);
+	struct efi_file *file = container_of(This, struct efi_file, file);
 	CHAR16 GuidString[36];
 
 	GuidToString(GuidString, Type);
@@ -542,23 +540,14 @@ FileOpenVolume(EFI_FILE_IO_INTERFACE *This, EFI_FILE_HANDLE *Root)
 	return EFI_SUCCESS;
 }
 
-/** EFI simple file system protocol */
-// TODO: Add our private BlockIO and DiskIO data and instantiate a
-// separate one for each FS
-static EFI_FILE_IO_INTERFACE FileIOInterface = {
-	.Revision = EFI_FILE_IO_INTERFACE_REVISION,
-	.OpenVolume = FileOpenVolume,
-};
-
 /**
  * Read the VBR and check its magic
  *
- * @v ControllerHandle      Handle for the partition controller
- * @v DriverBindingHandle   Handle for our current driver
+ * @v This                  The current EFI_FS instance
  * @ret Status              EFI status code
  */
 static EFI_STATUS
-FSCheckMagic(VOID)
+FSCheckMagic(EFI_FS *This)
 {
 	EFI_STATUS Status;
 	const EFI_LBA VbrLba = 0;	/* VBR LBA */
@@ -567,7 +556,7 @@ FSCheckMagic(VOID)
 	UINT8 Buffer[512];
 
 	/* Read the VBR and check for its magic */
-	Status = PrivateData.BlockIo->ReadBlocks(PrivateData.BlockIo, 
+	Status = This->BlockIo->ReadBlocks(This->BlockIo, 
 			MediaAny, VbrLba, sizeof(Buffer), Buffer);
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"Could not read VBR");
@@ -591,19 +580,19 @@ FSCheckMagic(VOID)
  * to access a file or the root directory on the volume.
  */
 static EFI_STATUS
-FSInstall(EFI_HANDLE ControllerHandle)
+FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 {
 	EFI_STATUS Status;
 	EFI_DEVICE_PATH *DevicePath = NULL;
 
 	/* Don't install the filesystem unless it has the right VBR */
-	Status = FSCheckMagic();
+	Status = FSCheckMagic(This);
 	if (EFI_ERROR(Status))
 		return Status;
 
 	/* Install the simple file system protocol. */
 	Status = LibInstallProtocolInterfaces(&ControllerHandle,
-			&FileSystemProtocol, &FileIOInterface,
+			&FileSystemProtocol, &This->FileIOInterface,
 			NULL);
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"Could not install simple file system protocol");
@@ -611,18 +600,22 @@ FSInstall(EFI_HANDLE ControllerHandle)
 	}
 
 	DevicePath = DevicePathFromHandle(ControllerHandle);
-	if (DevicePath != NULL)
+	if (DevicePath != NULL) {
+		StrCpy(This->Path, DevicePathToStr(DevicePath));
 		PrintInfo(L"FSInstall: %s\n", DevicePathToStr(DevicePath));
+	}
 
 	return EFI_SUCCESS;
 }
 
 /* Uninstall EFI simple file system protocol */
 static void
-FSUninstall(EFI_HANDLE ControllerHandle)
+FSUninstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 {
+	Print(L"FSUninstall: %s\n", This->Path);
+
 	LibUninstallProtocolInterfaces(ControllerHandle,
-			&FileSystemProtocol, &FileIOInterface,
+			&FileSystemProtocol, &This->FileIOInterface,
 			NULL);
 }
 
@@ -664,7 +657,7 @@ FSBindingSupported(EFI_DRIVER_BINDING_PROTOCOL *This,
 
 	/* Don't handle this unless we can get exclusive access to DiskIO through it */
 	Status = BS->OpenProtocol(ControllerHandle,
-			&DiskIoProtocol, (VOID**) &DiskIo,
+			&DiskIoProtocol, (VOID **) &DiskIo,
 			This->DriverBindingHandle, ControllerHandle,
 			EFI_OPEN_PROTOCOL_BY_DRIVER);
 	if (EFI_ERROR(Status))
@@ -688,16 +681,23 @@ FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 		EFI_DEVICE_PATH_PROTOCOL *RemainingDevicePath)
 {
 	EFI_STATUS Status;
+	EFI_FS *Instance;
 
 	PrintDebug(L"FSBindingStart\n");
-	// TODO: We are currently reuse the same PrivateData (BlockIO, DiskIO) for each of the
-	// file system instances we handle. When all we do with it is a magic check in FSInstall,
-	// it doesn't matter much, but it will when we try to access actual data from different
-	// partitions.
+
+	/* Allocate a new instance of a filesystem */
+	Instance = AllocateZeroPool(sizeof(EFI_FS));
+	if (Instance == NULL) {
+		Status = EFI_OUT_OF_RESOURCES;
+		PrintStatusError(Status, L"Could not allocate a new file system instance");
+		return Status;
+	}
+	Instance->FileIOInterface.Revision = EFI_FILE_IO_INTERFACE_REVISION;
+	Instance->FileIOInterface.OpenVolume = FileOpenVolume,
 
 	/* Get access to the Block IO protocol for this controller */
 	Status = BS->OpenProtocol(ControllerHandle,
-			&BlockIoProtocol, (VOID**) &PrivateData.BlockIo,
+			&BlockIoProtocol, (VOID **) &Instance->BlockIo,
 			This->DriverBindingHandle, ControllerHandle,
 			/* http://wiki.phoenix.com/wiki/index.php/EFI_BOOT_SERVICES#OpenProtocol.28.29
 			 * EFI_OPEN_PROTOCOL_BY_DRIVER returns Access Denied here, most likely
@@ -707,20 +707,20 @@ FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 			EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"Could not access BlockIO protocol");
-		return Status;
+		goto error;
 	}
 
 	/* Get exclusive access to the Disk IO protocol */
 	Status = BS->OpenProtocol(ControllerHandle,
-			&DiskIoProtocol, (VOID**) &PrivateData.DiskIo,
+			&DiskIoProtocol, (VOID**) &Instance->DiskIo,
 			This->DriverBindingHandle, ControllerHandle,
 			EFI_OPEN_PROTOCOL_BY_DRIVER);
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"Could not access the DiskIo protocol");
-		return Status;
+		goto error;
 	}
 
-	Status = FSInstall(ControllerHandle);
+	Status = FSInstall(Instance, ControllerHandle);
 	/* Unless we close the DiskIO protocol in case of error, no other
 	 * FS driver will be able to access this partition.
 	 */
@@ -729,6 +729,9 @@ FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 			This->DriverBindingHandle, ControllerHandle);
 	}
 
+error:
+	if (EFI_ERROR(Status))
+		FreePool(Instance);
 	return Status;
 }
 
@@ -737,9 +740,24 @@ FSBindingStop(EFI_DRIVER_BINDING_PROTOCOL *This,
 		EFI_HANDLE ControllerHandle, UINTN NumberOfChildren,
 		EFI_HANDLE *ChildHandleBuffer)
 {
+	EFI_STATUS Status;
+	EFI_FS *Instance;
+
 	PrintDebug(L"FSBindingStop\n");
 
-	FSUninstall(ControllerHandle);
+	/* Get a pointer back to our FS instance through its installed protocol */
+	Status = BS->OpenProtocol(ControllerHandle,
+			&FileSystemProtocol, (VOID **) &Instance,
+			This->DriverBindingHandle, ControllerHandle,
+			EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+	if (EFI_ERROR(Status)) {
+		PrintStatusError(Status, L"Could not locate our instance");
+		return Status;
+	}
+
+	FSUninstall(Instance, ControllerHandle);
+
+	FreePool(Instance);
 
 	BS->CloseProtocol(ControllerHandle, &DiskIoProtocol,
 			This->DriverBindingHandle, ControllerHandle);
@@ -760,13 +778,13 @@ FSBindingStop(EFI_DRIVER_BINDING_PROTOCOL *This,
 static EFI_COMPONENT_NAME_PROTOCOL FSComponentName = {
 	.GetDriverName = FSGetDriverName,
 	.GetControllerName = FSGetControllerName,
-	.SupportedLanguages = (CHAR8*) "eng"
+	.SupportedLanguages = (CHAR8 *) "eng"
 };
 
 static EFI_COMPONENT_NAME2_PROTOCOL FSComponentName2 = {
 	.GetDriverName = (EFI_COMPONENT_NAME2_GET_DRIVER_NAME) FSGetDriverName,
 	.GetControllerName = (EFI_COMPONENT_NAME2_GET_CONTROLLER_NAME) FSGetControllerName,
-	.SupportedLanguages = (CHAR8*) "en"
+	.SupportedLanguages = (CHAR8 *) "en"
 };
 
 static EFI_DRIVER_BINDING_PROTOCOL FSDriverBinding = {
@@ -860,11 +878,11 @@ SetLogging(VOID)
  * @ret Status          EFI status code to return on exit
  */
 EFI_STATUS EFIAPI
-FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
+FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 {
 	EFI_STATUS Status;
 	EFI_LOADED_IMAGE *LoadedImage = NULL;
-	VOID* Interface;
+	VOID *Interface;
 
 	InitializeLib(ImageHandle, SystemTable);
 	SetLogging();
