@@ -1,17 +1,22 @@
 efifs - An EFI FileSystem Driver
 ================================
 
-This is a __WORK IN PROGRESS__ GPLv3+ implementation of an EFI File System driver,
-aimed at providing some more useful functionality in the near future.
+This is a __WORK IN PROGRESS__ GPLv3+ implementation of standalone EFI File System
+drivers, based on the GRUB 2.0 read-only ones.
 
 * Requirements:
   * gnu-efi v3.0s or later 
   * gcc v4.7 or later
 
 * Compilation:
+  * Fetch the git grub submodule
+  * Go to the `grub` directory, run `autogen.sh` and then something like:
+    `./configure --disable-nls --with-platform=efi --target=x86_64`
+    This is necessary to create the `config.h` required to compile grub files.
   * Edit Make.common and set the variables at the top of the file to the location
   where gnu-efi is installed as well as your target directory for make install.
-  * Go to the `/src` directory and run `make`/`make install`
+  * Run `make` in the top directory. This will create the grub fs library we need.
+  * Go to the `src` directory and run `make` or `make install`
 
 * Testing:
   Make sure you have at least one disk with an NTFS partition that is not being

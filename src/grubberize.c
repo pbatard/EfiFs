@@ -59,7 +59,7 @@ const char *grub_env_get(const char *var)
 {
 	EFI_STATUS Status;
 	CHAR16 wVar[64], wVal[128];
-	UINTN wValSize = sizeof(wVal);	/* EFI uses the size in byte... */
+	UINTN wValSize = sizeof(wVal);	/* EFI uses the size in bytes... */
 	static char val[128] = { 0 };
 
 	/* ...whereas GRUB uses the size in characters */
@@ -99,16 +99,102 @@ int grub_dl_unref(grub_dl_t mod) {
 	return 0;
 };
 
-/*
- * TODO: implement the following calls
- */
-grub_disk_read_hook_t grub_file_progress_hook;
+
+// TODO: add EFI_STATUS <-> grub_err_t (defined in err.h) calls
+
+grub_disk_read_hook_t grub_file_progress_hook = NULL;
 
 grub_err_t grub_disk_read(grub_disk_t disk, grub_disk_addr_t sector,
 		grub_off_t offset, grub_size_t size, void *buf)
 {
+	EFI_STATUS Status;
+	const UINT32 MediaAny = 0;
+	EFI_FS* FileSystem = (EFI_FS *) disk->data;
+
+	Status = FileSystem->DiskIo->ReadDisk(FileSystem->DiskIo,
+			MediaAny, sector*512 + offset, size, buf);
+
+	if (EFI_ERROR(Status)) {
+		PrintStatusError(Status, L"Could not read block at address %08x", sector);
+		return GRUB_ERR_READ_ERROR;
+	}
+
 	return 0;
 }
 
 /* We need to instantiate this too */
 grub_fs_t grub_fs_list;
+
+// TODO: move this to a separate source and use a preprocessor variable for the fs */
+extern void grub_ntfs_init(void);
+extern void grub_ntfs_fini(void);
+
+// TODO: btrfs DOES call on grub_device_open() with an actual name => we'll have to handle that!
+grub_device_t grub_device_open(const char *name)
+{
+	struct grub_device* device;
+
+	device = grub_zalloc(sizeof(struct grub_device));
+	if (device == NULL)
+		return NULL;
+	device->disk = grub_zalloc(sizeof(struct grub_disk));
+	/* Hopefully we don't need to instantiate a grub_disk_dev */
+	if (device->disk == NULL) {
+		grub_free(device);
+		return NULL;
+	}
+	/* The private disk data is a pointer back to our EFI_FS */
+	device->disk->data = (void *) name;
+	return device;
+}
+
+grub_err_t grub_device_close(grub_device_t device)
+{
+	grub_free(device->disk);
+	grub_free(device);
+	return 0;
+}
+
+EFI_STATUS GrubDeviceInit(EFI_FS* This)
+{
+	This->GrubDevice = (VOID *) grub_device_open((const char *) This);
+	if (This->GrubDevice == NULL)
+		return EFI_OUT_OF_RESOURCES;
+
+	return EFI_SUCCESS;
+}
+
+EFI_STATUS GrubDeviceExit(EFI_FS* This)
+{
+	grub_device_close((grub_device_t) This->GrubDevice);
+
+	return EFI_SUCCESS;
+}
+
+void GrubModuleInit(void)
+{
+	GRUB_FS_INIT();
+}
+
+void GrubModuleExit(void)
+{
+	GRUB_FS_FINI();
+}
+
+CHAR16 *GrubGetUUID(EFI_FS* This)
+{
+	static CHAR16 UUID[36];
+	char* uuid;
+
+	if (grub_fs_list->uuid == NULL) {
+		PrintError(L"Grub fs list is empty\n");
+		return NULL;
+	}
+
+	if (grub_fs_list->uuid((grub_device_t) This->GrubDevice, &uuid) || (uuid == NULL))
+		return NULL;
+
+	grub_utf8_to_utf16(UUID, ARRAYSIZE(UUID), uuid, grub_strlen(uuid), NULL);
+
+	return UUID;
+}

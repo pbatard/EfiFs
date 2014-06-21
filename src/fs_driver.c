@@ -544,38 +544,6 @@ FileOpenVolume(EFI_FILE_IO_INTERFACE *This, EFI_FILE_HANDLE *Root)
 }
 
 /**
- * Read the VBR and check its magic
- *
- * @v This                  The current EFI_FS instance
- * @ret Status              EFI status code
- */
-static EFI_STATUS
-FSCheckMagic(EFI_FS *This)
-{
-	EFI_STATUS Status;
-	const EFI_LBA VbrLba = 0;	/* VBR LBA */
-	const UINT32 MediaAny = 0;	/* Don't care about removable media */
-	const UINT8 NTFSMagic[] = { 'N', 'T', 'F', 'S', ' ', ' ', ' ', ' ' };
-	UINT8 Buffer[512];
-
-	/* Read the VBR and check for its magic */
-	Status = This->BlockIo->ReadBlocks(This->BlockIo, 
-			MediaAny, VbrLba, sizeof(Buffer), Buffer);
-	if (EFI_ERROR(Status)) {
-		PrintStatusError(Status, L"Could not read VBR");
-		return Status;
-	}
-	if (LogLevel >= FS_LOGLEVEL_EXTRA)
-		DumpHex(0, 0, sizeof(Buffer), Buffer);
-
-	if (CompareMem(&Buffer[3], NTFSMagic, sizeof(NTFSMagic)) != 0)
-		return EFI_NOT_FOUND;
-
-	PrintDebug(L"Found NTFS partition\n");
-	return EFI_SUCCESS;
-}
-
-/**
  * Install the EFI simple file system protocol
  * If successful this call instantiates a new FS#: drive, that is made
  * available on the next 'map -r'. Note that all this call does is add
@@ -587,11 +555,14 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 {
 	EFI_STATUS Status;
 	EFI_DEVICE_PATH *DevicePath = NULL;
+	CHAR16 *UUID;
 
-	/* Don't install the filesystem unless it has the right VBR */
-	Status = FSCheckMagic(This);
-	if (EFI_ERROR(Status))
-		return Status;
+	/* We use the uuid call of grub to check if it's a filesystem we can handle */
+	UUID = GrubGetUUID(This);
+	if (UUID == NULL)
+		return EFI_UNSUPPORTED;
+
+	Print(L"UUID: %s\n", UUID);
 
 	/* Install the simple file system protocol. */
 	Status = LibInstallProtocolInterfaces(&ControllerHandle,
@@ -723,6 +694,12 @@ FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 		goto error;
 	}
 
+	Status = GrubDeviceInit(Instance);
+	if (EFI_ERROR(Status)) {
+		PrintStatusError(Status, L"Could not init grub device");
+		goto error;
+	}
+
 	Status = FSInstall(Instance, ControllerHandle);
 	/* Unless we close the DiskIO protocol in case of error, no other
 	 * FS driver will be able to access this partition.
@@ -759,6 +736,11 @@ FSBindingStop(EFI_DRIVER_BINDING_PROTOCOL *This,
 	}
 
 	FSUninstall(Instance, ControllerHandle);
+
+	Status = GrubDeviceExit(Instance);
+	if (EFI_ERROR(Status)) {
+		PrintStatusError(Status, L"Could not destroy grub device");
+	}
 
 	FreePool(Instance);
 
@@ -843,6 +825,9 @@ FSDriverUninstall(EFI_HANDLE ImageHandle)
 			&ComponentName2Protocol, &FSComponentName2,
 			NULL);
 
+	/* Unregister the relevant grub module */
+	GrubModuleExit();
+
 	/* Uninstall our mutex (we're the only instance that can run this code) */
 	LibUninstallProtocolInterfaces(MutexHandle,
 				&MutexGUID, &MutexProtocol,
@@ -871,8 +856,6 @@ SetLogging(VOID)
 
 	PrintExtra(L"LogLevel = %d\n", LogLevel);
 }
-
-extern void grub_ntfs_init(void);
 
 /**
  * Install EFI driver - Will be the entrypoint for our driver executable
@@ -942,7 +925,7 @@ FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	LoadedImage->Unload = FSDriverUninstall;
 
 	/* Register the relevant grub module */
-	grub_ntfs_init();
+	GrubModuleInit();
 
 	PrintDebug(L"FS driver installed.\n");
 	return EFI_SUCCESS;

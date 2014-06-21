@@ -58,6 +58,12 @@
 #define FS_LOGLEVEL_EXTRA       5
 
 typedef UINTN (*Print_t) (IN CHAR16 *fmt, ... );
+extern Print_t PrintError;
+extern Print_t PrintWarning;
+extern Print_t PrintInfo;
+extern Print_t PrintDebug;
+extern Print_t PrintExtra;
+extern void PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...);
 
 /* Set a GUID for this filesystem - Used for our global mutex among other things */
 // TODO: we'll need a separate GUID for each filesystem we want to serve
@@ -68,10 +74,17 @@ typedef UINTN (*Print_t) (IN CHAR16 *fmt, ... );
 /* A file system instance */
 typedef struct {
 	EFI_FILE_IO_INTERFACE FileIOInterface;
-	EFI_DISK_IO* DiskIo;
-	EFI_BLOCK_IO* BlockIo;
+	EFI_DISK_IO *DiskIo;
+	EFI_BLOCK_IO *BlockIo;
 	CHAR16 Path[256];
+	VOID *GrubDevice;
 } EFI_FS;
 
 extern EFI_HANDLE EfiImageHandle;
 extern EFI_GUID ShellVariable;
+
+extern void GrubModuleInit(void);
+extern void GrubModuleExit(void);
+extern CHAR16 *GrubGetUUID(EFI_FS *This);
+extern EFI_STATUS GrubDeviceInit(EFI_FS *This);
+extern EFI_STATUS GrubDeviceExit(EFI_FS *This);
