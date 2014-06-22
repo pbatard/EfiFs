@@ -15,7 +15,8 @@ INSTALL_DIR     = /boot/efi
 HOSTARCH        = $(shell uname -m | sed s,i[3456789]86,ia32,)
 ARCH           := $(HOSTARCH)
 OS              = $(shell uname -s)
-CPPFLAGS        = -I$(EFIINC) -I$(EFIINC)/$(ARCH) -I$(EFIINC)/protocol -DCONFIG_$(ARCH) -D__MAKEWITH_GNUEFI -DGNU_EFI_USE_MS_ABI 
+CPPFLAGS        = -I$(EFIINC) -I$(EFIINC)/$(ARCH) -I$(EFIINC)/protocol -I$(SRCDIR) -DCONFIG_$(ARCH) -D__MAKEWITH_GNUEFI \
+                  -DGNU_EFI_USE_MS_ABI -DGRUB_MACHINE_EFI -DGRUB_KERNEL -DGRUB_FILE=\"$(subst $(srcdir)/,,$<)\"
 
 OPTIMFLAGS      = -O2 -fno-strict-aliasing
 DEBUGFLAGS      = -Wall -Wunused -Wno-pointer-sign -Werror-implicit-function-declaration -Wshadow

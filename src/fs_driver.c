@@ -85,7 +85,6 @@ struct efi_file {
 
 static struct efi_file efi_file_root;
 
-
 /**
  * Print an error message along with a human readable EFI status code
  *
@@ -822,7 +821,7 @@ FSDriverUninstall(EFI_HANDLE ImageHandle)
 			NULL);
 
 	/* Unregister the relevant grub module */
-	GrubModuleExit();
+	GRUB_FS_FINI();
 
 	/* Uninstall our mutex (we're the only instance that can run this code) */
 	LibUninstallProtocolInterfaces(MutexHandle,
@@ -921,7 +920,7 @@ FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	LoadedImage->Unload = FSDriverUninstall;
 
 	/* Register the relevant grub module */
-	GrubModuleInit();
+	GRUB_FS_INIT();
 
 	PrintDebug(L"FS driver installed.\n");
 	return EFI_SUCCESS;

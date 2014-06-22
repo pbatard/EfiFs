@@ -113,8 +113,11 @@ grub_err_t grub_disk_read(grub_disk_t disk, grub_disk_addr_t sector,
 	const UINT32 MediaAny = 0;
 	EFI_FS* FileSystem = (EFI_FS *) disk->data;
 
-	Status = FileSystem->DiskIo->ReadDisk(FileSystem->DiskIo,
-			MediaAny, sector*512 + offset, size, buf);
+	/* NB: We could get the actual blocksize through FileSystem->BlockIo->Media.BlockSize
+	 * but GRUB uses the fixed GRUB_DISK_SECTOR_SIZE, so we follow suit
+	 */
+	Status = FileSystem->DiskIo->ReadDisk(FileSystem->DiskIo, MediaAny,
+			sector * GRUB_DISK_SECTOR_SIZE + offset, size, buf);
 
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"Could not read block at address %08x", sector);
@@ -127,10 +130,6 @@ grub_err_t grub_disk_read(grub_disk_t disk, grub_disk_addr_t sector,
 /* We need to instantiate this too */
 grub_fs_t grub_fs_list = NULL;
 
-// TODO: move this to a separate source and use a preprocessor variable for the fs */
-extern void grub_ntfs_init(void);
-extern void grub_ntfs_fini(void);
-
 // TODO: btrfs DOES call on grub_device_open() with an actual name => we'll have to handle that!
 grub_device_t grub_device_open(const char *name)
 {
@@ -140,13 +139,17 @@ grub_device_t grub_device_open(const char *name)
 	if (device == NULL)
 		return NULL;
 	device->disk = grub_zalloc(sizeof(struct grub_disk));
-	/* Hopefully we don't need to instantiate a grub_disk_dev */
 	if (device->disk == NULL) {
 		grub_free(device);
 		return NULL;
 	}
 	/* The private disk data is a pointer back to our EFI_FS */
 	device->disk->data = (void *) name;
+	/* Ideally, we'd fill the other disk data, such as total_sectors, name
+	 * and so on, but since we're doing the actual disk access through EFI
+	 * DiskIO rather than GRUB's disk.c, this doesn't seem to be needed.
+	 */
+
 	return device;
 }
 
@@ -171,16 +174,6 @@ EFI_STATUS GrubDeviceExit(EFI_FS* This)
 	grub_device_close((grub_device_t) This->GrubDevice);
 
 	return EFI_SUCCESS;
-}
-
-void GrubModuleInit(void)
-{
-	GRUB_FS_INIT();
-}
-
-void GrubModuleExit(void)
-{
-	GRUB_FS_FINI();
 }
 
 /* Helper for GrubFSProbe.  */

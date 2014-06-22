@@ -80,11 +80,12 @@ typedef struct {
 	VOID *GrubDevice;
 } EFI_FS;
 
+extern void GRUB_FS_INIT(void);
+extern void GRUB_FS_FINI(void);
+
 extern EFI_HANDLE EfiImageHandle;
 extern EFI_GUID ShellVariable;
 
-extern void GrubModuleInit(void);
-extern void GrubModuleExit(void);
 extern CHAR16 *GrubGetUUID(EFI_FS *This);
 extern BOOLEAN GrubFSProbe(EFI_FS *This);
 extern EFI_STATUS GrubDeviceInit(EFI_FS *This);
