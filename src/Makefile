@@ -42,11 +42,11 @@ include $(SRCDIR)/../Make.common
 $(TARGET): $(SHLIB_TARGET)
 	@echo [OBJ] $@
 	@$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel \
-		-j .rela -j .reloc --target=$(FORMAT_DRIVER)  $< $@
+		-j .rela -j .reloc --target=$(FORMAT_DRIVER) $< $@
 	@chmod a-x $(TARGET)
 
 clean:
-	rm -f $(OBJS) *.o *.so *.efi
+	rm -f $(OBJS) $(OBJS:.o=.d) *.o *.so *.efi
 
 install: all
 	@cp -v $(TARGET) $(INSTALL_DIR)

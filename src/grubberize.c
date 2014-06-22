@@ -1,6 +1,8 @@
 /* grubberize.c - The elastic binding between grub and standalone EFI */
 /*
  *  Copyright © 2014 Pete Batard <pete@akeo.ie>
+ *  Based on GRUB  --  GRand Unified Bootloader
+ *  Copyright © 2002, 2005, 2007  Free Software Foundation, Inc.
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -123,7 +125,7 @@ grub_err_t grub_disk_read(grub_disk_t disk, grub_disk_addr_t sector,
 }
 
 /* We need to instantiate this too */
-grub_fs_t grub_fs_list;
+grub_fs_t grub_fs_list = NULL;
 
 // TODO: move this to a separate source and use a preprocessor variable for the fs */
 extern void grub_ntfs_init(void);
@@ -179,6 +181,29 @@ void GrubModuleInit(void)
 void GrubModuleExit(void)
 {
 	GRUB_FS_FINI();
+}
+
+/* Helper for GrubFSProbe.  */
+static int
+probe_dummy_iter (const char *filename __attribute__ ((unused)),
+		const struct grub_dirhook_info *info __attribute__ ((unused)),
+		void *data __attribute__ ((unused)))
+{
+	return 1;
+}
+
+BOOLEAN GrubFSProbe(EFI_FS *This)
+{
+	grub_fs_t p = grub_fs_list;
+	grub_device_t device = (grub_device_t) This->GrubDevice;
+
+	if ((p == NULL) || (device->disk == NULL)) {
+		PrintError(L"GrubFSProbe: uninitialized variables\n"); 
+		return FALSE;
+	}
+
+	(p->dir)(device, "/", probe_dummy_iter, NULL);
+	return (grub_errno == GRUB_ERR_NONE);
 }
 
 CHAR16 *GrubGetUUID(EFI_FS* This)

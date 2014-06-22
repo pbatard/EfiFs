@@ -8,6 +8,9 @@
 *.lib
 *.a
 
+# Dependencies
+*.d
+
 # Shared objects (inc. Windows DLLs)
 *.dll
 *.so

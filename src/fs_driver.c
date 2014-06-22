@@ -555,14 +555,10 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 {
 	EFI_STATUS Status;
 	EFI_DEVICE_PATH *DevicePath = NULL;
-	CHAR16 *UUID;
 
-	/* We use the uuid call of grub to check if it's a filesystem we can handle */
-	UUID = GrubGetUUID(This);
-	if (UUID == NULL)
+	/* Check if it's a filesystem we can handle */
+	if (!GrubFSProbe(This))
 		return EFI_UNSUPPORTED;
-
-	Print(L"UUID: %s\n", UUID);
 
 	/* Install the simple file system protocol. */
 	Status = LibInstallProtocolInterfaces(&ControllerHandle,

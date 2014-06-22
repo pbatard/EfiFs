@@ -80,10 +80,18 @@ FORMAT          = efi-app-$(ARCH)
 FORMAT_DRIVER   = efi-bsdrv-$(ARCH)
 
 # general rules
+-include $(OBJS:.o=.d)
 
+# http://scottmcpeak.com/autodepend/autodepend.html
 %.o: %.c
 	@echo  [CC]  $@
 	@$(CC) $(LOCAL_CPPFLAGS) $(CPPFLAGS) $(LOCAL_CFLAGS) $(CFLAGS) -c $< -o $@
+	@$(CC) -MM $(LOCAL_CPPFLAGS) $(CPPFLAGS) $(LOCAL_CFLAGS) $*.c > $*.d
+	@mv -f $*.d $*.d.tmp
+	@sed -e 's|.*:|$*.o:|' < $*.d.tmp > $*.d
+	@sed -e 's/.*://' -e 's/\\$$//' < $*.d.tmp | fmt -1 | \
+	  sed -e 's/^ *//' -e 's/$$/:/' >> $*.d
+	@rm -f $*.d.tmp
 
 # rules for EFI applications
 
@@ -91,7 +99,7 @@ ifneq (,$(filter %.efi,$(TARGET)))
 
 SHLIB_TARGET = $(subst .efi,.so,$(TARGET))
 
-$(SHLIB_TARGET): $(OBJS)
+$(SHLIB_TARGET): $(OBJS) *.a
 	@echo  [LD]  $@
 	@$(LD) $(LOCAL_LDFLAGS) $(LDFLAGS) $(OBJS) -o $@ $(LOCAL_LIBS) $(LIBS)
 

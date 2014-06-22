@@ -86,5 +86,6 @@ extern EFI_GUID ShellVariable;
 extern void GrubModuleInit(void);
 extern void GrubModuleExit(void);
 extern CHAR16 *GrubGetUUID(EFI_FS *This);
+extern BOOLEAN GrubFSProbe(EFI_FS *This);
 extern EFI_STATUS GrubDeviceInit(EFI_FS *This);
 extern EFI_STATUS GrubDeviceExit(EFI_FS *This);
