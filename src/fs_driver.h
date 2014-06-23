@@ -17,6 +17,7 @@
  */
 
 #include <efi.h>
+#include <grub/file.h>
 
 #pragma once
 
@@ -76,9 +77,17 @@ typedef struct {
 	EFI_FILE_IO_INTERFACE FileIOInterface;
 	EFI_DISK_IO *DiskIo;
 	EFI_BLOCK_IO *BlockIo;
-	CHAR16 Path[256];
+	CHAR16 Path[256];	/* DevicePath */
 	VOID *GrubDevice;
 } EFI_FS;
+
+/* A file instance */
+typedef struct {
+	EFI_FILE EfiFile;
+	struct grub_file grub_file;
+	BOOLEAN IsRoot;
+	EFI_FS *FileSystem;
+} EFI_GRUB_FILE;
 
 extern void GRUB_FS_INIT(void);
 extern void GRUB_FS_FINI(void);

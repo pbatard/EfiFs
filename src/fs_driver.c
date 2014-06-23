@@ -26,6 +26,10 @@
 #include <edk2/ComponentName2.h>
 #include <edk2/ShellVariableGuid.h>
 
+#include <grub/file.h>
+#include <grub/charset.h>
+#include <grub/misc.h>
+
 #include "fs_driver.h"
 
 /* These ones are not defined in gnu-efi yet */
@@ -64,26 +68,10 @@ typedef struct {
 } EFI_MUTEX_PROTOCOL;
 static EFI_MUTEX_PROTOCOL MutexProtocol = { 0 };
 
-struct image {
-	CHAR16 *name;
-	UINTN len;
-	char data[16];
-};
+// TODO: we'll need a separate rootfile instance for each FS
+static EFI_GRUB_FILE RootFile;
 
-/* We'll use this to simulate a single file entry */
-static struct image fake_image = { L"file.txt", 16, "Hello world!" };
-
-/* An image exposed as an EFI file */
-struct efi_file {
-	/** EFI file protocol */
-	EFI_FILE file;
-	/** Image */
-	struct image *image;
-	/** Current file position */
-	UINT64 pos;
-};
-
-static struct efi_file efi_file_root;
+// TODO: implement our own UTF8 <-> UTF16 conversion routines
 
 /**
  * Print an error message along with a human readable EFI status code
@@ -111,9 +99,23 @@ PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...)
  * @v file			EFI file
  * @ret Name		Name
  */
-static const CHAR16 *FileName(struct efi_file *file)
+static const CHAR16 
+*FileName(EFI_GRUB_FILE *File)
 {
-	return file->image?file->image->name:L"<root>";
+	static CHAR16 Name[256];
+
+	grub_utf8_to_utf16(Name, ARRAYSIZE(Name), File->grub_file.name,
+		grub_strlen(File->grub_file.name), NULL);
+	return Name;
+}
+
+static int
+fs_hook(const char *filename,
+	const struct grub_dirhook_info *info, void *data)
+{
+	if (filename[0] != '$')
+		grub_printf("  %s%s\n", filename, info->dir?"/":"");
+	return 0;
 }
 
 /**
@@ -130,43 +132,73 @@ static EFI_STATUS EFIAPI
 FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 		CHAR16 *Name, UINT64 Mode, UINT64 Attributes)
 {
-	struct efi_file *file = container_of(This, struct efi_file, file);
-	struct efi_file *new_file;
-	struct image *image = &fake_image;
+	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
+	EFI_GRUB_FILE *NewFile;
+	/* Why oh why doesn't GRUB provide a grub_get_num_of_utf8_bytes for UTF16
+	 * or even an UTF16 to UTF8 that does the allocation?
+	 * TODO: Use dynamic buffers...
+	 */
+	char name[256];
+	INTN i;
 
-	PrintDebug(L"FileOpen: '%s'\n", Name);
+	PrintDebug(L"FileOpen '%s'\n", Name);
 
 	/* Initial '\' indicates opening from the root directory */
 	while (*Name == L'\\') {
-		file = &efi_file_root;
+		File = &RootFile;
 		Name++;
 	}
 
 	/* Allow root directory itself to be opened */
 	if ((Name[0] == L'\0') || (Name[0] == L'.')) {
-		*New = &efi_file_root.file;
+		*New = &RootFile.EfiFile;
 		return EFI_SUCCESS;
-	}
-
-	/* Fail unless opening from the root */
-	if (file->image) {
-		PrintError(L"EFIFILE %s is not a directory\n", FileName(file));
-		return EFI_NOT_FOUND;
 	}
 
 	/* Fail unless opening read-only */
 	if (Mode != EFI_FILE_MODE_READ) {
-		PrintError(L"EFIFILE %s cannot be opened in mode %#08llx\n", image->name, Mode);
+		PrintError(L"File '%s' cannot be opened in mode %#08llx\n", Name, Mode);
 		return EFI_WRITE_PROTECTED;
 	}
 
+	/* Fail unless opening from the root */
+	// TODO: eliminate this
+	if (!File->IsRoot) {
+		PrintError(L"WIP: Only the root directory can be opened for now\n");
+		return EFI_NOT_FOUND;
+	}
+
+	/* Convert an UTF16 file name with backslash delimiters to UTF8 with forward slash delimiters */
+	/* BEWARE: the GRUB conversion routines don't check the target size and the length is for the source!! */
+	grub_utf16_to_utf8(name, Name, StrLen(Name)+1);
+	for (i=0; i<grub_strlen(name); i++) {
+		if (name[i] == '\\')
+			name[i] = '/';
+	}
+
+	/* TODO: Check that the file exists */
+
 	/* Allocate and initialise file */
-	new_file = AllocateZeroPool(sizeof(*new_file));
-	CopyMem(&new_file->file, &efi_file_root.file,
-			sizeof(new_file->file));
-	new_file->image = &fake_image;
-	*New = &new_file->file;
-	PrintDebug(L"EFIFILE %s opened\n", FileName(new_file));
+	NewFile = AllocateZeroPool(sizeof(*NewFile));
+	if (NewFile == NULL) {
+		PrintError(L"Could not allocate file resource\n");
+		return EFI_OUT_OF_RESOURCES;
+	}
+	CopyMem(&NewFile->EfiFile, &RootFile.EfiFile, sizeof(NewFile->EfiFile));
+
+	NewFile->grub_file.name = AllocatePool(grub_strlen(name)+1);
+	if (NewFile->grub_file.name == NULL) {
+		FreePool(NewFile);
+		PrintError(L"Could not allocate grub filename\n");
+		return EFI_OUT_OF_RESOURCES;
+	}
+
+	CopyMem(NewFile->grub_file.name, name, grub_strlen(name)+1);
+	NewFile->grub_file.device = RootFile.grub_file.device;
+	NewFile->grub_file.fs = RootFile.grub_file.fs;
+
+	*New = &NewFile->EfiFile;
+	PrintDebug(L"File '%s' opened\n", FileName(NewFile));
 
 	return EFI_SUCCESS;
 }
@@ -180,17 +212,18 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 static EFI_STATUS EFIAPI
 FileClose(EFI_FILE_HANDLE This)
 {
-	struct efi_file *file = container_of(This, struct efi_file, file);
+	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
 
-	PrintDebug(L"FileClose\n");
+	PrintDebug(L"FileClose '%s'\n", FileName(File));
 
 	/* Do nothing if this is the root */
-	if (file->image == NULL)
+	if (File->IsRoot)
 		return EFI_SUCCESS;
 
 	/* Close file */
-	PrintDebug(L"EFIFILE %s closed\n", FileName(file));
-	FreePool(file);
+	PrintDebug(L"Non root file closed\n");
+	FreePool(File->grub_file.name);
+	FreePool(File);
 
 	return EFI_SUCCESS;
 }
@@ -204,9 +237,9 @@ FileClose(EFI_FILE_HANDLE This)
 static EFI_STATUS EFIAPI
 FileDelete(EFI_FILE_HANDLE This)
 {
-	struct efi_file *file = container_of(This, struct efi_file, file);
+	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
 
-	PrintError(L"EFIFILE %s cannot be deleted\n", FileName(file));
+	PrintError(L"EFIFILE %s cannot be deleted\n", FileName(File));
 
 	/* Close file */
 	FileClose(This);
@@ -256,24 +289,24 @@ FileVarlen(UINT64 *Base, UINT64 BaseLen,
  * @ret Status		EFI status code
  */
 static EFI_STATUS 
-FileInfo(struct image *image, UINTN *Len, VOID *Data)
+FileInfo(BOOLEAN Dir, UINTN *Len, VOID *Data)
 {
 	EFI_FILE_INFO Info;
 	const CHAR16 *Name;
 	const EFI_TIME Time = { 1970, 01, 01, 00, 00, 00, 0, 0, 0, 0, 0};
 
-	PrintDebug(L"FileInfo\n");
+	PrintDebug(L"FileInfo for %s\n", Dir?L"dir":L"reg");
 
 	/* Populate file information */
 	SetMem(&Info, 0, sizeof(Info));
-	if (image) {
-		Info.FileSize = image->len;
-		Info.PhysicalSize = image->len;
+	if (!Dir) {
+		Info.FileSize = 16;
+		Info.PhysicalSize = 16;
 		Info.Attribute = EFI_FILE_READ_ONLY;
 		CopyMem(&Info.CreateTime, &Time, sizeof(Time));
 		CopyMem(&Info.LastAccessTime, &Time, sizeof(Time));
 		CopyMem(&Info.ModificationTime, &Time, sizeof(Time));
-		Name = image->name;
+		Name = L"file.txt";
 	} else {
 		Info.Attribute = EFI_FILE_READ_ONLY | EFI_FILE_DIRECTORY;
 		Name = L"";
@@ -291,24 +324,25 @@ FileInfo(struct image *image, UINTN *Len, VOID *Data)
  * @ret Status		EFI status code
  */
 static EFI_STATUS
-FileReadDir(struct efi_file *file, UINTN *Len, VOID *Data)
+FileReadDir(EFI_GRUB_FILE *File, UINTN *Len, VOID *Data)
 {
+	EFI_STATUS Status;
+	UINT64 Index;
+	grub_fs_t p = grub_fs_list;
+	grub_device_t device = (grub_device_t) File->FileSystem->GrubDevice;
 
 	PrintDebug(L"FileReadDir\n");
 
-	EFI_STATUS Status;
-	struct image *image;
-	UINT64 Index;
+	// Test the GRUB dir hook
+	p->dir(device, "/", fs_hook, NULL);
 
 	/* Construct directory entry at current position */
-	Index = file->pos;
-
-	image = &fake_image;
+	Index = File->grub_file.offset;
 
 	if (Index-- == 0) {
-		Status = FileInfo(image, Len, Data);
+		Status = FileInfo(FALSE, Len, Data);
 		if (Status == EFI_SUCCESS)
-			file->pos++;
+			File->grub_file.offset++;
 		return Status;
 	}
 
@@ -328,24 +362,27 @@ FileReadDir(struct efi_file *file, UINTN *Len, VOID *Data)
 static EFI_STATUS EFIAPI
 FileRead(EFI_FILE_HANDLE This, UINTN *Len, VOID *Data)
 {
-	struct efi_file *file = container_of(This, struct efi_file, file);
-	UINTN Remaining;
+	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
 
-	PrintDebug(L"FileRead\n");
+	PrintDebug(L"FileRead '%s'\n", FileName(File));
 
 	/* If this is the root directory, then construct a directory entry */
-	if (file->image == NULL)
-		return FileReadDir(file, Len, Data);
+	if (File->IsRoot)
+		return FileReadDir(File, Len, Data);
 
-	/* Read from the file */
-	Remaining = (file->image->len - file->pos);
+	/* Read from a file */
+	// TODO
+	return EFI_ACCESS_DENIED;
+/*
+	Remaining = (file->image->len - File->grub_file->offset);
 	if (*Len > Remaining)
 		*Len = Remaining;
-	PrintDebug(L"EFIFILE %s read [%#08zx,%#08zx]\n", FileName(file),
-			file->pos, file->pos + *Len );
-	CopyMem(Data, &file->image->data[file->pos], *Len);
-	file->pos += *Len;
+	PrintDebug(L"EFIFILE %s read [%#08zx,%#08zx]\n", FileName(File),
+			File->grub_file.offset, File->grub_file.offset + *Len );
+	CopyMem(Data, &file->image->data[File->grub_file.offset], *Len);
+	File->grub_file.offset += *Len;
 	return EFI_SUCCESS;
+*/
 }
 
 /**
@@ -359,10 +396,9 @@ FileRead(EFI_FILE_HANDLE This, UINTN *Len, VOID *Data)
 static EFI_STATUS EFIAPI
 FileWrite(EFI_FILE_HANDLE This, UINTN *Len, VOID *Data)
 {
-	struct efi_file *file = container_of(This, struct efi_file, file);
+	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
 
-	PrintError(L"EFIFILE %s cannot write [%#08zx, %#08zx]\n", FileName(file),
-			file->pos, file->pos + *Len);
+	PrintError(L"Cannot write to '%s'\n", FileName(File));
 	return EFI_WRITE_PROTECTED;
 }
 
@@ -376,34 +412,30 @@ FileWrite(EFI_FILE_HANDLE This, UINTN *Len, VOID *Data)
 static EFI_STATUS EFIAPI
 FileSetPosition(EFI_FILE_HANDLE This, UINT64 Position)
 {
-	struct efi_file *file = container_of(This, struct efi_file, file);
+	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
 
-	PrintDebug(L"FileSetPosition\n");
+	PrintDebug(L"FileSetPosition '%s'\n", FileName(File));
 
 	/* If this is the root directory, reset to the start */
-	if (file->image == NULL) {
-		PrintDebug(L"EFIFILE root directory rewound\n");
-		file->pos = 0;
+	if (File->IsRoot) {
+		PrintDebug(L"Root directory rewound\n");
+		File->grub_file.offset = 0;
 		return EFI_SUCCESS;
 	}
-
-	/* Check for the magic end-of-file value */
-	if (Position == 0xffffffffffffffffULL)
-		Position = file->image->len;
 
 	/* Fail if we attempt to seek past the end of the file (since
 	 * we do not support writes).
 	 */
-	if (Position > file->image->len) {
+	if (Position > File->grub_file.size) {
 		PrintError(L"EFIFILE %s cannot seek to %#08llx of %#08zx\n",
-				FileName(file), Position, file->image->len );
+				FileName(File), Position, File->grub_file.size);
 		return EFI_UNSUPPORTED;
 	}
 
 	/* Set position */
-	file->pos = Position;
+	File->grub_file.offset = Position;
 	PrintDebug(L"EFIFILE %s position set to %#08zx\n",
-			FileName(file), file->pos );
+			FileName(File), File->grub_file.offset);
 
 	return EFI_SUCCESS;
 }
@@ -418,11 +450,11 @@ FileSetPosition(EFI_FILE_HANDLE This, UINT64 Position)
 static EFI_STATUS EFIAPI
 FileGetPosition(EFI_FILE_HANDLE This, UINT64 *Position)
 {
-	struct efi_file *file = container_of(This, struct efi_file, file);
+	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
 
 	PrintDebug(L"FileGetPosition\n");
 
-	*Position = file->pos;
+	*Position = File->grub_file.offset;
 	return EFI_SUCCESS;
 }
 
@@ -436,36 +468,36 @@ FileGetPosition(EFI_FILE_HANDLE This, UINT64 *Position)
  * @ret Status		EFI status code
  */
 static EFI_STATUS EFIAPI
-FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type,
-		UINTN *Len, VOID *Data)
+FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 {
-	struct efi_file *file = container_of(This, struct efi_file, file);
+	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
 	EFI_FILE_SYSTEM_INFO FSInfo;
-	struct image *image = &fake_image;
 	CHAR16 GuidString[36];
 
-	PrintDebug(L"FileGetInfo\n");
+	PrintDebug(L"FileGetInfo '%s'\n", FileName(File));
 
 	/* Determine information to return */
 	if (CompareMem(Type, &GenericFileInfo, sizeof(*Type)) == 0) {
 
 		/* Get file information */
-		PrintDebug(L"EFIFILE %s get file information\n", FileName(file));
-		return FileInfo(file->image, Len, Data);
+		PrintDebug(L"Get regular file information\n");
+		return FileInfo(File->IsRoot, Len, Data);
 
 	} else if (CompareMem(Type, &FileSystemInfo, sizeof(*Type)) == 0) {
 
 		/* Get file system information */
-		PrintDebug(L"EFIFILE %s get file system information\n", FileName(file));
+		PrintDebug(L"Get file system information\n");
 		SetMem(&FSInfo, 0, sizeof(FSInfo));
 		FSInfo.ReadOnly = 1;
-		FSInfo.VolumeSize += image->len;
+		FSInfo.VolumeSize = (File->FileSystem->BlockIo->Media->LastBlock + 1) *
+			File->FileSystem->BlockIo->Media->BlockSize;
+		// TODO: get volume label from GRUB
 		return FileVarlen(&FSInfo.Size, SIZE_OF_EFI_FILE_SYSTEM_INFO,
-				L"Test Volume Label", Len, Data );
+				L"Test Volume Label", Len, Data);
 	} else {
 		GuidToString(GuidString, Type);
 		PrintError(L"EFIFILE %s cannot get information of type %s\n",
-				FileName(file), GuidString);
+				FileName(File), GuidString);
 		return EFI_UNSUPPORTED;
 	}
 }
@@ -482,12 +514,12 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type,
 static EFI_STATUS EFIAPI
 FileSetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN Len, VOID *Data)
 {
-	struct efi_file *file = container_of(This, struct efi_file, file);
+	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
 	CHAR16 GuidString[36];
 
 	GuidToString(GuidString, Type);
 	PrintError(L"EFIFILE %s cannot set information of type %s\n",
-			FileName(file), GuidString);
+			FileName(File), GuidString);
 	return EFI_WRITE_PROTECTED;
 }
 
@@ -503,28 +535,10 @@ FileSetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN Len, VOID *Data)
 static EFI_STATUS EFIAPI
 FileFlush(EFI_FILE_HANDLE This)
 {
-	PrintDebug(L"EFIFILE %s flushed\n", FileName(
-			container_of(This, struct efi_file, file)));
+	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
+	PrintDebug(L"EFIFILE %s flushed\n", FileName(File));
 	return EFI_SUCCESS;
 }
-
-/** Root directory */
-static struct efi_file efi_file_root = {
-	.file = {
-		.Revision = EFI_FILE_HANDLE_REVISION,
-		.Open = FileOpen,
-		.Close = FileClose,
-		.Delete = FileDelete,
-		.Read = FileRead,
-		.Write = FileWrite,
-		.GetPosition = FileGetPosition,
-		.SetPosition = FileSetPosition,
-		.GetInfo = FileGetInfo,
-		.SetInfo = FileSetInfo,
-		.Flush = FileFlush,
-	},
-	.image = NULL,
-};
 
 /**
  * Open root directory
@@ -537,8 +551,8 @@ static EFI_STATUS EFIAPI
 FileOpenVolume(EFI_FILE_IO_INTERFACE *This, EFI_FILE_HANDLE *Root)
 {
 	PrintDebug(L"FileOpenVolume\n");
+	*Root = &RootFile.EfiFile;
 
-	*Root = &efi_file_root.file;
 	return EFI_SUCCESS;
 }
 
@@ -573,6 +587,32 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 		StrCpy(This->Path, DevicePathToStr(DevicePath));
 		PrintInfo(L"FSInstall: %s\n", DevicePathToStr(DevicePath));
 	}
+
+	/* Initialize the root handle */
+	ZeroMem(&RootFile, sizeof(RootFile));
+
+	/* Setup the EFI part */
+	RootFile.EfiFile.Revision = EFI_FILE_HANDLE_REVISION;
+	RootFile.EfiFile.Open = FileOpen;
+	RootFile.EfiFile.Close = FileClose;
+	RootFile.EfiFile.Delete = FileDelete;
+	RootFile.EfiFile.Read = FileRead;
+	RootFile.EfiFile.Write = FileWrite;
+	RootFile.EfiFile.GetPosition = FileGetPosition;
+	RootFile.EfiFile.SetPosition = FileSetPosition;
+	RootFile.EfiFile.GetInfo = FileGetInfo;
+	RootFile.EfiFile.SetInfo = FileSetInfo;
+	RootFile.EfiFile.Flush = FileFlush;
+
+	/* Setup the GRUB part */
+	RootFile.grub_file.name = "/";
+	RootFile.grub_file.device = (grub_device_t) This->GrubDevice;
+	RootFile.grub_file.fs = grub_fs_list;
+
+	/* Setup extra data */
+	RootFile.IsRoot = TRUE;
+	/* We could pick it up from GrubDevice, but it's more convenient this way */
+	RootFile.FileSystem = This;
 
 	return EFI_SUCCESS;
 }

@@ -71,7 +71,8 @@ const char *grub_env_get(const char *var)
 	if (EFI_ERROR(Status))
 		return NULL;
 
-	grub_utf16_to_utf8(val, wVal, sizeof(val));
+	/* Oh, and GRUB's utf16_to_utf8 does NOT stop at NUL nor does it check the dest size!! */
+	grub_utf16_to_utf8(val, wVal, StrLen(wVal)+1);
 
 	return val;
 }
@@ -112,6 +113,9 @@ grub_err_t grub_disk_read(grub_disk_t disk, grub_disk_addr_t sector,
 	EFI_STATUS Status;
 	const UINT32 MediaAny = 0;
 	EFI_FS* FileSystem = (EFI_FS *) disk->data;
+
+	if ((FileSystem == NULL) || (FileSystem->DiskIo == NULL))
+		return GRUB_ERR_READ_ERROR;
 
 	/* NB: We could get the actual blocksize through FileSystem->BlockIo->Media.BlockSize
 	 * but GRUB uses the fixed GRUB_DISK_SECTOR_SIZE, so we follow suit
