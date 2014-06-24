@@ -26,6 +26,7 @@
 #include <edk2/ComponentName2.h>
 #include <edk2/ShellVariableGuid.h>
 
+// TODO: split this file and move anything GRUB related there
 #include <grub/file.h>
 #include <grub/charset.h>
 #include <grub/misc.h>
@@ -68,9 +69,6 @@ typedef struct {
 } EFI_MUTEX_PROTOCOL;
 static EFI_MUTEX_PROTOCOL MutexProtocol = { 0 };
 
-// TODO: we'll need a separate rootfile instance for each FS
-static EFI_GRUB_FILE RootFile;
-
 // TODO: implement our own UTF8 <-> UTF16 conversion routines
 
 /**
@@ -109,15 +107,6 @@ static const CHAR16
 	return Name;
 }
 
-static int
-fs_hook(const char *filename,
-	const struct grub_dirhook_info *info, void *data)
-{
-	if (filename[0] != '$')
-		grub_printf("  %s%s\n", filename, info->dir?"/":"");
-	return 0;
-}
-
 /**
  * Open file
  *
@@ -144,14 +133,12 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	PrintDebug(L"FileOpen '%s'\n", Name);
 
 	/* Initial '\' indicates opening from the root directory */
-	while (*Name == L'\\') {
-		File = &RootFile;
+	while (*Name == L'\\')
 		Name++;
-	}
 
 	/* Allow root directory itself to be opened */
 	if ((Name[0] == L'\0') || (Name[0] == L'.')) {
-		*New = &RootFile.EfiFile;
+		*New = This;
 		return EFI_SUCCESS;
 	}
 
@@ -184,7 +171,8 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 		PrintError(L"Could not allocate file resource\n");
 		return EFI_OUT_OF_RESOURCES;
 	}
-	CopyMem(&NewFile->EfiFile, &RootFile.EfiFile, sizeof(NewFile->EfiFile));
+	CopyMem(&NewFile->EfiFile, &File->EfiFile, sizeof(NewFile->EfiFile));
+
 
 	NewFile->grub_file.name = AllocatePool(grub_strlen(name)+1);
 	if (NewFile->grub_file.name == NULL) {
@@ -194,8 +182,8 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	}
 
 	CopyMem(NewFile->grub_file.name, name, grub_strlen(name)+1);
-	NewFile->grub_file.device = RootFile.grub_file.device;
-	NewFile->grub_file.fs = RootFile.grub_file.fs;
+	NewFile->grub_file.device = File->grub_file.device;
+	NewFile->grub_file.fs = File->grub_file.fs;
 
 	*New = &NewFile->EfiFile;
 	PrintDebug(L"File '%s' opened\n", FileName(NewFile));
@@ -259,25 +247,85 @@ FileDelete(EFI_FILE_HANDLE This)
  * @ret Status		EFI status code
  */
 static EFI_STATUS
-FileVarlen(UINT64 *Base, UINT64 BaseLen,
-		const CHAR16 *Name, UINT64 *Len, VOID *Data)
+FileVarlen(UINT64 *Base, UINTN BaseLen,
+		const CHAR16 *Name, UINTN *Len, VOID *Data)
 {
 	UINTN NameLen;
 
 	/* Calculate structure length */
 	NameLen = StrLen(Name);
-	*Base = (BaseLen + (NameLen + 1 /* NUL */) * sizeof(CHAR16));
-	if (*Len < *Base) {
-		*Len = *Base;
+	*Base = (UINT64) (BaseLen + (NameLen + 1 /* NUL */) * sizeof(CHAR16));
+	if (*Len < (UINTN) *Base) {
+		*Len = (UINTN) *Base;
 		return EFI_BUFFER_TOO_SMALL;
 	}
 
 	/* Copy data to buffer */
-	*Len = *Base;
+	*Len = (UINTN) *Base;
 	CopyMem(Data, Base, BaseLen);
 	StrCpy(Data + BaseLen, Name);
 
 	return EFI_SUCCESS;
+}
+
+typedef struct {
+	UINTN *Len;
+	VOID *Data;
+	INTN Index;
+} hook_data_t;
+
+
+/* GRUB uses a callback for each directory entry, whereas EFI uses repeated
+ * firmware generated calls to FileReadDir() to get the info for each entry,
+ * so we have to reconcile the twos. For now, we'll re-issue a call to grub
+ * dir(), and run through all the entries (to find the one we
+ * are interested in)  multiple times. Maybe later we'll try to optimize this
+ * by building a one-off chained list of entries that we can parse...
+ */
+static int
+grub_dirhook(const char *name, const struct grub_dirhook_info *info, void *data)
+{
+	EFI_STATUS Status;
+	EFI_FILE_INFO Info = { 0 };
+	CHAR16 Name[256];
+	EFI_TIME Time = { 1970, 01, 01, 00, 00, 00, 0, 0, 0, 0, 0};
+	hook_data_t* hook_data = (hook_data_t*) data;
+
+	// Eliminate '.' or '..'
+	if ((name[0] ==  '.') && ((name[1] == 0) || ((name[1] == '.') && (name[2] == 0))))
+		return 0;
+
+	/* Ignore any entry that don't match our offset */
+	if (hook_data->Index-- != 0)
+		return 0;
+
+	// Boy do the GRUB UNICODE routines suuuuuuuuuuck...!!!!
+	ZeroMem(Name, ARRAYSIZE(Name));
+	grub_utf8_to_utf16(Name, ARRAYSIZE(Name), name, -1, NULL);
+	PrintExtra(L"PRO: %s%s\n", Name, info->dir?L"/":L"");
+
+	// Oh, and of course GRUB uses a 32 bit signed mtime value (seriously, wtf guys?!?)
+	if (info->mtimeset)
+		GrubTimeToEfiTime(info->mtime, &Time);
+	CopyMem(&Info.CreateTime, &Time, sizeof(Time));
+	CopyMem(&Info.LastAccessTime, &Time, sizeof(Time));
+	CopyMem(&Info.ModificationTime, &Time, sizeof(Time));
+
+	if (info->dir) {
+		Info.Attribute = EFI_FILE_READ_ONLY | EFI_FILE_DIRECTORY;
+	} else {
+		Info.Attribute = EFI_FILE_READ_ONLY;
+		// TODO: We'll need to go through grub open to get the filesize
+		Info.FileSize = 16;
+		Info.PhysicalSize = 16;
+	}
+
+	Status = FileVarlen(&Info.Size, SIZE_OF_EFI_FILE_INFO, Name, hook_data->Len, hook_data->Data);
+	if (Status == EFI_BUFFER_TOO_SMALL) {
+		return grub_error(GRUB_ERR_OUT_OF_RANGE, "dirhook data to small");
+	}
+
+	return 0;
 }
 
 /**
@@ -327,28 +375,34 @@ static EFI_STATUS
 FileReadDir(EFI_GRUB_FILE *File, UINTN *Len, VOID *Data)
 {
 	EFI_STATUS Status;
-	UINT64 Index;
 	grub_fs_t p = grub_fs_list;
 	grub_device_t device = (grub_device_t) File->FileSystem->GrubDevice;
+	grub_err_t rc;
+
+	/* The offset is the entry we are interested in */
+	hook_data_t hook_data = { Len, Data, (INTN) File->grub_file.offset };
 
 	PrintDebug(L"FileReadDir\n");
 
-	// Test the GRUB dir hook
-	p->dir(device, "/", fs_hook, NULL);
+	/* Invoke GRUB's directory listing */
+	rc = p->dir(device, "/", grub_dirhook, &hook_data);
 
-	/* Construct directory entry at current position */
-	Index = File->grub_file.offset;
-
-	if (Index-- == 0) {
-		Status = FileInfo(FALSE, Len, Data);
-		if (Status == EFI_SUCCESS)
-			File->grub_file.offset++;
-		return Status;
+	if (hook_data.Index >= 0) {
+		/* No more entries */
+		*Len = 0;
+		Status = EFI_SUCCESS;
+	} else if (rc == GRUB_ERR_OUT_OF_RANGE) {
+		Status = EFI_BUFFER_TOO_SMALL;
+	} else if (rc != GRUB_ERR_NONE) {
+		PrintError(L"GRUB dir failed with error %d\n", rc);
+		Status = EFI_UNSUPPORTED;
+	} else {
+		/* Advance to the next entry */
+		File->grub_file.offset++;
+		Status = EFI_SUCCESS;
 	}
 
-	/* No more entries */
-	*Len = 0;
-	return EFI_SUCCESS;
+	return Status;
 }
 
 /**
@@ -370,7 +424,7 @@ FileRead(EFI_FILE_HANDLE This, UINTN *Len, VOID *Data)
 	if (File->IsRoot)
 		return FileReadDir(File, Len, Data);
 
-	/* Read from a file */
+	/* Read from a file or subdirectory */
 	// TODO
 	return EFI_ACCESS_DENIED;
 /*
@@ -480,13 +534,13 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 	if (CompareMem(Type, &GenericFileInfo, sizeof(*Type)) == 0) {
 
 		/* Get file information */
-		PrintDebug(L"Get regular file information\n");
+		PrintExtra(L"Get regular file information\n");
 		return FileInfo(File->IsRoot, Len, Data);
 
 	} else if (CompareMem(Type, &FileSystemInfo, sizeof(*Type)) == 0) {
 
 		/* Get file system information */
-		PrintDebug(L"Get file system information\n");
+		PrintExtra(L"Get file system information\n");
 		SetMem(&FSInfo, 0, sizeof(FSInfo));
 		FSInfo.ReadOnly = 1;
 		FSInfo.VolumeSize = (File->FileSystem->BlockIo->Media->LastBlock + 1) *
@@ -550,8 +604,10 @@ FileFlush(EFI_FILE_HANDLE This)
 static EFI_STATUS EFIAPI
 FileOpenVolume(EFI_FILE_IO_INTERFACE *This, EFI_FILE_HANDLE *Root)
 {
+	EFI_FS *FSInstance = container_of(This, EFI_FS, FileIOInterface);
+
 	PrintDebug(L"FileOpenVolume\n");
-	*Root = &RootFile.EfiFile;
+	*Root = &FSInstance->RootFile.EfiFile;
 
 	return EFI_SUCCESS;
 }
@@ -589,30 +645,31 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 	}
 
 	/* Initialize the root handle */
-	ZeroMem(&RootFile, sizeof(RootFile));
+	ZeroMem(&This->RootFile, sizeof(This->RootFile));
 
 	/* Setup the EFI part */
-	RootFile.EfiFile.Revision = EFI_FILE_HANDLE_REVISION;
-	RootFile.EfiFile.Open = FileOpen;
-	RootFile.EfiFile.Close = FileClose;
-	RootFile.EfiFile.Delete = FileDelete;
-	RootFile.EfiFile.Read = FileRead;
-	RootFile.EfiFile.Write = FileWrite;
-	RootFile.EfiFile.GetPosition = FileGetPosition;
-	RootFile.EfiFile.SetPosition = FileSetPosition;
-	RootFile.EfiFile.GetInfo = FileGetInfo;
-	RootFile.EfiFile.SetInfo = FileSetInfo;
-	RootFile.EfiFile.Flush = FileFlush;
+	This->RootFile.EfiFile.Revision = EFI_FILE_HANDLE_REVISION;
+	This->RootFile.EfiFile.Open = FileOpen;
+	This->RootFile.EfiFile.Close = FileClose;
+	This->RootFile.EfiFile.Delete = FileDelete;
+	This->RootFile.EfiFile.Read = FileRead;
+	This->RootFile.EfiFile.Write = FileWrite;
+	This->RootFile.EfiFile.GetPosition = FileGetPosition;
+	This->RootFile.EfiFile.SetPosition = FileSetPosition;
+	This->RootFile.EfiFile.GetInfo = FileGetInfo;
+	This->RootFile.EfiFile.SetInfo = FileSetInfo;
+	This->RootFile.EfiFile.Flush = FileFlush;
 
 	/* Setup the GRUB part */
-	RootFile.grub_file.name = "/";
-	RootFile.grub_file.device = (grub_device_t) This->GrubDevice;
-	RootFile.grub_file.fs = grub_fs_list;
+	This->RootFile.grub_file.name = "/";
+	This->RootFile.grub_file.device = (grub_device_t) This->GrubDevice;
+	This->RootFile.grub_file.fs = grub_fs_list;
 
 	/* Setup extra data */
-	RootFile.IsRoot = TRUE;
+	// TODO: get rid of this
+	This->RootFile.IsRoot = TRUE;
 	/* We could pick it up from GrubDevice, but it's more convenient this way */
-	RootFile.FileSystem = This;
+	This->RootFile.FileSystem = This;
 
 	return EFI_SUCCESS;
 }

@@ -72,22 +72,26 @@ extern void PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...);
 	0x3AD33E69, 0x7966, 0x4081, {0x9A, 0x66, 0x9B, 0xA8, 0xE5, 0x4E, 0x06, 0x4B } \
 }
 
+/* Forward declaration */
+struct _EFI_FS;
+
+/* A file instance */
+typedef struct _EFI_GRUB_FILE {
+	EFI_FILE EfiFile;
+	struct grub_file grub_file;
+	BOOLEAN IsRoot;
+	struct _EFI_FS *FileSystem;
+} EFI_GRUB_FILE;
+
 /* A file system instance */
-typedef struct {
+typedef struct _EFI_FS {
 	EFI_FILE_IO_INTERFACE FileIOInterface;
 	EFI_DISK_IO *DiskIo;
 	EFI_BLOCK_IO *BlockIo;
 	CHAR16 Path[256];	/* DevicePath */
 	VOID *GrubDevice;
+	EFI_GRUB_FILE RootFile;
 } EFI_FS;
-
-/* A file instance */
-typedef struct {
-	EFI_FILE EfiFile;
-	struct grub_file grub_file;
-	BOOLEAN IsRoot;
-	EFI_FS *FileSystem;
-} EFI_GRUB_FILE;
 
 extern void GRUB_FS_INIT(void);
 extern void GRUB_FS_FINI(void);
@@ -99,3 +103,4 @@ extern CHAR16 *GrubGetUUID(EFI_FS *This);
 extern BOOLEAN GrubFSProbe(EFI_FS *This);
 extern EFI_STATUS GrubDeviceInit(EFI_FS *This);
 extern EFI_STATUS GrubDeviceExit(EFI_FS *This);
+extern VOID GrubTimeToEfiTime(const INT32 t, EFI_TIME *tp);

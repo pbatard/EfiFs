@@ -1,8 +1,8 @@
 /* grubberize.c - The elastic binding between grub and standalone EFI */
 /*
  *  Copyright © 2014 Pete Batard <pete@akeo.ie>
- *  Based on GRUB  --  GRand Unified Bootloader
- *  Copyright © 2002, 2005, 2007  Free Software Foundation, Inc.
+ *  Based on GRUB, glibc and additional software:
+ *  Copyright © 2001-2014 Free Software Foundation, Inc.
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -219,4 +219,66 @@ CHAR16 *GrubGetUUID(EFI_FS* This)
 	grub_utf8_to_utf16(UUID, ARRAYSIZE(UUID), uuid, grub_strlen(uuid), NULL);
 
 	return UUID;
+}
+
+/* The following is adapted from glibc's (offtime.c, etc.)
+ */
+
+/* How many days come before each month (0-12). */
+static const unsigned short int __mon_yday[2][13] = {
+	/* Normal years.  */
+	{ 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 },
+	/* Leap years.  */
+	{ 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 }
+};
+
+/* Nonzero if YEAR is a leap year (every 4 years,
+   except every 100th isn't, and every 400th is). */
+#define __isleap(year) \
+	((year) % 4 == 0 && ((year) % 100 != 0 || (year) % 400 == 0))
+
+#define SECS_PER_HOUR         (60 * 60)
+#define SECS_PER_DAY          (SECS_PER_HOUR * 24)
+#define DIV(a, b)             ((a) / (b) - ((a) % (b) < 0))
+#define LEAPS_THRU_END_OF(y)  (DIV (y, 4) - DIV (y, 100) + DIV (y, 400))
+
+/* Compute an EFI_TIME representation of a GRUB's mtime_t */
+VOID GrubTimeToEfiTime(const INT32 t, EFI_TIME *tp)
+{
+	INT32 days, rem, y;
+	const unsigned short int *ip;
+
+	days = t / SECS_PER_DAY;
+	rem = t % SECS_PER_DAY;
+	while (rem < 0) {
+		rem += SECS_PER_DAY;
+		--days;
+	}
+	while (rem >= SECS_PER_DAY) {
+		rem -= SECS_PER_DAY;
+		++days;
+	}
+	tp->Hour = rem / SECS_PER_HOUR;
+	rem %= SECS_PER_HOUR;
+	tp->Minute = rem / 60;
+	tp->Second = rem % 60;
+	y = 1970;
+
+	while (days < 0 || days >= (__isleap (y) ? 366 : 365)) {
+		/* Guess a corrected year, assuming 365 days per year. */
+		INT32 yg = y + days / 365 - (days % 365 < 0);
+
+		/* Adjust DAYS and Y to match the guessed year. */
+		days -= ((yg - y) * 365
+			+ LEAPS_THRU_END_OF (yg - 1)
+			- LEAPS_THRU_END_OF (y - 1));
+		y = yg;
+	}
+	tp->Year = y;
+	ip = __mon_yday[__isleap(y)];
+	for (y = 11; days < (long int) ip[y]; --y)
+		continue;
+	days -= ip[y];
+	tp->Month = y + 1;
+	tp->Day = days + 1;
 }
