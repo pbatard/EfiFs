@@ -236,45 +236,6 @@ FileDelete(EFI_FILE_HANDLE This)
 	return EFI_WARN_DELETE_FAILURE;
 }
 
-/**
- * Return variable-length data structure
- *
- * @v Base			Base data structure (starting with UINT64)
- * @v BaseLen		Length of base data structure
- * @v Name			Name to append to base data structure
- * @v Len			Length of data buffer
- * @v Data			Data buffer
- * @ret Status		EFI status code
- */
-static EFI_STATUS
-FileVarlen(UINT64 *Base, UINTN BaseLen,
-		const CHAR16 *Name, UINTN *Len, VOID *Data)
-{
-	UINTN NameLen;
-
-	/* Calculate structure length */
-	NameLen = StrLen(Name);
-	*Base = (UINT64) (BaseLen + (NameLen + 1 /* NUL */) * sizeof(CHAR16));
-	if (*Len < (UINTN) *Base) {
-		*Len = (UINTN) *Base;
-		return EFI_BUFFER_TOO_SMALL;
-	}
-
-	/* Copy data to buffer */
-	*Len = (UINTN) *Base;
-	CopyMem(Data, Base, BaseLen);
-	StrCpy(Data + BaseLen, Name);
-
-	return EFI_SUCCESS;
-}
-
-typedef struct {
-	UINTN *Len;
-	VOID *Data;
-	INTN Index;
-} hook_data_t;
-
-
 /* GRUB uses a callback for each directory entry, whereas EFI uses repeated
  * firmware generated calls to FileReadDir() to get the info for each entry,
  * so we have to reconcile the twos. For now, we'll re-issue a call to grub
@@ -285,82 +246,36 @@ typedef struct {
 static int
 grub_dirhook(const char *name, const struct grub_dirhook_info *info, void *data)
 {
-	EFI_STATUS Status;
-	EFI_FILE_INFO Info = { 0 };
-	CHAR16 Name[256];
+	EFI_FILE_INFO *Info = (EFI_FILE_INFO *) data;
+	INT64 *Index = (INT64 *) &Info->FileSize;
 	EFI_TIME Time = { 1970, 01, 01, 00, 00, 00, 0, 0, 0, 0, 0};
-	hook_data_t* hook_data = (hook_data_t*) data;
 
 	// Eliminate '.' or '..'
 	if ((name[0] ==  '.') && ((name[1] == 0) || ((name[1] == '.') && (name[2] == 0))))
 		return 0;
 
 	/* Ignore any entry that don't match our offset */
-	if (hook_data->Index-- != 0)
+	if ((*Index)-- != 0)
 		return 0;
 
-	// Boy do the GRUB UNICODE routines suuuuuuuuuuck...!!!!
-	ZeroMem(Name, ARRAYSIZE(Name));
-	grub_utf8_to_utf16(Name, ARRAYSIZE(Name), name, -1, NULL);
-	PrintExtra(L"PRO: %s%s\n", Name, info->dir?L"/":L"");
+	// TODO: check for overflow and return EFI_BUFFER_TOO_SMALL
+	grub_utf8_to_utf16(Info->FileName, Info->Size - sizeof(EFI_FILE_INFO), name, -1, NULL);
+	/* The Info struct size already accounts for the extra NUL */
+	Info->Size = sizeof(*Info) + StrLen(Info->FileName) * sizeof(CHAR16);
+	PrintExtra(L"PRO: %s%s (size = %d)\n", Info->FileName, info->dir?L"/":L"", (UINTN) Info->Size);
 
 	// Oh, and of course GRUB uses a 32 bit signed mtime value (seriously, wtf guys?!?)
 	if (info->mtimeset)
 		GrubTimeToEfiTime(info->mtime, &Time);
-	CopyMem(&Info.CreateTime, &Time, sizeof(Time));
-	CopyMem(&Info.LastAccessTime, &Time, sizeof(Time));
-	CopyMem(&Info.ModificationTime, &Time, sizeof(Time));
+	CopyMem(&Info->CreateTime, &Time, sizeof(Time));
+	CopyMem(&Info->LastAccessTime, &Time, sizeof(Time));
+	CopyMem(&Info->ModificationTime, &Time, sizeof(Time));
 
-	if (info->dir) {
-		Info.Attribute = EFI_FILE_READ_ONLY | EFI_FILE_DIRECTORY;
-	} else {
-		Info.Attribute = EFI_FILE_READ_ONLY;
-		// TODO: We'll need to go through grub open to get the filesize
-		Info.FileSize = 16;
-		Info.PhysicalSize = 16;
-	}
-
-	Status = FileVarlen(&Info.Size, SIZE_OF_EFI_FILE_INFO, Name, hook_data->Len, hook_data->Data);
-	if (Status == EFI_BUFFER_TOO_SMALL) {
-		return grub_error(GRUB_ERR_OUT_OF_RANGE, "dirhook data to small");
-	}
+	Info->Attribute = EFI_FILE_READ_ONLY;
+	if (info->dir)
+		Info->Attribute |= EFI_FILE_DIRECTORY;
 
 	return 0;
-}
-
-/**
- * Return file information structure
- *
- * @v image			Image, or NULL for the root directory
- * @v Len			Length of data buffer
- * @v Data			Data buffer
- * @ret Status		EFI status code
- */
-static EFI_STATUS 
-FileInfo(BOOLEAN Dir, UINTN *Len, VOID *Data)
-{
-	EFI_FILE_INFO Info;
-	const CHAR16 *Name;
-	const EFI_TIME Time = { 1970, 01, 01, 00, 00, 00, 0, 0, 0, 0, 0};
-
-	PrintDebug(L"FileInfo for %s\n", Dir?L"dir":L"reg");
-
-	/* Populate file information */
-	SetMem(&Info, 0, sizeof(Info));
-	if (!Dir) {
-		Info.FileSize = 16;
-		Info.PhysicalSize = 16;
-		Info.Attribute = EFI_FILE_READ_ONLY;
-		CopyMem(&Info.CreateTime, &Time, sizeof(Time));
-		CopyMem(&Info.LastAccessTime, &Time, sizeof(Time));
-		CopyMem(&Info.ModificationTime, &Time, sizeof(Time));
-		Name = L"file.txt";
-	} else {
-		Info.Attribute = EFI_FILE_READ_ONLY | EFI_FILE_DIRECTORY;
-		Name = L"";
-	}
-
-	return FileVarlen(&Info.Size, SIZE_OF_EFI_FILE_INFO, Name, Len, Data);
 }
 
 /**
@@ -374,35 +289,69 @@ FileInfo(BOOLEAN Dir, UINTN *Len, VOID *Data)
 static EFI_STATUS
 FileReadDir(EFI_GRUB_FILE *File, UINTN *Len, VOID *Data)
 {
-	EFI_STATUS Status;
+	EFI_FILE_INFO *Info = (EFI_FILE_INFO *) Data;
+	/* We repurpose the FileSize (which we will populate later) as a *signed* entry index */
+	INT64 *Index = (INT64 *) &Info->FileSize;
+	char filename[256];
+	struct grub_file file;
 	grub_fs_t p = grub_fs_list;
 	grub_device_t device = (grub_device_t) File->FileSystem->GrubDevice;
 	grub_err_t rc;
 
-	/* The offset is the entry we are interested in */
-	hook_data_t hook_data = { Len, Data, (INTN) File->grub_file.offset };
+	/* Unless we can fill at least a 16 chars filename, forget it */
+	if (*Len < sizeof(EFI_FILE_INFO) + 16 * sizeof(CHAR16))
+		return EFI_BUFFER_TOO_SMALL;
+
+	/* Populate our Info template */
+	ZeroMem(Data, *Len);
+	Info->Size = (UINT64) *Len;
+	*Index = File->grub_file.offset;
 
 	PrintDebug(L"FileReadDir\n");
 
 	/* Invoke GRUB's directory listing */
-	rc = p->dir(device, "/", grub_dirhook, &hook_data);
+	rc = p->dir(device, "/", grub_dirhook, Data);
 
-	if (hook_data.Index >= 0) {
+	if (*Index >= 0) {
 		/* No more entries */
 		*Len = 0;
-		Status = EFI_SUCCESS;
-	} else if (rc == GRUB_ERR_OUT_OF_RANGE) {
-		Status = EFI_BUFFER_TOO_SMALL;
-	} else if (rc != GRUB_ERR_NONE) {
-		PrintError(L"GRUB dir failed with error %d\n", rc);
-		Status = EFI_UNSUPPORTED;
-	} else {
-		/* Advance to the next entry */
-		File->grub_file.offset++;
-		Status = EFI_SUCCESS;
+		return EFI_SUCCESS;
 	}
 
-	return Status;
+	if (rc == GRUB_ERR_OUT_OF_RANGE) {
+		PrintError(L"Dir entry buffer too small\n");
+		return EFI_BUFFER_TOO_SMALL;
+	} else if (rc) {
+		PrintError(L"GRUB dir failed with error %d\n", rc);
+		return EFI_UNSUPPORTED;
+	}
+
+	/* Our Index/FileSize must be reset */
+	Info->FileSize = 0;
+
+	/* For regular files, we still need to fill the size */
+	if (!(Info->Attribute & EFI_FILE_DIRECTORY)) {
+		/* Why, yes, let's just convert our filename BACK AGAIN to UTF-8... */
+		filename[0] = '/';
+		grub_utf16_to_utf8(&filename[1], Info->FileName, StrLen(Info->FileName) + 1);
+		/* Open the file and read its size */
+		file.device = (grub_device_t) File->FileSystem->GrubDevice;
+		rc = p->open(&file, filename);
+		if (rc == GRUB_ERR_NONE) {
+			Info->FileSize = file.size;
+			Info->PhysicalSize = file.size;
+			p->close(&file);
+		} else if (rc !=  GRUB_ERR_BAD_FILE_TYPE) {
+			/* BAD_FILE_TYPE is returned for links */
+			PrintError(L"Unable to obtain the size of '%s' - grub error: %d\n",
+					Info->FileName, rc);
+		}
+	}
+	*Len = (UINTN) Info->Size;
+	/* Advance to the next entry */
+	File->grub_file.offset++;
+
+	return EFI_SUCCESS;
 }
 
 /**
@@ -510,6 +459,73 @@ FileGetPosition(EFI_FILE_HANDLE This, UINT64 *Position)
 
 	*Position = File->grub_file.offset;
 	return EFI_SUCCESS;
+}
+
+/**
+ * Return variable-length data structure
+ *
+ * @v Base			Base data structure (starting with UINT64)
+ * @v BaseLen		Length of base data structure
+ * @v Name			Name to append to base data structure
+ * @v Len			Length of data buffer
+ * @v Data			Data buffer
+ * @ret Status		EFI status code
+ */
+static EFI_STATUS
+FileVarlen(UINT64 *Base, UINTN BaseLen,
+		const CHAR16 *Name, UINTN *Len, VOID *Data)
+{
+	UINTN NameLen;
+
+	/* Calculate structure length */
+	NameLen = StrLen(Name);
+	*Base = (UINT64) (BaseLen + (NameLen + 1 /* NUL */) * sizeof(CHAR16));
+	if (*Len < (UINTN) *Base) {
+		*Len = (UINTN) *Base;
+		return EFI_BUFFER_TOO_SMALL;
+	}
+
+	/* Copy data to buffer */
+	*Len = (UINTN) *Base;
+	CopyMem(Data, Base, BaseLen);
+	StrCpy(Data + BaseLen, Name);
+
+	return EFI_SUCCESS;
+}
+
+/**
+ * Return file information structure
+ *
+ * @v image			Image, or NULL for the root directory
+ * @v Len			Length of data buffer
+ * @v Data			Data buffer
+ * @ret Status		EFI status code
+ */
+static EFI_STATUS 
+FileInfo(BOOLEAN Dir, UINTN *Len, VOID *Data)
+{
+	EFI_FILE_INFO Info;
+	const CHAR16 *Name;
+	const EFI_TIME Time = { 1970, 01, 01, 00, 00, 00, 0, 0, 0, 0, 0};
+
+	PrintDebug(L"FileInfo for %s\n", Dir?L"dir":L"reg");
+
+	/* Populate file information */
+	SetMem(&Info, 0, sizeof(Info));
+	if (!Dir) {
+		Info.FileSize = 16;
+		Info.PhysicalSize = 16;
+		Info.Attribute = EFI_FILE_READ_ONLY;
+		CopyMem(&Info.CreateTime, &Time, sizeof(Time));
+		CopyMem(&Info.LastAccessTime, &Time, sizeof(Time));
+		CopyMem(&Info.ModificationTime, &Time, sizeof(Time));
+		Name = L"file.txt";
+	} else {
+		Info.Attribute = EFI_FILE_READ_ONLY | EFI_FILE_DIRECTORY;
+		Name = L"";
+	}
+
+	return FileVarlen(&Info.Size, SIZE_OF_EFI_FILE_INFO, Name, Len, Data);
 }
 
 /**
