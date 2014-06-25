@@ -52,7 +52,8 @@ Print_t PrintWarning = PrintNone;
 Print_t PrintInfo = PrintNone;
 Print_t PrintDebug = PrintNone;
 Print_t PrintExtra = PrintNone;
-Print_t* PrintTable[] = { &PrintError, &PrintWarning, &PrintInfo, &PrintDebug, &PrintExtra };
+Print_t* PrintTable[] = { &PrintError, &PrintWarning, &PrintInfo,
+		&PrintDebug, &PrintExtra };
 
 /* Global driver verbosity level */
 #if !defined(DEFAULT_LOGLEVEL)
@@ -97,11 +98,13 @@ PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...)
  * @v file			EFI file
  * @ret Name		Name
  */
+// TODO: we probably oughta keep a copy of the UTF16 Name in the file handle
 static const CHAR16 
 *FileName(EFI_GRUB_FILE *File)
 {
 	static CHAR16 Name[256];
 
+	ZeroMem(Name, sizeof(Name));
 	grub_utf8_to_utf16(Name, ARRAYSIZE(Name), File->grub_file.name,
 		grub_strlen(File->grub_file.name), NULL);
 	return Name;
@@ -123,12 +126,14 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 {
 	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
 	EFI_GRUB_FILE *NewFile;
+	grub_fs_t p = grub_fs_list;
+	grub_err_t rc;
 	/* Why oh why doesn't GRUB provide a grub_get_num_of_utf8_bytes for UTF16
 	 * or even an UTF16 to UTF8 that does the allocation?
 	 * TODO: Use dynamic buffers...
 	 */
 	char name[256];
-	INTN i;
+	INTN i, len;
 
 	PrintDebug(L"FileOpen '%s'\n", Name);
 
@@ -148,22 +153,24 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 		return EFI_WRITE_PROTECTED;
 	}
 
-	/* Fail unless opening from the root */
-	// TODO: eliminate this
-	if (!File->IsRoot) {
-		PrintError(L"WIP: Only the root directory can be opened for now\n");
-		return EFI_NOT_FOUND;
-	}
+	/* Copy the base part of the name */
+	grub_strcpy(name, File->grub_file.name);
+	len = grub_strlen(name);
 
-	/* Convert an UTF16 file name with backslash delimiters to UTF8 with forward slash delimiters */
-	/* BEWARE: the GRUB conversion routines don't check the target size and the length is for the source!! */
-	grub_utf16_to_utf8(name, Name, StrLen(Name)+1);
-	for (i=0; i<grub_strlen(name); i++) {
+	/* Add a separator if required */
+	if ((len == 0) || (name[len-1] != '/'))
+		name[len++] = '/';
+
+	/* Convert an UTF16 file name with backslash delimiters to UTF8 with
+	 * forward slash delimiters
+	 */
+	/* BEWARE: the GRUB conversion routines don't check the target size
+	 * and the length parameter is for the source only!! */
+	grub_utf16_to_utf8(&name[len], Name, StrLen(Name)+1);
+	for (i=len; i<grub_strlen(name); i++) {
 		if (name[i] == '\\')
 			name[i] = '/';
 	}
-
-	/* TODO: Check that the file exists */
 
 	/* Allocate and initialise file */
 	NewFile = AllocateZeroPool(sizeof(*NewFile));
@@ -172,7 +179,6 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 		return EFI_OUT_OF_RESOURCES;
 	}
 	CopyMem(&NewFile->EfiFile, &File->EfiFile, sizeof(NewFile->EfiFile));
-
 
 	NewFile->grub_file.name = AllocatePool(grub_strlen(name)+1);
 	if (NewFile->grub_file.name == NULL) {
@@ -185,8 +191,16 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	NewFile->grub_file.device = File->grub_file.device;
 	NewFile->grub_file.fs = File->grub_file.fs;
 
+	// TODO: check if we're opening a directory and don't bother (GRUB_ERR_BAD_FILE_TYPE)
+	rc = p->open(&NewFile->grub_file, NewFile->grub_file.name);
+	if ((rc != GRUB_ERR_NONE) && (rc != GRUB_ERR_BAD_FILE_TYPE)) {
+		PrintError(L"Could not open file '%s' - GRUB error %d\n", Name, rc);
+		FreePool(NewFile->grub_file.name);
+		FreePool(NewFile);
+		return EFI_NOT_FOUND;
+	}
+
 	*New = &NewFile->EfiFile;
-	PrintDebug(L"File '%s' opened\n", FileName(NewFile));
 
 	return EFI_SUCCESS;
 }
@@ -200,6 +214,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 static EFI_STATUS EFIAPI
 FileClose(EFI_FILE_HANDLE This)
 {
+	grub_fs_t p = grub_fs_list;
 	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
 
 	PrintDebug(L"FileClose '%s'\n", FileName(File));
@@ -209,7 +224,7 @@ FileClose(EFI_FILE_HANDLE This)
 		return EFI_SUCCESS;
 
 	/* Close file */
-	PrintDebug(L"Non root file closed\n");
+	p->close(&File->grub_file);
 	FreePool(File->grub_file.name);
 	FreePool(File);
 
@@ -227,7 +242,7 @@ FileDelete(EFI_FILE_HANDLE This)
 {
 	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
 
-	PrintError(L"EFIFILE %s cannot be deleted\n", FileName(File));
+	PrintError(L"Cannot delete '%s'\n", FileName(File));
 
 	/* Close file */
 	FileClose(This);
@@ -259,10 +274,10 @@ grub_dirhook(const char *name, const struct grub_dirhook_info *info, void *data)
 		return 0;
 
 	// TODO: check for overflow and return EFI_BUFFER_TOO_SMALL
-	grub_utf8_to_utf16(Info->FileName, Info->Size - sizeof(EFI_FILE_INFO), name, -1, NULL);
+	grub_utf8_to_utf16(Info->FileName, Info->Size - sizeof(EFI_FILE_INFO),
+			name, -1, NULL);
 	/* The Info struct size already accounts for the extra NUL */
 	Info->Size = sizeof(*Info) + StrLen(Info->FileName) * sizeof(CHAR16);
-	PrintExtra(L"PRO: %s%s (size = %d)\n", Info->FileName, info->dir?L"/":L"", (UINTN) Info->Size);
 
 	// Oh, and of course GRUB uses a 32 bit signed mtime value (seriously, wtf guys?!?)
 	if (info->mtimeset)
@@ -290,27 +305,29 @@ static EFI_STATUS
 FileReadDir(EFI_GRUB_FILE *File, UINTN *Len, VOID *Data)
 {
 	EFI_FILE_INFO *Info = (EFI_FILE_INFO *) Data;
-	/* We repurpose the FileSize (which we will populate later) as a *signed* entry index */
+	/* We temporarily repurpose the FileSize as a *signed* entry index */
 	INT64 *Index = (INT64 *) &Info->FileSize;
 	char filename[256];
 	struct grub_file file;
 	grub_fs_t p = grub_fs_list;
-	grub_device_t device = (grub_device_t) File->FileSystem->GrubDevice;
 	grub_err_t rc;
+	const INTN MinimumInfoLength = sizeof(EFI_FILE_INFO) + 16 * sizeof(CHAR16);
 
 	/* Unless we can fill at least a 16 chars filename, forget it */
-	if (*Len < sizeof(EFI_FILE_INFO) + 16 * sizeof(CHAR16))
+	if (*Len < MinimumInfoLength) {
+		*Len = MinimumInfoLength;
 		return EFI_BUFFER_TOO_SMALL;
+	}
 
 	/* Populate our Info template */
 	ZeroMem(Data, *Len);
-	Info->Size = (UINT64) *Len;
+	Info->Size = *Len;
 	*Index = File->grub_file.offset;
 
 	PrintDebug(L"FileReadDir\n");
 
 	/* Invoke GRUB's directory listing */
-	rc = p->dir(device, "/", grub_dirhook, Data);
+	rc = p->dir(File->grub_file.device, "/", grub_dirhook, Data);
 
 	if (*Index >= 0) {
 		/* No more entries */
@@ -335,7 +352,8 @@ FileReadDir(EFI_GRUB_FILE *File, UINTN *Len, VOID *Data)
 		filename[0] = '/';
 		grub_utf16_to_utf8(&filename[1], Info->FileName, StrLen(Info->FileName) + 1);
 		/* Open the file and read its size */
-		file.device = (grub_device_t) File->FileSystem->GrubDevice;
+		file.device = File->grub_file.device;
+		file.fs = File->grub_file.fs;
 		rc = p->open(&file, filename);
 		if (rc == GRUB_ERR_NONE) {
 			Info->FileSize = file.size;
@@ -365,7 +383,10 @@ FileReadDir(EFI_GRUB_FILE *File, UINTN *Len, VOID *Data)
 static EFI_STATUS EFIAPI
 FileRead(EFI_FILE_HANDLE This, UINTN *Len, VOID *Data)
 {
+	grub_fs_t p = grub_fs_list;
+	grub_ssize_t len;
 	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
+	INTN Remaining;
 
 	PrintDebug(L"FileRead '%s'\n", FileName(File));
 
@@ -373,19 +394,19 @@ FileRead(EFI_FILE_HANDLE This, UINTN *Len, VOID *Data)
 	if (File->IsRoot)
 		return FileReadDir(File, Len, Data);
 
-	/* Read from a file or subdirectory */
-	// TODO
-	return EFI_ACCESS_DENIED;
-/*
-	Remaining = (file->image->len - File->grub_file->offset);
+	/* GRUB may return an error if we request more data than available */
+	Remaining = File->grub_file.size - File->grub_file.offset;
 	if (*Len > Remaining)
 		*Len = Remaining;
-	PrintDebug(L"EFIFILE %s read [%#08zx,%#08zx]\n", FileName(File),
-			File->grub_file.offset, File->grub_file.offset + *Len );
-	CopyMem(Data, &file->image->data[File->grub_file.offset], *Len);
-	File->grub_file.offset += *Len;
+	len = p->read(&File->grub_file, (char *) Data, *Len);
+	if (len < 0) {
+		grub_print_error();
+		PrintError(L"Could not read from file '%s': GRUB error %d\n",
+				FileName(File), grub_errno);
+		return EFI_DEVICE_ERROR;
+	}
+	*Len = len;
 	return EFI_SUCCESS;
-*/
 }
 
 /**
@@ -430,14 +451,14 @@ FileSetPosition(EFI_FILE_HANDLE This, UINT64 Position)
 	 * we do not support writes).
 	 */
 	if (Position > File->grub_file.size) {
-		PrintError(L"EFIFILE %s cannot seek to %#08llx of %#08zx\n",
+		PrintError(L"'%s': Cannot seek to %#08llx of %#08zx\n",
 				FileName(File), Position, File->grub_file.size);
 		return EFI_UNSUPPORTED;
 	}
 
 	/* Set position */
 	File->grub_file.offset = Position;
-	PrintDebug(L"EFIFILE %s position set to %#08zx\n",
+	PrintDebug(L"'%s': Position set to %#08zx\n",
 			FileName(File), File->grub_file.offset);
 
 	return EFI_SUCCESS;
@@ -462,73 +483,6 @@ FileGetPosition(EFI_FILE_HANDLE This, UINT64 *Position)
 }
 
 /**
- * Return variable-length data structure
- *
- * @v Base			Base data structure (starting with UINT64)
- * @v BaseLen		Length of base data structure
- * @v Name			Name to append to base data structure
- * @v Len			Length of data buffer
- * @v Data			Data buffer
- * @ret Status		EFI status code
- */
-static EFI_STATUS
-FileVarlen(UINT64 *Base, UINTN BaseLen,
-		const CHAR16 *Name, UINTN *Len, VOID *Data)
-{
-	UINTN NameLen;
-
-	/* Calculate structure length */
-	NameLen = StrLen(Name);
-	*Base = (UINT64) (BaseLen + (NameLen + 1 /* NUL */) * sizeof(CHAR16));
-	if (*Len < (UINTN) *Base) {
-		*Len = (UINTN) *Base;
-		return EFI_BUFFER_TOO_SMALL;
-	}
-
-	/* Copy data to buffer */
-	*Len = (UINTN) *Base;
-	CopyMem(Data, Base, BaseLen);
-	StrCpy(Data + BaseLen, Name);
-
-	return EFI_SUCCESS;
-}
-
-/**
- * Return file information structure
- *
- * @v image			Image, or NULL for the root directory
- * @v Len			Length of data buffer
- * @v Data			Data buffer
- * @ret Status		EFI status code
- */
-static EFI_STATUS 
-FileInfo(BOOLEAN Dir, UINTN *Len, VOID *Data)
-{
-	EFI_FILE_INFO Info;
-	const CHAR16 *Name;
-	const EFI_TIME Time = { 1970, 01, 01, 00, 00, 00, 0, 0, 0, 0, 0};
-
-	PrintDebug(L"FileInfo for %s\n", Dir?L"dir":L"reg");
-
-	/* Populate file information */
-	SetMem(&Info, 0, sizeof(Info));
-	if (!Dir) {
-		Info.FileSize = 16;
-		Info.PhysicalSize = 16;
-		Info.Attribute = EFI_FILE_READ_ONLY;
-		CopyMem(&Info.CreateTime, &Time, sizeof(Time));
-		CopyMem(&Info.LastAccessTime, &Time, sizeof(Time));
-		CopyMem(&Info.ModificationTime, &Time, sizeof(Time));
-		Name = L"file.txt";
-	} else {
-		Info.Attribute = EFI_FILE_READ_ONLY | EFI_FILE_DIRECTORY;
-		Name = L"";
-	}
-
-	return FileVarlen(&Info.Size, SIZE_OF_EFI_FILE_INFO, Name, Len, Data);
-}
-
-/**
  * Get file information
  *
  * @v This			File handle
@@ -541,8 +495,16 @@ static EFI_STATUS EFIAPI
 FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 {
 	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
-	EFI_FILE_SYSTEM_INFO FSInfo;
+	// TODO: use the same trick as for file info
+	EFI_FILE_SYSTEM_INFO *FSInfo = (EFI_FILE_SYSTEM_INFO *) Data;
+	EFI_FILE_INFO *Info = (EFI_FILE_INFO *) Data;
 	CHAR16 GuidString[36];
+	const INTN MinimumInfoLength = sizeof(EFI_FILE_INFO) + 16 * sizeof(CHAR16);
+	const INTN MinimumFSInfoLength = sizeof(EFI_FILE_SYSTEM_INFO) + 16 * sizeof(CHAR16);
+	const EFI_TIME Time = { 1970, 01, 01, 00, 00, 00, 0, 0, 0, 0, 0};
+	grub_fs_t p = grub_fs_list;
+	char* label;
+	grub_err_t rc;
 
 	PrintDebug(L"FileGetInfo '%s'\n", FileName(File));
 
@@ -551,24 +513,72 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 
 		/* Get file information */
 		PrintExtra(L"Get regular file information\n");
-		return FileInfo(File->IsRoot, Len, Data);
+		if (*Len < MinimumInfoLength) {
+			*Len = MinimumInfoLength;
+			return EFI_BUFFER_TOO_SMALL;
+		}
+
+		// TODO: only zero the INFO part
+		ZeroMem(Data, *Len);
+		// TODO: check for directory
+		if (File->IsRoot) {
+			Info->Size = sizeof(EFI_FILE_INFO);
+			Info->Attribute = EFI_FILE_READ_ONLY | EFI_FILE_DIRECTORY;
+		} else {
+			Info->FileSize = File->grub_file.size;
+			Info->PhysicalSize = File->grub_file.size;
+			Info->Attribute = EFI_FILE_READ_ONLY;
+			// TODO: get the actual time by issuing a dir
+			CopyMem(&Info->CreateTime, &Time, sizeof(Time));
+			CopyMem(&Info->LastAccessTime, &Time, sizeof(Time));
+			CopyMem(&Info->ModificationTime, &Time, sizeof(Time));
+			// TODO: check for overflow and return EFI_BUFFER_TOO_SMALL
+			grub_utf8_to_utf16(Info->FileName, Info->Size - sizeof(EFI_FILE_INFO),
+					File->grub_file.name, -1, NULL);
+			/* The Info struct size already accounts for the extra NUL */
+			Info->Size = sizeof(EFI_FILE_INFO) + 
+					StrLen(Info->FileName) * sizeof(CHAR16);
+		}
+		return EFI_SUCCESS;
 
 	} else if (CompareMem(Type, &FileSystemInfo, sizeof(*Type)) == 0) {
 
 		/* Get file system information */
 		PrintExtra(L"Get file system information\n");
-		SetMem(&FSInfo, 0, sizeof(FSInfo));
-		FSInfo.ReadOnly = 1;
-		FSInfo.VolumeSize = (File->FileSystem->BlockIo->Media->LastBlock + 1) *
-			File->FileSystem->BlockIo->Media->BlockSize;
-		// TODO: get volume label from GRUB
-		return FileVarlen(&FSInfo.Size, SIZE_OF_EFI_FILE_SYSTEM_INFO,
-				L"Test Volume Label", Len, Data);
+		if (*Len < MinimumFSInfoLength) {
+			*Len = MinimumFSInfoLength;
+			return EFI_BUFFER_TOO_SMALL;
+		}
+
+		// TODO: only zero the INFO part
+		ZeroMem(Data, *Len);
+		FSInfo->Size = *Len;
+		FSInfo->ReadOnly = 1;
+		/* NB: This should really be cluster size, but we don't have access to that */
+		FSInfo->BlockSize = File->FileSystem->BlockIo->Media->BlockSize;
+		FSInfo->VolumeSize = (File->FileSystem->BlockIo->Media->LastBlock + 1) *
+			FSInfo->BlockSize;
+		/* No idea if we can easily get this for GRUB, and the device is RO anyway */
+		FSInfo->FreeSpace = 0;
+		rc = p->label(File->grub_file.device, &label);
+		if (rc) {
+			PrintError(L"Could not read disk label - GRUB error %d\n", rc);
+		} else {
+			// TODO: check for overflow and return EFI_BUFFER_TOO_SMALL
+			grub_utf8_to_utf16(FSInfo->VolumeLabel,
+					FSInfo->Size - sizeof(EFI_FILE_SYSTEM_INFO), label, -1, NULL);
+			Info->Size = sizeof(EFI_FILE_SYSTEM_INFO) +
+					StrLen(FSInfo->VolumeLabel) * sizeof(CHAR16);
+		}
+		return EFI_SUCCESS;
+
 	} else {
+
 		GuidToString(GuidString, Type);
-		PrintError(L"EFIFILE %s cannot get information of type %s\n",
+		PrintError(L"'%s': Cannot get information of type %s\n",
 				FileName(File), GuidString);
 		return EFI_UNSUPPORTED;
+
 	}
 }
 
