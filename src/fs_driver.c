@@ -70,6 +70,8 @@ typedef struct {
 } EFI_MUTEX_PROTOCOL;
 static EFI_MUTEX_PROTOCOL MutexProtocol = { 0 };
 
+static const char dotpath[] = ".";
+
 // TODO: implement our own UTF8 <-> UTF16 conversion routines
 
 /**
@@ -98,16 +100,33 @@ PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...)
  * @v file			EFI file
  * @ret Name		Name
  */
-// TODO: we probably oughta keep a copy of the UTF16 Name in the file handle
+// TODO: we may want to keep a copy of the UTF16 Name in the file handle
 static const CHAR16 
 *FileName(EFI_GRUB_FILE *File)
 {
-	static CHAR16 Name[256];
+	static CHAR16 Name[MAX_PATH];
 
 	ZeroMem(Name, sizeof(Name));
 	grub_utf8_to_utf16(Name, ARRAYSIZE(Name), File->grub_file.name,
 		grub_strlen(File->grub_file.name), NULL);
 	return Name;
+}
+
+/* Simple hook to populate the timestamp and directory flag when opening a file */
+static int
+grub_infohook(const char *name, const struct grub_dirhook_info *info, void *data)
+{
+	EFI_GRUB_FILE *File = (EFI_GRUB_FILE *) data;
+
+	/* Look for a specific file */
+	if (grub_strcmp(name, File->basename) != 0)
+		return 0;
+
+	File->IsDir = (info->dir);
+	if (info->mtimeset)
+		File->grub_time = info->mtime;
+
+	return 0;
 }
 
 /**
@@ -132,46 +151,67 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	 * or even an UTF16 to UTF8 that does the allocation?
 	 * TODO: Use dynamic buffers...
 	 */
-	char name[256];
+	char path[MAX_PATH], clean_path[MAX_PATH], *dirname;
 	INTN i, len;
+	BOOLEAN AbsolutePath = (*Name == L'\\');
 
-	PrintDebug(L"FileOpen '%s'\n", Name);
-
-	/* Initial '\' indicates opening from the root directory */
-	while (*Name == L'\\')
-		Name++;
-
-	/* Allow root directory itself to be opened */
-	if ((Name[0] == L'\0') || (Name[0] == L'.')) {
-		*New = This;
-		return EFI_SUCCESS;
-	}
+	PrintInfo(L"Open(%llx%s, \"%s\")\n", (UINT64) This,
+			(File == &File->FileSystem->RootFile)?L" <ROOT>":L"", Name);
 
 	/* Fail unless opening read-only */
 	if (Mode != EFI_FILE_MODE_READ) {
-		PrintError(L"File '%s' cannot be opened in mode %#08llx\n", Name, Mode);
+		PrintError(L"File '%s' can only be opened in read-only mode\n", Name);
 		return EFI_WRITE_PROTECTED;
 	}
 
-	/* Copy the base part of the name */
-	grub_strcpy(name, File->grub_file.name);
-	len = grub_strlen(name);
-
-	/* Add a separator if required */
-	if ((len == 0) || (name[len-1] != '/'))
-		name[len++] = '/';
-
-	/* Convert an UTF16 file name with backslash delimiters to UTF8 with
-	 * forward slash delimiters
-	 */
-	/* BEWARE: the GRUB conversion routines don't check the target size
-	 * and the length parameter is for the source only!! */
-	grub_utf16_to_utf8(&name[len], Name, StrLen(Name)+1);
-	for (i=len; i<grub_strlen(name); i++) {
-		if (name[i] == '\\')
-			name[i] = '/';
+	/* Additional failures */
+	if ((StrCmp(Name, L"..") == 0) && (File == &File->FileSystem->RootFile)) {
+		PrintWarning(L"Trying to open <ROOT>'s parent\n");
+		return EFI_NOT_FOUND;
 	}
 
+	/* See if we're trying to reopen current (which the EFI Shell insists on doing) */
+	if (StrCmp(Name, L".") == 0) {
+		PrintInfo(L"  Reopening %s\n",
+				(File == &File->FileSystem->RootFile)?L"<ROOT>":FileName(File));
+		File->refcount++;
+		*New = This;
+		PrintInfo(L"  RET: %llx\n", (UINT64) *New);
+		return EFI_SUCCESS;
+	}
+
+	/* If we have an absolute path, don't bother completing with the parent */
+	if (AbsolutePath) {
+		len = 0;
+	} else {
+		grub_strcpy(path, File->grub_file.name);
+		len = grub_strlen(path);
+		/* Add delimiter if needed */
+		if ((len == 0) || (path[len-1] != '/'))
+			path[len++] = '/';
+	}
+
+	/* Copy the rest of the path (converted to UTF-8) */
+	grub_utf16_to_utf8(&path[len], Name, StrLen(Name) + 1);
+	/* Convert the delimiters */
+	for (i = grub_strlen(path) - 1 ; i >= len; i--) {
+		if (path[i] == '\\')
+			path[i] = '/';
+	}
+
+	/* We only want to handle with absolute paths */
+	clean_path[0] = '/';
+	/* Find out if we're dealing with root by removing the junk */
+	copy_path_relative(&clean_path[1], path, MAX_PATH - 1);
+	if (clean_path[1] == 0) {
+		/* We're dealing with the root */
+		PrintInfo(L"  Reopening <ROOT>\n");
+		*New = &File->FileSystem->RootFile.EfiFile;
+		PrintInfo(L"  RET: %llx\n", (UINT64) *New);
+		return EFI_SUCCESS;
+	}
+
+	// TODO: eventually we should seek for already opened files and increase refcount */
 	/* Allocate and initialise file */
 	NewFile = AllocateZeroPool(sizeof(*NewFile));
 	if (NewFile == NULL) {
@@ -180,18 +220,42 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	}
 	CopyMem(&NewFile->EfiFile, &File->EfiFile, sizeof(NewFile->EfiFile));
 
-	NewFile->grub_file.name = AllocatePool(grub_strlen(name)+1);
+	NewFile->grub_file.name = AllocatePool(grub_strlen(clean_path)+1);
 	if (NewFile->grub_file.name == NULL) {
 		FreePool(NewFile);
 		PrintError(L"Could not allocate grub filename\n");
 		return EFI_OUT_OF_RESOURCES;
 	}
+	CopyMem(NewFile->grub_file.name, clean_path, grub_strlen(path)+1);
 
-	CopyMem(NewFile->grub_file.name, name, grub_strlen(name)+1);
+	/* Isolate the basename and dirname */
+	for (i = grub_strlen(clean_path) - 1; i >= 0; i--) {
+		if (clean_path[i] == '/') {
+			clean_path[i] = 0;
+			break;
+		}
+	}
+	dirname = (i <= 0) ? "/" : clean_path;
+	NewFile->basename = &NewFile->grub_file.name[i+1];
+	/* If our basename is empty, replace it with '.' */
+	if (*NewFile->basename == 0)
+		NewFile->basename = (char *) dotpath;
+
+	/* Duplicate the attributes needed */
 	NewFile->grub_file.device = File->grub_file.device;
 	NewFile->grub_file.fs = File->grub_file.fs;
+	NewFile->FileSystem = File->FileSystem;
 
-	// TODO: check if we're opening a directory and don't bother (GRUB_ERR_BAD_FILE_TYPE)
+	/* Find if we're working with a directory and fill the grub timestamp */
+	rc = p->dir(NewFile->grub_file.device, dirname, grub_infohook, (void *) NewFile);
+	if (rc) {
+		PrintError(L"Could not get file attributes for '%s' - GRUB error %d\n", Name, rc);
+		FreePool(NewFile->grub_file.name);
+		FreePool(NewFile);
+		return EFI_NOT_FOUND;
+	}
+
+	/* Finally we can call on GRUB to open the file */
 	rc = p->open(&NewFile->grub_file, NewFile->grub_file.name);
 	if ((rc != GRUB_ERR_NONE) && (rc != GRUB_ERR_BAD_FILE_TYPE)) {
 		PrintError(L"Could not open file '%s' - GRUB error %d\n", Name, rc);
@@ -200,8 +264,10 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 		return EFI_NOT_FOUND;
 	}
 
+	NewFile->refcount++;
 	*New = &NewFile->EfiFile;
 
+	PrintInfo(L"  RET: %llx\n", (UINT64) *New);
 	return EFI_SUCCESS;
 }
 
@@ -217,16 +283,19 @@ FileClose(EFI_FILE_HANDLE This)
 	grub_fs_t p = grub_fs_list;
 	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
 
-	PrintDebug(L"FileClose '%s'\n", FileName(File));
+	PrintInfo(L"Close(%llx|'%s') %s\n", (UINT64) This, FileName(File),
+		(File == &File->FileSystem->RootFile)?L"<ROOT>":L"");
 
-	/* Do nothing if this is the root */
-	if (File->IsRoot)
+	/* Nothing to do it this is the root */
+	if (File == &File->FileSystem->RootFile)
 		return EFI_SUCCESS;
 
-	/* Close file */
-	p->close(&File->grub_file);
-	FreePool(File->grub_file.name);
-	FreePool(File);
+	if (--File->refcount == 0) {
+		/* Close file */
+		p->close(&File->grub_file);
+		FreePool(File->grub_file.name);
+		FreePool(File);
+	}
 
 	return EFI_SUCCESS;
 }
@@ -263,19 +332,24 @@ grub_dirhook(const char *name, const struct grub_dirhook_info *info, void *data)
 {
 	EFI_FILE_INFO *Info = (EFI_FILE_INFO *) data;
 	INT64 *Index = (INT64 *) &Info->FileSize;
+	char *filename = (char *) Info->PhysicalSize;
 	EFI_TIME Time = { 1970, 01, 01, 00, 00, 00, 0, 0, 0, 0, 0};
 
 	// Eliminate '.' or '..'
 	if ((name[0] ==  '.') && ((name[1] == 0) || ((name[1] == '.') && (name[2] == 0))))
 		return 0;
 
-	/* Ignore any entry that don't match our offset */
+	/* Ignore any entry that doesn't match our index */
 	if ((*Index)-- != 0)
 		return 0;
 
+//	if (*name != '$')
+//		grub_printf("PRO: %s\n", name);
+	grub_strcpy(filename, name);
+
 	// TODO: check for overflow and return EFI_BUFFER_TOO_SMALL
 	grub_utf8_to_utf16(Info->FileName, Info->Size - sizeof(EFI_FILE_INFO),
-			name, -1, NULL);
+			filename, -1, NULL);
 	/* The Info struct size already accounts for the extra NUL */
 	Info->Size = sizeof(*Info) + StrLen(Info->FileName) * sizeof(CHAR16);
 
@@ -307,15 +381,17 @@ FileReadDir(EFI_GRUB_FILE *File, UINTN *Len, VOID *Data)
 	EFI_FILE_INFO *Info = (EFI_FILE_INFO *) Data;
 	/* We temporarily repurpose the FileSize as a *signed* entry index */
 	INT64 *Index = (INT64 *) &Info->FileSize;
-	char filename[256];
+	/* And PhysicalSize as a pointer to our filename */
+	char **basename = (char **) &Info->PhysicalSize;
+	char path[MAX_PATH];
 	struct grub_file file;
 	grub_fs_t p = grub_fs_list;
 	grub_err_t rc;
-	const INTN MinimumInfoLength = sizeof(EFI_FILE_INFO) + 16 * sizeof(CHAR16);
+	INTN len;
 
 	/* Unless we can fill at least a 16 chars filename, forget it */
-	if (*Len < MinimumInfoLength) {
-		*Len = MinimumInfoLength;
+	if (*Len < MINIMUM_INFO_LENGTH) {
+		*Len = MINIMUM_INFO_LENGTH;
 		return EFI_BUFFER_TOO_SMALL;
 	}
 
@@ -323,11 +399,14 @@ FileReadDir(EFI_GRUB_FILE *File, UINTN *Len, VOID *Data)
 	ZeroMem(Data, *Len);
 	Info->Size = *Len;
 	*Index = File->grub_file.offset;
-
-	PrintDebug(L"FileReadDir\n");
+	grub_strcpy(path, File->grub_file.name);
+	len = grub_strlen(path);
+	if (path[len-1] != '/')
+		path[len++] = '/';
+	*basename = &path[len];
 
 	/* Invoke GRUB's directory listing */
-	rc = p->dir(File->grub_file.device, "/", grub_dirhook, Data);
+	rc = p->dir(File->grub_file.device, File->grub_file.name, grub_dirhook, Data);
 
 	if (*Index >= 0) {
 		/* No more entries */
@@ -345,16 +424,14 @@ FileReadDir(EFI_GRUB_FILE *File, UINTN *Len, VOID *Data)
 
 	/* Our Index/FileSize must be reset */
 	Info->FileSize = 0;
+	Info->PhysicalSize = 0;
 
 	/* For regular files, we still need to fill the size */
 	if (!(Info->Attribute & EFI_FILE_DIRECTORY)) {
-		/* Why, yes, let's just convert our filename BACK AGAIN to UTF-8... */
-		filename[0] = '/';
-		grub_utf16_to_utf8(&filename[1], Info->FileName, StrLen(Info->FileName) + 1);
 		/* Open the file and read its size */
 		file.device = File->grub_file.device;
 		file.fs = File->grub_file.fs;
-		rc = p->open(&file, filename);
+		rc = p->open(&file, path);
 		if (rc == GRUB_ERR_NONE) {
 			Info->FileSize = file.size;
 			Info->PhysicalSize = file.size;
@@ -365,9 +442,13 @@ FileReadDir(EFI_GRUB_FILE *File, UINTN *Len, VOID *Data)
 					Info->FileName, rc);
 		}
 	}
+
 	*Len = (UINTN) Info->Size;
 	/* Advance to the next entry */
 	File->grub_file.offset++;
+
+//	PrintInfo(L"  Entry: '%s' %s\n", Info->FileName,
+//			(Info->Attribute&EFI_FILE_DIRECTORY)?L"<DIR>":L"");
 
 	return EFI_SUCCESS;
 }
@@ -388,10 +469,11 @@ FileRead(EFI_FILE_HANDLE This, UINTN *Len, VOID *Data)
 	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
 	INTN Remaining;
 
-	PrintDebug(L"FileRead '%s'\n", FileName(File));
+	PrintInfo(L"Read(%llx|'%s', %d) %s\n", This, FileName(File),
+			*Len, File->IsDir?L"<DIR>":L"");
 
-	/* If this is the root directory, then construct a directory entry */
-	if (File->IsRoot)
+	/* If this is a directory, then fetch the directory entries */
+	if (File->IsDir)
 		return FileReadDir(File, Len, Data);
 
 	/* GRUB may return an error if we request more data than available */
@@ -438,11 +520,11 @@ FileSetPosition(EFI_FILE_HANDLE This, UINT64 Position)
 {
 	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
 
-	PrintDebug(L"FileSetPosition '%s'\n", FileName(File));
+	PrintInfo(L"SetPosition(%llx|'%s', %lld) %s\n", (UINT64) This,
+		FileName(File), Position, (File->IsDir)?L"<DIR>":L"");
 
-	/* If this is the root directory, reset to the start */
-	if (File->IsRoot) {
-		PrintDebug(L"Root directory rewound\n");
+	/* If this is a directory, reset to the start */
+	if (File->IsDir) {
 		File->grub_file.offset = 0;
 		return EFI_SUCCESS;
 	}
@@ -451,14 +533,14 @@ FileSetPosition(EFI_FILE_HANDLE This, UINT64 Position)
 	 * we do not support writes).
 	 */
 	if (Position > File->grub_file.size) {
-		PrintError(L"'%s': Cannot seek to %#08llx of %#08zx\n",
+		PrintError(L"'%s': Cannot seek to %#llx of %llx\n",
 				FileName(File), Position, File->grub_file.size);
 		return EFI_UNSUPPORTED;
 	}
 
 	/* Set position */
 	File->grub_file.offset = Position;
-	PrintDebug(L"'%s': Position set to %#08zx\n",
+	PrintDebug(L"'%s': Position set to %llx\n",
 			FileName(File), File->grub_file.offset);
 
 	return EFI_SUCCESS;
@@ -476,7 +558,7 @@ FileGetPosition(EFI_FILE_HANDLE This, UINT64 *Position)
 {
 	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
 
-	PrintDebug(L"FileGetPosition\n");
+	PrintInfo(L"GetPosition(%llx|'%s', %lld)\n", This, FileName(File));
 
 	*Position = File->grub_file.offset;
 	return EFI_SUCCESS;
@@ -495,43 +577,42 @@ static EFI_STATUS EFIAPI
 FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 {
 	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
-	// TODO: use the same trick as for file info
 	EFI_FILE_SYSTEM_INFO *FSInfo = (EFI_FILE_SYSTEM_INFO *) Data;
 	EFI_FILE_INFO *Info = (EFI_FILE_INFO *) Data;
 	CHAR16 GuidString[36];
-	const INTN MinimumInfoLength = sizeof(EFI_FILE_INFO) + 16 * sizeof(CHAR16);
-	const INTN MinimumFSInfoLength = sizeof(EFI_FILE_SYSTEM_INFO) + 16 * sizeof(CHAR16);
-	const EFI_TIME Time = { 1970, 01, 01, 00, 00, 00, 0, 0, 0, 0, 0};
+	EFI_TIME Time;
 	grub_fs_t p = grub_fs_list;
-	char* label;
 	grub_err_t rc;
+	char* label;
 
-	PrintDebug(L"FileGetInfo '%s'\n", FileName(File));
+	PrintInfo(L"GetInfo(%llx|'%s', %d) %s\n", (UINT64) This,
+		FileName(File), *Len, File->IsDir?L"<DIR>":L"");
 
 	/* Determine information to return */
 	if (CompareMem(Type, &GenericFileInfo, sizeof(*Type)) == 0) {
 
-		/* Get file information */
+		/* Fill file information */
 		PrintExtra(L"Get regular file information\n");
-		if (*Len < MinimumInfoLength) {
-			*Len = MinimumInfoLength;
+		if (*Len < MINIMUM_INFO_LENGTH) {
+			*Len = MINIMUM_INFO_LENGTH;
 			return EFI_BUFFER_TOO_SMALL;
 		}
 
 		// TODO: only zero the INFO part
 		ZeroMem(Data, *Len);
-		// TODO: check for directory
-		if (File->IsRoot) {
+
+		Info->Attribute = EFI_FILE_READ_ONLY;
+		GrubTimeToEfiTime(File->grub_time, &Time);
+		CopyMem(&Info->CreateTime, &Time, sizeof(Time));
+		CopyMem(&Info->LastAccessTime, &Time, sizeof(Time));
+		CopyMem(&Info->ModificationTime, &Time, sizeof(Time));
+
+		if (File->IsDir) {
+			Info->Attribute |= EFI_FILE_DIRECTORY;
 			Info->Size = sizeof(EFI_FILE_INFO);
-			Info->Attribute = EFI_FILE_READ_ONLY | EFI_FILE_DIRECTORY;
 		} else {
 			Info->FileSize = File->grub_file.size;
 			Info->PhysicalSize = File->grub_file.size;
-			Info->Attribute = EFI_FILE_READ_ONLY;
-			// TODO: get the actual time by issuing a dir
-			CopyMem(&Info->CreateTime, &Time, sizeof(Time));
-			CopyMem(&Info->LastAccessTime, &Time, sizeof(Time));
-			CopyMem(&Info->ModificationTime, &Time, sizeof(Time));
 			// TODO: check for overflow and return EFI_BUFFER_TOO_SMALL
 			grub_utf8_to_utf16(Info->FileName, Info->Size - sizeof(EFI_FILE_INFO),
 					File->grub_file.name, -1, NULL);
@@ -545,8 +626,8 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 
 		/* Get file system information */
 		PrintExtra(L"Get file system information\n");
-		if (*Len < MinimumFSInfoLength) {
-			*Len = MinimumFSInfoLength;
+		if (*Len < MINIMUM_FS_INFO_LENGTH) {
+			*Len = MINIMUM_FS_INFO_LENGTH;
 			return EFI_BUFFER_TOO_SMALL;
 		}
 
@@ -598,8 +679,8 @@ FileSetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN Len, VOID *Data)
 	CHAR16 GuidString[36];
 
 	GuidToString(GuidString, Type);
-	PrintError(L"EFIFILE %s cannot set information of type %s\n",
-			FileName(File), GuidString);
+	PrintError(L"Cannot set information of type %s for file '%s'\n",
+			GuidString, FileName(File));
 	return EFI_WRITE_PROTECTED;
 }
 
@@ -616,7 +697,8 @@ static EFI_STATUS EFIAPI
 FileFlush(EFI_FILE_HANDLE This)
 {
 	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
-	PrintDebug(L"EFIFILE %s flushed\n", FileName(File));
+
+	PrintInfo(L"Flush(%llx|'%s')\n", (UINT64)This, FileName(File));
 	return EFI_SUCCESS;
 }
 
@@ -632,7 +714,7 @@ FileOpenVolume(EFI_FILE_IO_INTERFACE *This, EFI_FILE_HANDLE *Root)
 {
 	EFI_FS *FSInstance = container_of(This, EFI_FS, FileIOInterface);
 
-	PrintDebug(L"FileOpenVolume\n");
+	PrintInfo(L"OpenVolume\n");
 	*Root = &FSInstance->RootFile.EfiFile;
 
 	return EFI_SUCCESS;
@@ -666,7 +748,7 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 
 	DevicePath = DevicePathFromHandle(ControllerHandle);
 	if (DevicePath != NULL) {
-		StrCpy(This->Path, DevicePathToStr(DevicePath));
+		StrCpy(This->DevicePath, DevicePathToStr(DevicePath));
 		PrintInfo(L"FSInstall: %s\n", DevicePathToStr(DevicePath));
 	}
 
@@ -692,8 +774,7 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 	This->RootFile.grub_file.fs = grub_fs_list;
 
 	/* Setup extra data */
-	// TODO: get rid of this
-	This->RootFile.IsRoot = TRUE;
+	This->RootFile.IsDir = TRUE;
 	/* We could pick it up from GrubDevice, but it's more convenient this way */
 	This->RootFile.FileSystem = This;
 
@@ -704,7 +785,7 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 static void
 FSUninstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 {
-	PrintDebug(L"FSUninstall: %s\n", This->Path);
+	PrintInfo(L"FSUninstall: %s\n", This->DevicePath);
 
 	LibUninstallProtocolInterfaces(ControllerHandle,
 			&FileSystemProtocol, &This->FileIOInterface,

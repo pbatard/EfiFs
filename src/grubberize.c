@@ -3,6 +3,7 @@
  *  Copyright © 2014 Pete Batard <pete@akeo.ie>
  *  Based on GRUB, glibc and additional software:
  *  Copyright © 2001-2014 Free Software Foundation, Inc.
+ *  Path sanitation code by Ludwig Nussel <ludwig.nussel@suse.de>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -281,4 +282,75 @@ VOID GrubTimeToEfiTime(const INT32 t, EFI_TIME *tp)
 	days -= ip[y];
 	tp->Month = y + 1;
 	tp->Day = days + 1;
+}
+
+/* copy src into dest converting the path to a relative one inside the current
+ * directory. dest must hold at least len bytes
+ */
+
+#ifndef PATH_CHAR
+#define PATH_CHAR '/'
+#endif
+
+void copy_path_relative(char *dest, char *src, INTN len)
+{
+	char* o = dest;
+	char* p = src;
+
+	*o = '\0';
+
+	while(*p && *p == PATH_CHAR) ++p;
+	for(; len && *p;)
+	{
+		src = p;
+		p = grub_strchr(src, PATH_CHAR);
+		if(!p) p = src+grub_strlen(src);
+
+		/* . => skip */
+		if(p-src == 1 && *src == '.' )
+		{
+			if(*p) src = ++p;
+		}
+		/* .. => pop one */
+		else if(p-src == 2 && *src == '.' && src[1] == '.')
+		{
+			if(o != dest)
+			{
+				char* tmp;
+				*o = '\0';
+				tmp = grub_strrchr(dest, PATH_CHAR);
+				if(!tmp)
+				{
+					len += o-dest;
+					o = dest;
+					if(*p) ++p;
+				}
+				else
+				{
+					len += o-tmp;
+					o = tmp;
+					if(*p) ++p;
+				}
+			}
+			else /* nothing to pop */
+				if(*p) ++p;
+		}
+		else
+		{
+			INTN copy;
+			if(o != dest)
+			{
+				--len;
+				*o++ = PATH_CHAR;
+			}
+			copy = MIN(p-src,len);
+			grub_memcpy(o, src, copy);
+			len -= copy;
+			src += copy;
+			o += copy;
+			if(*p) ++p;
+		}
+		while(*p && *p == PATH_CHAR) ++p;
+	}
+	o[len?0:-1] = '\0';
 }

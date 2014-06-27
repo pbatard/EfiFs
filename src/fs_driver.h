@@ -72,25 +72,37 @@ extern void PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...);
 	0x3AD33E69, 0x7966, 0x4081, {0x9A, 0x66, 0x9B, 0xA8, 0xE5, 0x4E, 0x06, 0x4B } \
 }
 
+#define MAX_PATH 256
+
+#define MINIMUM_INFO_LENGTH     (sizeof(EFI_FILE_INFO) + MAX_PATH * sizeof(CHAR16))
+#define MINIMUM_FS_INFO_LENGTH  (sizeof(EFI_FILE_SYSTEM_INFO) + MAX_PATH * sizeof(CHAR16))
+
+#ifndef MIN
+#define MIN(x,y) ((x)<(y)?(x):(y))
+#endif
+
 /* Forward declaration */
 struct _EFI_FS;
 
 /* A file instance */
 typedef struct _EFI_GRUB_FILE {
-	EFI_FILE EfiFile;
-	struct grub_file grub_file;
-	BOOLEAN IsRoot;
-	struct _EFI_FS *FileSystem;
+	BOOLEAN                IsDir;
+	INT32                  grub_time;
+	char                  *basename;
+	INTN                   refcount;
+	EFI_FILE               EfiFile;
+	struct grub_file       grub_file;
+	struct _EFI_FS        *FileSystem;
 } EFI_GRUB_FILE;
 
 /* A file system instance */
 typedef struct _EFI_FS {
 	EFI_FILE_IO_INTERFACE FileIOInterface;
-	EFI_DISK_IO *DiskIo;
-	EFI_BLOCK_IO *BlockIo;
-	CHAR16 Path[256];	/* DevicePath */
-	VOID *GrubDevice;
-	EFI_GRUB_FILE RootFile;
+	EFI_DISK_IO           *DiskIo;
+	EFI_BLOCK_IO          *BlockIo;
+	CHAR16                 DevicePath[MAX_PATH];
+	VOID                  *GrubDevice;
+	EFI_GRUB_FILE          RootFile;
 } EFI_FS;
 
 extern void GRUB_FS_INIT(void);
@@ -104,3 +116,4 @@ extern BOOLEAN GrubFSProbe(EFI_FS *This);
 extern EFI_STATUS GrubDeviceInit(EFI_FS *This);
 extern EFI_STATUS GrubDeviceExit(EFI_FS *This);
 extern VOID GrubTimeToEfiTime(const INT32 t, EFI_TIME *tp);
+extern VOID copy_path_relative(char *dest, char *src, INTN len);
