@@ -57,7 +57,7 @@ Print_t* PrintTable[] = { &PrintError, &PrintWarning, &PrintInfo,
 
 /* Global driver verbosity level */
 #if !defined(DEFAULT_LOGLEVEL)
-#define DEFAULT_LOGLEVEL FS_LOGLEVEL_INFO
+#define DEFAULT_LOGLEVEL FS_LOGLEVEL_NONE
 #endif
 static INTN LogLevel = DEFAULT_LOGLEVEL;
 
@@ -69,8 +69,6 @@ typedef struct {
 	INTN Unused;
 } EFI_MUTEX_PROTOCOL;
 static EFI_MUTEX_PROTOCOL MutexProtocol = { 0 };
-
-static const char dotpath[] = ".";
 
 // TODO: implement our own UTF8 <-> UTF16 conversion routines
 
@@ -237,9 +235,6 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	}
 	dirname = (i <= 0) ? "/" : clean_path;
 	NewFile->basename = &NewFile->grub_file.name[i+1];
-	/* If our basename is empty, replace it with '.' */
-	if (*NewFile->basename == 0)
-		NewFile->basename = (char *) dotpath;
 
 	/* Duplicate the attributes needed */
 	NewFile->grub_file.device = File->grub_file.device;
@@ -609,17 +604,17 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 
 		if (File->IsDir) {
 			Info->Attribute |= EFI_FILE_DIRECTORY;
-			Info->Size = sizeof(EFI_FILE_INFO);
 		} else {
 			Info->FileSize = File->grub_file.size;
 			Info->PhysicalSize = File->grub_file.size;
-			// TODO: check for overflow and return EFI_BUFFER_TOO_SMALL
-			grub_utf8_to_utf16(Info->FileName, Info->Size - sizeof(EFI_FILE_INFO),
-					File->grub_file.name, -1, NULL);
-			/* The Info struct size already accounts for the extra NUL */
-			Info->Size = sizeof(EFI_FILE_INFO) + 
-					StrLen(Info->FileName) * sizeof(CHAR16);
 		}
+
+		// TODO: check for overflow and return EFI_BUFFER_TOO_SMALL
+		grub_utf8_to_utf16(Info->FileName, Info->Size - sizeof(EFI_FILE_INFO),
+				File->basename, -1, NULL);
+		/* The Info struct size already accounts for the extra NUL */
+		Info->Size = sizeof(EFI_FILE_INFO) + 
+				StrLen(Info->FileName) * sizeof(CHAR16);
 		return EFI_SUCCESS;
 
 	} else if (CompareMem(Type, &FileSystemInfo, sizeof(*Type)) == 0) {
@@ -772,6 +767,7 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 	This->RootFile.grub_file.name = "/";
 	This->RootFile.grub_file.device = (grub_device_t) This->GrubDevice;
 	This->RootFile.grub_file.fs = grub_fs_list;
+	This->RootFile.basename = &This->RootFile.grub_file.name[1];
 
 	/* Setup extra data */
 	This->RootFile.IsDir = TRUE;

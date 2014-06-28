@@ -51,7 +51,7 @@
 #endif
 
 /* Logging */
-#define FS_LOGLEVEL_SILENT      0
+#define FS_LOGLEVEL_NONE        0
 #define FS_LOGLEVEL_ERROR       1
 #define FS_LOGLEVEL_WARNING     2
 #define FS_LOGLEVEL_INFO        3
