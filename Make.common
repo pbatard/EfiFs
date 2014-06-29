@@ -9,7 +9,7 @@ GNUEFILIB       = /usr/lib
 EFILIB          = /usr/lib
 EFICRT0         = /usr/lib
 # Directory where you want the driver files to be copied into with 'make install'
-INSTALL_DIR     = /boot/efi
+INSTALL_DIR     = /boot/efi/EFI/refind/drivers_x64/
 
 # You shouldn't have to edit anything below this
 HOSTARCH        = $(shell uname -m | sed s,i[3456789]86,ia32,)
@@ -19,7 +19,7 @@ CPPFLAGS        = -I$(EFIINC) -I$(EFIINC)/$(ARCH) -I$(EFIINC)/protocol -I$(SRCDI
                   -DGNU_EFI_USE_MS_ABI -DGRUB_MACHINE_EFI -DGRUB_KERNEL -DGRUB_FILE=\"$(subst $(srcdir)/,,$<)\"
 
 OPTIMFLAGS      = -O2 -fno-strict-aliasing
-DEBUGFLAGS      = -Wall -Wunused -Wno-pointer-sign -Werror-implicit-function-declaration -Wshadow
+DEBUGFLAGS      = -Wall -Wunused -Wno-pointer-sign -Wshadow
 CFLAGS          = $(ARCH3264) $(OPTIMFLAGS) -fno-stack-protector -fpic -fshort-wchar -mno-red-zone $(DEBUGFLAGS)
 ASFLAGS         = $(ARCH3264)
 LDFLAGS         = -nostdlib -znocombreloc -zdefs

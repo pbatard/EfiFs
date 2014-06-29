@@ -32,7 +32,7 @@
 
 /* Driver version */
 #define FS_DRIVER_VERSION_MAJOR 0
-#define FS_DRIVER_VERSION_MINOR 3
+#define FS_DRIVER_VERSION_MINOR 4
 
 #undef offsetof
 #if defined(__GNUC__) && (__GNUC__ > 3)
@@ -81,6 +81,12 @@ extern void PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...);
 #define MIN(x,y) ((x)<(y)?(x):(y))
 #endif
 
+#define _STRINGIFY(s) #s
+#define STRINGIFY(s) _STRINGIFY(s)
+
+#define _WIDEN(s) L ## s 
+#define WIDEN(s) _WIDEN(s)
+
 /* Forward declaration */
 struct _EFI_FS;
 
@@ -105,8 +111,11 @@ typedef struct _EFI_FS {
 	EFI_GRUB_FILE          RootFile;
 } EFI_FS;
 
-extern void GRUB_FS_INIT(void);
-extern void GRUB_FS_FINI(void);
+/* Setup generic function calls for grub_<fs>_init and grub_<fs>_exit */
+#define MAKE_FN_NAME(drivername, suffix) grub_ ## drivername ## _ ## suffix
+#define GRUB_FS_CALL(drivername, suffix) MAKE_FN_NAME(drivername, suffix)
+extern void GRUB_FS_CALL(DRIVERNAME, init)(void);
+extern void GRUB_FS_CALL(DRIVERNAME, fini)(void);
 
 extern EFI_HANDLE EfiImageHandle;
 extern EFI_GUID ShellVariable;

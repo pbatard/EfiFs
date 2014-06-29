@@ -24,7 +24,7 @@ drivers, based on the GRUB 2.0 read-only drivers.
   Boot into the EFI shell and run the following:
   * `load fs0:\ntfs_x64.efi` or wherever your driver was copied
   * `map -r` this should make a new `fs#` available, eg `fs2:`
-  * `dir fs2:` this should list the NTFS content
+  * You should now be able to navigate and access NTFS content (in read-only mode)
   * For logging output, set the `FS_LOGGING` shell variable to 1 or more
   * To unload use the `drivers` command, then `unload` with the driver ID
 

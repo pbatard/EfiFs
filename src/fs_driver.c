@@ -797,7 +797,8 @@ static EFI_STATUS EFIAPI
 FSGetDriverName(EFI_COMPONENT_NAME_PROTOCOL *This,
 		CHAR8 *Language, CHAR16 **DriverName)
 {
-	*DriverName = L"FS driver";
+	*DriverName = WIDEN(STRINGIFY(DRIVERNAME)) L" driver v" WIDEN(STRINGIFY(FS_DRIVER_VERSION_MAJOR)) \
+			L"." WIDEN(STRINGIFY(FS_DRIVER_VERSION_MINOR)) L" (" WIDEN(PACKAGE_STRING) L")";
 	return EFI_SUCCESS;
 }
 
@@ -1021,7 +1022,7 @@ FSDriverUninstall(EFI_HANDLE ImageHandle)
 			NULL);
 
 	/* Unregister the relevant grub module */
-	GRUB_FS_FINI();
+	GRUB_FS_CALL(DRIVERNAME, fini)();
 
 	/* Uninstall our mutex (we're the only instance that can run this code) */
 	LibUninstallProtocolInterfaces(MutexHandle,
@@ -1120,7 +1121,7 @@ FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	LoadedImage->Unload = FSDriverUninstall;
 
 	/* Register the relevant grub module */
-	GRUB_FS_INIT();
+	GRUB_FS_CALL(DRIVERNAME, init)();
 
 	PrintDebug(L"FS driver installed.\n");
 	return EFI_SUCCESS;

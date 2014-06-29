@@ -1,0 +1,5 @@
+For detailed information about the changes below, please see the git log or
+visit: https://github.com/pbatard/efifs
+
+2014-06-29: v0.4
+* Initial ALPHA release (NTFS only)

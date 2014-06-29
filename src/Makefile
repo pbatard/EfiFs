@@ -29,7 +29,7 @@ ifeq ($(ARCH),x86_64)
   LD_CODE       = elf_x86_64
 endif
 
-LOCAL_CPPFLAGS  = -DGRUB_FS_INIT=grub_$(DRIVERNAME)_init -DGRUB_FS_FINI=grub_$(DRIVERNAME)_fini $(ARCH_C_FLAGS) -I$(SRCDIR)/../include -I$(SRCDIR)/../grub -I$(SRCDIR)/../grub/include
+LOCAL_CPPFLAGS  = -DDRIVERNAME=$(DRIVERNAME) $(ARCH_C_FLAGS) -I$(SRCDIR)/../include -I$(SRCDIR)/../grub -I$(SRCDIR)/../grub/include
 LOCAL_LIBS      = -lgrub
 LOCAL_LDFLAGS   = -L.
 OBJS            = fs_driver.o grubberize.o ../grub/grub-core/fs/$(DRIVERNAME).o
