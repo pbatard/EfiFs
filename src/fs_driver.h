@@ -66,12 +66,6 @@ extern Print_t PrintDebug;
 extern Print_t PrintExtra;
 extern void PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...);
 
-/* Set a GUID for this filesystem - Used for our global mutex among other things */
-// TODO: we'll need a separate GUID for each filesystem we want to serve
-#define THIS_FS_GUID { \
-	0x3AD33E69, 0x7966, 0x4081, {0x9A, 0x66, 0x9B, 0xA8, 0xE5, 0x4E, 0x06, 0x4B } \
-}
-
 #define MAX_PATH 256
 
 #define MINIMUM_INFO_LENGTH     (sizeof(EFI_FILE_INFO) + MAX_PATH * sizeof(CHAR16))

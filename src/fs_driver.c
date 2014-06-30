@@ -32,6 +32,7 @@
 #include <grub/misc.h>
 
 #include "fs_driver.h"
+#include "fs_guid.h"
 
 /* These ones are not defined in gnu-efi yet */
 EFI_GUID DriverBindingProtocol = EFI_DRIVER_BINDING_PROTOCOL_GUID;
@@ -40,7 +41,7 @@ EFI_GUID ComponentName2Protocol = EFI_COMPONENT_NAME2_PROTOCOL_GUID;
 EFI_GUID ShellVariable = SHELL_VARIABLE_GUID;
 
 /* We'll try to instantiate a custom protocol as a mutex, so we need a GUID */
-EFI_GUID MutexGUID = THIS_FS_GUID;
+EFI_GUID *MutexGUID = NULL;
 
 /* Keep a global copy of our ImageHanle */
 EFI_HANDLE EfiImageHandle = NULL;
@@ -473,15 +474,18 @@ FileRead(EFI_FILE_HANDLE This, UINTN *Len, VOID *Data)
 
 	/* GRUB may return an error if we request more data than available */
 	Remaining = File->grub_file.size - File->grub_file.offset;
+
 	if (*Len > Remaining)
 		*Len = Remaining;
 	len = p->read(&File->grub_file, (char *) Data, *Len);
+
 	if (len < 0) {
 		grub_print_error();
 		PrintError(L"Could not read from file '%s': GRUB error %d\n",
 				FileName(File), grub_errno);
 		return EFI_DEVICE_ERROR;
 	}
+
 	*Len = len;
 	return EFI_SUCCESS;
 }
@@ -1026,7 +1030,7 @@ FSDriverUninstall(EFI_HANDLE ImageHandle)
 
 	/* Uninstall our mutex (we're the only instance that can run this code) */
 	LibUninstallProtocolInterfaces(MutexHandle,
-				&MutexGUID, &MutexProtocol,
+				MutexGUID, &MutexProtocol,
 				NULL);
 
 	PrintDebug(L"FS driver uninstalled.\n");
@@ -1073,9 +1077,16 @@ FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	EfiImageHandle = ImageHandle;
 
 	/* Prevent the driver from being loaded twice by detecting and trying to
-	 * instantiate a custom protocol which we use as a global mutex.
+	 * instantiate a custom protocol, which we use as a global mutex.
 	 */
-	Status = BS->LocateProtocol(&MutexGUID, NULL, &Interface);
+	MutexGUID = (EFI_GUID *) GetFSGuid(WIDEN(STRINGIFY(DRIVERNAME)));
+	if (MutexGUID == NULL) {
+		PrintError(L"No GUID is defined for " WIDEN(STRINGIFY(DRIVERNAME)) 
+				L". Please edit <fs_guid.h> to add one\n");
+		return EFI_LOAD_ERROR;
+	}
+
+	Status = BS->LocateProtocol(MutexGUID, NULL, &Interface);
 	if (Status == EFI_SUCCESS) {
 		PrintError(L"This driver has already been installed\n");
 		return EFI_LOAD_ERROR;
@@ -1086,7 +1097,7 @@ FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 		return Status;
 	}
 	Status = LibInstallProtocolInterfaces(&MutexHandle,
-			&MutexGUID, &MutexProtocol,
+			MutexGUID, &MutexProtocol,
 			NULL);
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"Could not install global mutex");
