@@ -78,20 +78,54 @@ const char *grub_env_get(const char *var)
 	return val;
 }
 
-/* Memory management */
+/* Memory management
+ * NB: We must keep track of the size allocated for grub_realloc
+ */
 void *grub_malloc(grub_size_t size)
 {
-	return AllocatePool(size);
+	grub_size_t *ptr;
+
+	ptr = (grub_size_t *) AllocatePool(size + sizeof(grub_size_t));
+
+	if (ptr != NULL)
+		*ptr++ = size;
+
+	return (void *) ptr;
 }
 
 void *grub_zalloc(grub_size_t size)
 {
-	return AllocateZeroPool(size);
+	grub_size_t *ptr;
+
+	ptr = (grub_size_t *) AllocateZeroPool(size + sizeof(grub_size_t));
+
+	if (ptr != NULL)
+		*ptr++ = size;
+
+	return (void *) ptr;
 }
 
-void grub_free(void *ptr)
+void grub_free(void *p)
 {
-	FreePool(ptr);
+	grub_size_t *ptr = (grub_size_t *) p;
+
+	if (ptr != NULL) {
+		ptr = &ptr[-1];
+		FreePool(ptr);
+	}
+}
+
+void *grub_realloc(void *p, grub_size_t new_size)
+{
+	grub_size_t *ptr = (grub_size_t *) p;
+
+	if (ptr != NULL) {
+		ptr = &ptr[-1];
+		ptr = ReallocatePool(ptr, *ptr, new_size + sizeof(grub_size_t));
+		if (ptr != NULL)
+			*ptr++ = new_size;
+	}
+	return ptr;
 }
 
 /* Don't care about refcounts for a standalone EFI FS driver */
