@@ -32,7 +32,7 @@
 
 /* Driver version */
 #define FS_DRIVER_VERSION_MAJOR 0
-#define FS_DRIVER_VERSION_MINOR 4
+#define FS_DRIVER_VERSION_MINOR 4b
 
 #undef offsetof
 #if defined(__GNUC__) && (__GNUC__ > 3)

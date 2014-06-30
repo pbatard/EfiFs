@@ -486,6 +486,9 @@ FileRead(EFI_FILE_HANDLE This, UINTN *Len, VOID *Data)
 		return EFI_DEVICE_ERROR;
 	}
 
+	/* You'd think that GRUB read() would increase the offset... */
+	File->grub_file.offset += len; 
+
 	*Len = len;
 	return EFI_SUCCESS;
 }
