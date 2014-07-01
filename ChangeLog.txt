@@ -1,5 +1,12 @@
 For detailed information about the changes below, please see the git log or
 visit: https://github.com/pbatard/efifs
 
+2014-07-01: v0.5
+* Add XFS and exFAT
+* Fix access for card readers
+
+2014-06-30: v0.5
+* Fix copying of files
+
 2014-06-29: v0.4
 * Initial ALPHA release (NTFS only)
