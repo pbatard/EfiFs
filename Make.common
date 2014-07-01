@@ -8,8 +8,6 @@ EFIINC          = /usr/include/efi
 GNUEFILIB       = /usr/lib
 EFILIB          = /usr/lib
 EFICRT0         = /usr/lib
-# Directory where you want the driver files to be copied into with 'make install'
-INSTALL_DIR     = /boot/efi/EFI/refind/drivers_x64/
 
 # You shouldn't have to edit anything below this
 HOSTARCH        = $(shell uname -m | sed s,i[3456789]86,ia32,)

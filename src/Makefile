@@ -1,52 +1,27 @@
+# meta-Makefile for the filesystem drivers
 #
-# Build control file for the EFI drivers, as built with GNU-EFI
-#
 
-DRIVERNAME      = ntfs
-SRCDIR          = .
-VPATH           = $(SRCDIR)
-HOSTARCH        = $(shell uname -m | sed s,i[3456789]86,ia32,)
-ARCH           ?= $(HOSTARCH)
+INSTALL_DIR = /boot/efi/EFI/refind/drivers_x64
 
-# Note: IA64 options are untested; taken from Debian's rEFIt package.
-ifeq ($(ARCH),ia64)
-  # EFI specs allows only lower floating point partition to be used
-  ARCH_C_CFLAGS  = -frename-registers -mfixed-range=f32-f127
-  DRIVER_ARCH    = ia64
-endif
+FILESYSTEMS = ntfs xfs
 
-ifeq ($(ARCH),ia32)
-  LIBEG = build32
-  ARCH_C_FLAGS  = -m32 -malign-double
-  DRIVERARCH    = ia32
-  LD_CODE       = elf_i386
-endif
+all:	$(FILESYSTEMS)
 
-ifeq ($(ARCH),x86_64)
-  LIBEG = build64
-  ARCH_C_FLAGS  = "-DEFIAPI=__attribute__((ms_abi))" -m64
-  DRIVERARCH    = x64
-  LD_CODE       = elf_x86_64
-endif
+exfat:
+	@rm -f fs_driver.o
+	+make DRIVERNAME=exfat -f Make.gnuefi
 
-LOCAL_CPPFLAGS  = -DDRIVERNAME=$(DRIVERNAME) $(ARCH_C_FLAGS) -I$(SRCDIR)/../include -I$(SRCDIR)/../grub -I$(SRCDIR)/../grub/include
-LOCAL_LIBS      = -lgrub
-LOCAL_LDFLAGS   = -L.
-OBJS            = fs_driver.o grubberize.o ../grub/grub-core/fs/fshelp.o ../grub/grub-core/fs/$(DRIVERNAME).o
-TARGET          = $(DRIVERNAME)_$(DRIVERARCH).efi
+ntfs:
+	@rm -f fs_driver.o
+	+make DRIVERNAME=ntfs -f Make.gnuefi
 
-all: $(TARGET)
+xfs:
+	@rm -f fs_driver.o
+	+make DRIVERNAME=xfs -f Make.gnuefi
 
-include $(SRCDIR)/../Make.common
-
-$(TARGET): $(SHLIB_TARGET)
-	@echo [OBJ] $@
-	@$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel \
-		-j .rela -j .reloc --target=$(FORMAT_DRIVER) $< $@
-	@chmod a-x $(TARGET)
+install:
+	@mkdir -p $(INSTALL_DIR)
+	@cp -v *.efi $(INSTALL_DIR)
 
 clean:
-	rm -f $(OBJS) $(OBJS:.o=.d) *.o *.so *.efi
-
-install: all
-	@cp -v $(TARGET) $(INSTALL_DIR)
+	+make -f Make.gnuefi clean

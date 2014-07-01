@@ -1,7 +1,6 @@
 SRCDIR  = grub
 
 VPATH   = $(SRCDIR)
-FS_NAME = ntfs
 
 LOCAL_CPPFLAGS  = -I$(SRCDIR)/include
 
