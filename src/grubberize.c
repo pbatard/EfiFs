@@ -233,8 +233,15 @@ BOOLEAN GrubFSProbe(EFI_FS *This)
 		return FALSE;
 	}
 
+	grub_errno = 0;
 	(p->dir)(device, "/", probe_dummy_iter, NULL);
-	return (grub_errno == GRUB_ERR_NONE);
+	if (grub_errno) {
+		if (LogLevel >= FS_LOGLEVEL_INFO)
+			/* NB: Calling grub_print_error() resets grub_errno */
+			grub_print_error();
+		return FALSE;
+	}
+	return TRUE;
 }
 
 CHAR16 *GrubGetUUID(EFI_FS* This)
@@ -243,7 +250,7 @@ CHAR16 *GrubGetUUID(EFI_FS* This)
 	char* uuid;
 
 	if (grub_fs_list->uuid == NULL) {
-		PrintError(L"Grub fs list is empty\n");
+		PrintError(L"The GRUB filesystem list is not set\n");
 		return NULL;
 	}
 

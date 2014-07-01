@@ -60,7 +60,7 @@ Print_t* PrintTable[] = { &PrintError, &PrintWarning, &PrintInfo,
 #if !defined(DEFAULT_LOGLEVEL)
 #define DEFAULT_LOGLEVEL FS_LOGLEVEL_NONE
 #endif
-static INTN LogLevel = DEFAULT_LOGLEVEL;
+INTN LogLevel = DEFAULT_LOGLEVEL;
 
 /* Handle for our custom protocol/mutex instance */
 static EFI_HANDLE MutexHandle = NULL;
@@ -165,12 +165,12 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 
 	/* Additional failures */
 	if ((StrCmp(Name, L"..") == 0) && (File == &File->FileSystem->RootFile)) {
-		PrintWarning(L"Trying to open <ROOT>'s parent\n");
+		PrintInfo(L"Trying to open <ROOT>'s parent\n");
 		return EFI_NOT_FOUND;
 	}
 
 	/* See if we're trying to reopen current (which the EFI Shell insists on doing) */
-	if (StrCmp(Name, L".") == 0) {
+	if ((*Name == 0) || (StrCmp(Name, L".") == 0)) {
 		PrintInfo(L"  Reopening %s\n",
 				(File == &File->FileSystem->RootFile)?L"<ROOT>":FileName(File));
 		File->refcount++;
@@ -243,6 +243,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	NewFile->FileSystem = File->FileSystem;
 
 	/* Find if we're working with a directory and fill the grub timestamp */
+	grub_errno = 0;
 	rc = p->dir(NewFile->grub_file.device, dirname, grub_infohook, (void *) NewFile);
 	if (rc) {
 		PrintError(L"Could not get file attributes for '%s' - GRUB error %d\n", Name, rc);
@@ -252,6 +253,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	}
 
 	/* Finally we can call on GRUB to open the file */
+	grub_errno = 0;
 	rc = p->open(&NewFile->grub_file, NewFile->grub_file.name);
 	if ((rc != GRUB_ERR_NONE) && (rc != GRUB_ERR_BAD_FILE_TYPE)) {
 		PrintError(L"Could not open file '%s' - GRUB error %d\n", Name, rc);
@@ -402,6 +404,7 @@ FileReadDir(EFI_GRUB_FILE *File, UINTN *Len, VOID *Data)
 	*basename = &path[len];
 
 	/* Invoke GRUB's directory listing */
+	grub_errno = 0;
 	rc = p->dir(File->grub_file.device, File->grub_file.name, grub_dirhook, Data);
 
 	if (*Index >= 0) {
@@ -427,6 +430,7 @@ FileReadDir(EFI_GRUB_FILE *File, UINTN *Len, VOID *Data)
 		/* Open the file and read its size */
 		file.device = File->grub_file.device;
 		file.fs = File->grub_file.fs;
+		grub_errno = 0;
 		rc = p->open(&file, path);
 		if (rc == GRUB_ERR_NONE) {
 			Info->FileSize = file.size;
@@ -477,6 +481,7 @@ FileRead(EFI_FILE_HANDLE This, UINTN *Len, VOID *Data)
 
 	if (*Len > Remaining)
 		*Len = Remaining;
+	grub_errno = 0;
 	len = p->read(&File->grub_file, (char *) Data, *Len);
 
 	if (len < 0) {
@@ -647,6 +652,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 			FSInfo->BlockSize;
 		/* No idea if we can easily get this for GRUB, and the device is RO anyway */
 		FSInfo->FreeSpace = 0;
+		grub_errno = 0;
 		rc = p->label(File->grub_file.device, &label);
 		if (rc) {
 			PrintError(L"Could not read disk label - GRUB error %d\n", rc);

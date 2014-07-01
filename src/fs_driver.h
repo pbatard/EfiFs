@@ -111,6 +111,7 @@ typedef struct _EFI_FS {
 extern void GRUB_FS_CALL(DRIVERNAME, init)(void);
 extern void GRUB_FS_CALL(DRIVERNAME, fini)(void);
 
+extern INTN LogLevel;
 extern EFI_HANDLE EfiImageHandle;
 extern EFI_GUID ShellVariable;
 

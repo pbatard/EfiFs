@@ -32,7 +32,7 @@ endif
 LOCAL_CPPFLAGS  = -DDRIVERNAME=$(DRIVERNAME) $(ARCH_C_FLAGS) -I$(SRCDIR)/../include -I$(SRCDIR)/../grub -I$(SRCDIR)/../grub/include
 LOCAL_LIBS      = -lgrub
 LOCAL_LDFLAGS   = -L.
-OBJS            = fs_driver.o grubberize.o ../grub/grub-core/fs/$(DRIVERNAME).o
+OBJS            = fs_driver.o grubberize.o ../grub/grub-core/fs/fshelp.o ../grub/grub-core/fs/$(DRIVERNAME).o
 TARGET          = $(DRIVERNAME)_$(DRIVERARCH).efi
 
 all: $(TARGET)
