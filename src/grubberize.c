@@ -146,16 +146,15 @@ grub_err_t grub_disk_read(grub_disk_t disk, grub_disk_addr_t sector,
 		grub_off_t offset, grub_size_t size, void *buf)
 {
 	EFI_STATUS Status;
-	const UINT32 MediaAny = 0;
 	EFI_FS* FileSystem = (EFI_FS *) disk->data;
 
-	if ((FileSystem == NULL) || (FileSystem->DiskIo == NULL))
+	if ((FileSystem == NULL) || (FileSystem->DiskIo == NULL) || (FileSystem->BlockIo == NULL))
 		return GRUB_ERR_READ_ERROR;
 
-	/* NB: We could get the actual blocksize through FileSystem->BlockIo->Media.BlockSize
+	/* NB: We could get the actual blocksize through FileSystem->BlockIo->Media->BlockSize
 	 * but GRUB uses the fixed GRUB_DISK_SECTOR_SIZE, so we follow suit
 	 */
-	Status = FileSystem->DiskIo->ReadDisk(FileSystem->DiskIo, MediaAny,
+	Status = FileSystem->DiskIo->ReadDisk(FileSystem->DiskIo, FileSystem->BlockIo->Media->MediaId,
 			sector * GRUB_DISK_SECTOR_SIZE + offset, size, buf);
 
 	if (EFI_ERROR(Status)) {

@@ -639,6 +639,10 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 		FSInfo->ReadOnly = 1;
 		/* NB: This should really be cluster size, but we don't have access to that */
 		FSInfo->BlockSize = File->FileSystem->BlockIo->Media->BlockSize;
+		if (FSInfo->BlockSize  == 0) {
+			PrintWarning(L"Corrected Media BlockSize\n");
+			FSInfo->BlockSize = 512;
+		}
 		FSInfo->VolumeSize = (File->FileSystem->BlockIo->Media->LastBlock + 1) *
 			FSInfo->BlockSize;
 		/* No idea if we can easily get this for GRUB, and the device is RO anyway */
