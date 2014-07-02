@@ -110,6 +110,10 @@ typedef struct _EFI_FS {
 #define GRUB_FS_CALL(drivername, suffix) MAKE_FN_NAME(drivername, suffix)
 extern void GRUB_FS_CALL(DRIVERNAME, init)(void);
 extern void GRUB_FS_CALL(DRIVERNAME, fini)(void);
+#if defined(EXTRAMODULE)
+extern void GRUB_FS_CALL(EXTRAMODULE, init)(void);
+extern void GRUB_FS_CALL(EXTRAMODULE, fini)(void);
+#endif
 
 extern INTN LogLevel;
 extern EFI_HANDLE EfiImageHandle;

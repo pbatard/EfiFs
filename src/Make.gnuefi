@@ -4,6 +4,7 @@
 
 SRCDIR          = .
 VPATH           = $(SRCDIR)
+GRUBPATH        = $(SRCDIR)/../grub
 HOSTARCH        = $(shell uname -m | sed s,i[3456789]86,ia32,)
 ARCH           ?= $(HOSTARCH)
 
@@ -28,11 +29,17 @@ ifeq ($(ARCH),x86_64)
   LD_CODE       = elf_x86_64
 endif
 
-LOCAL_CPPFLAGS  = -DDRIVERNAME=$(DRIVERNAME) $(ARCH_C_FLAGS) -I$(SRCDIR)/../include -I$(SRCDIR)/../grub -I$(SRCDIR)/../grub/include
+LOCAL_CPPFLAGS  = -DDRIVERNAME=$(DRIVERNAME) $(ARCH_C_FLAGS) \
+                  -I$(SRCDIR)/../include -I$(GRUBPATH) -I$(GRUBPATH)/include -I$(GRUBPATH)/grub-core/lib/minilzo
 LOCAL_LIBS      = -lgrub
 LOCAL_LDFLAGS   = -L.
 GRUB_FS_DIR     = ../grub/grub-core/fs
-OBJS            = grubberize.o $(GRUB_FS_DIR)/fshelp.o $(GRUB_FS_DIR)/$(DRIVERNAME).o fs_driver.o
+OBJS            = grubberize.o fs_driver.o $(GRUB_FS_DIR)/fshelp.o $(GRUB_FS_DIR)/$(DRIVERNAME).o
+
+ifdef EXTRAMODULE
+LOCAL_CPPFLAGS += -DEXTRAMODULE=$(EXTRAMODULE)
+OBJS           += $(GRUB_FS_DIR)/$(EXTRAMODULE).o
+endif
 TARGET          = $(DRIVERNAME)_$(DRIVERARCH).efi
 
 all: $(TARGET)

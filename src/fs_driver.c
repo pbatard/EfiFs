@@ -1040,6 +1040,9 @@ FSDriverUninstall(EFI_HANDLE ImageHandle)
 
 	/* Unregister the relevant grub module */
 	GRUB_FS_CALL(DRIVERNAME, fini)();
+#if defined(EXTRAMODULE)
+	GRUB_FS_CALL(EXTRAMODULE, fini)();
+#endif
 
 	/* Uninstall our mutex (we're the only instance that can run this code) */
 	LibUninstallProtocolInterfaces(MutexHandle,
@@ -1144,8 +1147,15 @@ FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	/* Register the uninstall callback */
 	LoadedImage->Unload = FSDriverUninstall;
 
-	/* Register the relevant grub module */
+	// TODO: would be nicer to move the fs specific stuff out so we don't have to recompile fs_driver.c
+	/* Register the relevant GRUB filesystem module */
 	GRUB_FS_CALL(DRIVERNAME, init)();
+	/* The GRUB compression routines are registered as an extra module */
+	// TODO: Eventually, we could try to turn each GRUB module into their
+	// own EFI driver, have them register their interface and consume that.
+#if defined(EXTRAMODULE)
+	GRUB_FS_CALL(EXTRAMODULE, init)();
+#endif
 
 	PrintDebug(L"FS driver installed.\n");
 	return EFI_SUCCESS;
