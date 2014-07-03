@@ -19,6 +19,8 @@
 #pragma once
 
 /* Each filesystem we service must have its own GUID */
+// TODO: unless we need to match existing driver GUIDs, we could try to remove this
+// and use the name for the last 8 bytes...
 static const struct {
 	const CHAR16   *Name;
 	const EFI_GUID  Guid;

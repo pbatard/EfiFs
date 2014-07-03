@@ -137,8 +137,93 @@ int grub_dl_unref(grub_dl_t mod) {
 	return 0;
 };
 
+/* Convert a grub_err_t to EFI_STATUS */
+EFI_STATUS GrubErrToEFIStatus(grub_err_t err)
+{
+	// The following are unused:
+	// EFI_BAD_BUFFER_SIZE
+	// EFI_WRITE_PROTECTED
+	// EFI_VOLUME_FULL
+	// EFI_MEDIA_CHANGED
+	// EFI_NO_MEDIA
+	// EFI_NOT_STARTED
+	// EFI_ALREADY_STARTED
+	// EFI_ABORTED
+	// EFI_END_OF_MEDIA
+	// EFI_NO_RESPONSE
+	// EFI_PROTOCOL_ERROR
+	// EFI_INCOMPATIBLE_VERSION
 
-// TODO: add EFI_STATUS <-> grub_err_t (defined in err.h) calls
+	if ((grub_errno != 0) && (LogLevel > FS_LOGLEVEL_INFO))
+		/* NB: Calling grub_print_error() will reset grub_errno */
+		grub_print_error();
+
+	switch (err) {
+	case GRUB_ERR_NONE:
+		return EFI_SUCCESS;
+
+	case GRUB_ERR_BAD_MODULE:
+		return EFI_LOAD_ERROR;
+
+	case GRUB_ERR_OUT_OF_RANGE:
+		return EFI_BUFFER_TOO_SMALL;
+
+	case GRUB_ERR_OUT_OF_MEMORY:
+	case GRUB_ERR_SYMLINK_LOOP:
+		return EFI_OUT_OF_RESOURCES;
+
+	case GRUB_ERR_BAD_FILE_TYPE:
+		return EFI_NO_MAPPING;
+
+	case GRUB_ERR_FILE_NOT_FOUND:
+	case GRUB_ERR_UNKNOWN_DEVICE:
+	case GRUB_ERR_UNKNOWN_FS:
+		return EFI_NOT_FOUND;
+
+	case GRUB_ERR_FILE_READ_ERROR:
+	case GRUB_ERR_BAD_DEVICE:
+	case GRUB_ERR_READ_ERROR:
+	case GRUB_ERR_WRITE_ERROR:
+	case GRUB_ERR_IO:
+		return EFI_DEVICE_ERROR;
+
+	case GRUB_ERR_BAD_PART_TABLE:
+	case GRUB_ERR_BAD_FS:
+		return EFI_VOLUME_CORRUPTED;
+
+	case GRUB_ERR_BAD_FILENAME:
+	case GRUB_ERR_BAD_ARGUMENT:
+	case GRUB_ERR_BAD_NUMBER:
+	case GRUB_ERR_UNKNOWN_COMMAND:
+	case GRUB_ERR_INVALID_COMMAND:
+		return EFI_INVALID_PARAMETER;
+
+	case GRUB_ERR_NOT_IMPLEMENTED_YET:
+		return EFI_UNSUPPORTED;
+
+	case GRUB_ERR_TIMEOUT:
+		return EFI_TIMEOUT;
+
+	case GRUB_ERR_ACCESS_DENIED:
+		return EFI_ACCESS_DENIED;
+
+	case GRUB_ERR_WAIT:
+		return EFI_NOT_READY;
+
+	case GRUB_ERR_EXTRACTOR:
+	case GRUB_ERR_BAD_COMPRESSED_DATA:
+		return EFI_CRC_ERROR;
+
+	case GRUB_ERR_EOF:
+		return EFI_END_OF_FILE;
+
+	case GRUB_ERR_BAD_SIGNATURE:
+		return EFI_SECURITY_VIOLATION;
+
+	default:
+		return EFI_NOT_FOUND;
+	}
+}
 
 grub_disk_read_hook_t grub_file_progress_hook = NULL;
 
@@ -214,6 +299,74 @@ EFI_STATUS GrubDeviceExit(EFI_FS* This)
 	return EFI_SUCCESS;
 }
 
+/*
+ * The following provides an EFI interface for each basic GRUB fs call
+ */
+EFI_STATUS GrubDir(EFI_GRUB_FILE *File, const CHAR8 *path,
+		GRUB_DIRHOOK Hook, VOID *HookData)
+{
+	grub_fs_t p = grub_fs_list;
+	grub_err_t rc;
+
+	grub_errno = 0;
+	rc = p->dir(File->grub_file.device, path, (grub_fs_dir_hook_t) Hook, HookData);
+	return GrubErrToEFIStatus(rc);
+}
+
+EFI_STATUS GrubOpen(EFI_GRUB_FILE *File)
+{
+	grub_fs_t p = grub_fs_list;
+	grub_err_t rc;
+
+	grub_errno = 0;
+	rc = p->open(&File->grub_file, File->grub_file.name);
+	return GrubErrToEFIStatus(rc);
+}
+
+VOID GrubClose(EFI_GRUB_FILE *File)
+{
+	grub_fs_t p = grub_fs_list;
+
+	grub_errno = 0;
+	p->close(&File->grub_file);
+}
+
+EFI_STATUS GrubRead(EFI_GRUB_FILE *File, VOID *Data, UINTN *Len)
+{
+	grub_fs_t p = grub_fs_list;
+	grub_ssize_t len;
+	INTN Remaining;
+
+	/* GRUB may return an error if we request more data than available */
+	Remaining = File->grub_file.size - File->grub_file.offset;
+
+	if (*Len > Remaining)
+		*Len = Remaining;
+
+	len = p->read(&File->grub_file, (char *) Data, *Len);
+
+	if (len < 0) {
+		*Len = 0;
+		return GrubErrToEFIStatus(grub_errno);
+	}
+
+	/* You'd think that GRUB read() would increase the offset... */
+	File->grub_file.offset += len; 
+	*Len = len;
+
+	return EFI_SUCCESS;
+}
+
+EFI_STATUS GrubLabel(EFI_GRUB_FILE *File, CHAR8 **label)
+{
+	grub_fs_t p = grub_fs_list;
+	grub_err_t rc;
+	
+	grub_errno = 0;
+	rc = p->label(File->grub_file.device, (char **) label);
+	return GrubErrToEFIStatus(rc);
+}
+
 /* Helper for GrubFSProbe.  */
 static int
 probe_dummy_iter (const char *filename __attribute__ ((unused)),
@@ -235,10 +388,10 @@ BOOLEAN GrubFSProbe(EFI_FS *This)
 
 	grub_errno = 0;
 	(p->dir)(device, "/", probe_dummy_iter, NULL);
-	if (grub_errno) {
+	return (grub_errno == 0);
+	if (grub_errno != 0) {
 		if (LogLevel >= FS_LOGLEVEL_INFO)
-			/* NB: Calling grub_print_error() resets grub_errno */
-			grub_print_error();
+			grub_print_error();	/* NB: this call will reset grub_errno */
 		return FALSE;
 	}
 	return TRUE;

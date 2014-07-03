@@ -87,10 +87,12 @@ struct _EFI_FS;
 /* A file instance */
 typedef struct _EFI_GRUB_FILE {
 	BOOLEAN                IsDir;
-	INT32                  grub_time;
+	INT32                  Mtime;
+	// TODO: have a copy of grub_file->name here, as a CHAR8*
 	char                  *basename;
-	INTN                   refcount;
+	INTN                   RefCount;
 	EFI_FILE               EfiFile;
+	// TODO: use a VOID *GrubFile here
 	struct grub_file       grub_file;
 	struct _EFI_FS        *FileSystem;
 } EFI_GRUB_FILE;
@@ -104,6 +106,19 @@ typedef struct _EFI_FS {
 	VOID                  *GrubDevice;
 	EFI_GRUB_FILE          RootFile;
 } EFI_FS;
+
+/* Mirror similar constructs from GRUB, using an EFI sauce */
+typedef struct _GRUB_DIRHOOK_INFO {
+	UINT32                 Dir:1;
+	UINT32                 MtimeSet:1;
+	UINT32                 CaseInsensitive:1;
+	UINT32                 InodeSet:1;
+	INT32                  Mtime;
+	UINT64                 Inode;
+} GRUB_DIRHOOK_INFO;
+
+typedef INT32 (*GRUB_DIRHOOK) (const CHAR8 *name,
+		const GRUB_DIRHOOK_INFO *Info, VOID *Data);
 
 /* Setup generic function calls for grub_<fs>_init and grub_<fs>_exit */
 #define MAKE_FN_NAME(drivername, suffix) grub_ ## drivername ## _ ## suffix
@@ -125,3 +140,9 @@ extern EFI_STATUS GrubDeviceInit(EFI_FS *This);
 extern EFI_STATUS GrubDeviceExit(EFI_FS *This);
 extern VOID GrubTimeToEfiTime(const INT32 t, EFI_TIME *tp);
 extern VOID copy_path_relative(char *dest, char *src, INTN len);
+extern EFI_STATUS GrubOpen(EFI_GRUB_FILE *File);
+extern EFI_STATUS GrubDir(EFI_GRUB_FILE *File, const CHAR8 *path,
+		GRUB_DIRHOOK Hook, VOID *HookData);
+extern VOID GrubClose(EFI_GRUB_FILE *File);
+extern EFI_STATUS GrubRead(EFI_GRUB_FILE *File, VOID *Data, UINTN *Len);
+extern EFI_STATUS GrubLabel(EFI_GRUB_FILE *File, CHAR8 **label);

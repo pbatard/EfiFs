@@ -14,17 +14,17 @@ drivers, based on the GRUB 2.0 read-only drivers.
     `./configure --disable-nls --with-platform=efi --target=x86_64`  
     This is necessary to create the `config.h` required to compile grub files.
   * Edit `Make.common` and set the variables at the top of the file to the location
-    where gnu-efi is installed as well as your target directory for make install.
+    where gnu-efi is installed.
   * Run `make` in the top directory. This creates the grub library we link against.
   * Go to the `src` directory and run `make` or `make install`
 
 * Testing:  
-  Make sure you have at least one disk with an NTFS partition that is not being
-  handled by any EFI filesystem driver.
+  Make sure you have at least one disk with a target partition using the target
+  filesystem, and that is not being handled by other EFI filesystem drivers.
   Boot into the EFI shell and run the following:
-  * `load fs0:\ntfs_x64.efi` or wherever your driver was copied
+  * `load fs0:\<fs_name>_x64.efi` or wherever your driver was copied
   * `map -r` this should make a new `fs#` available, eg `fs2:`
-  * You should now be able to navigate and access NTFS content (in read-only mode)
+  * You should now be able to navigate and access content (in read-only mode)
   * For logging output, set the `FS_LOGGING` shell variable to 1 or more
   * To unload use the `drivers` command, then `unload` with the driver ID
 
