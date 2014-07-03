@@ -388,7 +388,6 @@ BOOLEAN GrubFSProbe(EFI_FS *This)
 
 	grub_errno = 0;
 	(p->dir)(device, "/", probe_dummy_iter, NULL);
-	return (grub_errno == 0);
 	if (grub_errno != 0) {
 		if (LogLevel >= FS_LOGLEVEL_INFO)
 			grub_print_error();	/* NB: this call will reset grub_errno */

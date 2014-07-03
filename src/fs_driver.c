@@ -79,17 +79,20 @@ static EFI_MUTEX_PROTOCOL MutexProtocol = { 0 };
  * @v Format		A non '\n' terminated error message string
  * @v ...			Any extra parameters
  */
-void
+VOID
 PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...)
 {
 	CHAR16 StatusString[64];
 	va_list ap;
 
+	if (LogLevel < FS_LOGLEVEL_ERROR)
+		return;
+
 	StatusToString(StatusString, Status);
 	va_start(ap, Format);
 	VPrint((CHAR16 *)Format, ap);
 	va_end(ap);
-	PrintError(L": [%d] %s\n", Status, StatusString); 
+	Print(L": [%d] %s\n", Status, StatusString); 
 }
 
 /**

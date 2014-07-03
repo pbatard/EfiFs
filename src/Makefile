@@ -1,9 +1,19 @@
 # meta-Makefile for the filesystem drivers
 #
 
-INSTALL_DIR = /boot/efi/EFI/refind/drivers_x64
+INSTALL_DIR     = /boot/efi/EFI/refind/drivers_x64
+FILESYSTEMS     = affs bfs exfat hfs hfsplus jfs ntfs xfs
+HOSTARCH        = $(shell uname -m | sed s,i[3456789]86,ia32,)
 
-FILESYSTEMS = affs bfs exfat hfs hfsplus jfs ntfs xfs
+ifeq ($(HOSTARCH),ia64)
+  DRIVERARCH    = ia64
+endif
+ifeq ($(HOSTARCH),ia32)
+  DRIVERARCH    = ia32
+endif
+ifeq ($(HOSTARCH),x86_64)
+  DRIVERARCH    = x64
+endif
 
 all:	$(FILESYSTEMS)
 
@@ -46,7 +56,7 @@ xfs:
 
 install: all
 	@mkdir -p $(INSTALL_DIR)
-	@cp -v *.efi $(INSTALL_DIR)
+	@cp -v $(FILESYSTEMS:%=%_$(DRIVERARCH).efi) $(INSTALL_DIR)
 
 clean:
 	+make -f Make.gnuefi clean
