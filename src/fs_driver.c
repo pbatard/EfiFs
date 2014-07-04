@@ -70,6 +70,14 @@ typedef struct {
 } EFI_MUTEX_PROTOCOL;
 static EFI_MUTEX_PROTOCOL MutexProtocol = { 0 };
 
+// TODO: move this into a separate header/source
+static __inline VOID
+strcpya(IN CHAR8 *dst, IN CONST CHAR8 *src)
+{
+	INTN len = strlena(src) + 1;
+	CopyMem(dst, src, len);
+}
+
 // TODO: implement our own UTF8 <-> UTF16 conversion routines
 
 /**
@@ -109,7 +117,7 @@ static const CHAR16
 
 	ZeroMem(Name, sizeof(Name));
 	grub_utf8_to_utf16(Name, ARRAYSIZE(Name), File->grub_file.name,
-		grub_strlen(File->grub_file.name), NULL);
+		strlena(File->grub_file.name), NULL);
 	return Name;
 }
 
@@ -185,8 +193,8 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	if (AbsolutePath) {
 		len = 0;
 	} else {
-		grub_strcpy(path, File->grub_file.name);
-		len = grub_strlen(path);
+		strcpya(path, File->grub_file.name);
+		len = strlena(path);
 		/* Add delimiter if needed */
 		if ((len == 0) || (path[len-1] != '/'))
 			path[len++] = '/';
@@ -195,7 +203,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	/* Copy the rest of the path (converted to UTF-8) */
 	grub_utf16_to_utf8(&path[len], Name, StrLen(Name) + 1);
 	/* Convert the delimiters */
-	for (i = grub_strlen(path) - 1 ; i >= len; i--) {
+	for (i = strlena(path) - 1 ; i >= len; i--) {
 		if (path[i] == '\\')
 			path[i] = '/';
 	}
@@ -221,16 +229,16 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	}
 	CopyMem(&NewFile->EfiFile, &File->EfiFile, sizeof(NewFile->EfiFile));
 
-	NewFile->grub_file.name = AllocatePool(grub_strlen(clean_path)+1);
+	NewFile->grub_file.name = AllocatePool(strlena(clean_path)+1);
 	if (NewFile->grub_file.name == NULL) {
 		FreePool(NewFile);
 		PrintError(L"Could not allocate grub filename\n");
 		return EFI_OUT_OF_RESOURCES;
 	}
-	CopyMem(NewFile->grub_file.name, clean_path, grub_strlen(path)+1);
+	CopyMem(NewFile->grub_file.name, clean_path, strlena(path)+1);
 
 	/* Isolate the basename and dirname */
-	for (i = grub_strlen(clean_path) - 1; i >= 0; i--) {
+	for (i = strlena(clean_path) - 1; i >= 0; i--) {
 		if (clean_path[i] == '/') {
 			clean_path[i] = 0;
 			break;
@@ -345,9 +353,8 @@ DirHook(const CHAR8 *name, const GRUB_DIRHOOK_INFO *DirInfo, VOID *Data)
 
 //	if (*name != '$')
 //		grub_printf("PRO: %s\n", name);
-	// TODO: use memcpy + strlena
 
-	grub_strcpy(filename, name);
+	strcpya(filename, name);
 
 	// TODO: check for overflow and return EFI_BUFFER_TOO_SMALL
 	grub_utf8_to_utf16(Info->FileName, Info->Size - sizeof(EFI_FILE_INFO),
@@ -399,9 +406,9 @@ FileReadDir(EFI_GRUB_FILE *File, UINTN *Len, VOID *Data)
 	/* Populate our Info template */
 	ZeroMem(Data, *Len);
 	Info->Size = *Len;
-	*Index = File->grub_file.offset;
-	grub_strcpy(path, File->grub_file.name);
-	len = grub_strlen(path);
+	*Index = File->DirIndex;
+	strcpya(path, File->grub_file.name);
+	len = strlena(path);
 	if (path[len-1] != '/')
 		path[len++] = '/';
 	*basename = &path[len];
@@ -444,8 +451,7 @@ FileReadDir(EFI_GRUB_FILE *File, UINTN *Len, VOID *Data)
 
 	*Len = (UINTN) Info->Size;
 	/* Advance to the next entry */
-	// TODO: use our own index
-	File->grub_file.offset++;
+	File->DirIndex++;
 
 //	PrintInfo(L"  Entry: '%s' %s\n", Info->FileName,
 //			(Info->Attribute&EFI_FILE_DIRECTORY)?L"<DIR>":L"");
@@ -508,9 +514,11 @@ FileSetPosition(EFI_FILE_HANDLE This, UINT64 Position)
 	PrintInfo(L"SetPosition(%llx|'%s', %lld) %s\n", (UINT64) This,
 		FileName(File), Position, (File->IsDir)?L"<DIR>":L"");
 
-	/* If this is a directory, reset to the start */
+	/* If this is a directory, reset the Index to the start */
 	if (File->IsDir) {
-		File->grub_file.offset = 0;
+		if (Position != 0)
+			return EFI_INVALID_PARAMETER;
+		File->DirIndex = 0;
 		return EFI_SUCCESS;
 	}
 
@@ -545,7 +553,10 @@ FileGetPosition(EFI_FILE_HANDLE This, UINT64 *Position)
 
 	PrintInfo(L"GetPosition(%llx|'%s', %lld)\n", This, FileName(File));
 
-	*Position = File->grub_file.offset;
+	if (File->IsDir)
+		*Position = File->DirIndex;
+	else
+		*Position = File->grub_file.offset;
 	return EFI_SUCCESS;
 }
 
@@ -721,6 +732,7 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 {
 	EFI_STATUS Status;
 	EFI_DEVICE_PATH *DevicePath = NULL;
+	CHAR16 *DevicePathString;
 
 	/* Check if it's a filesystem we can handle */
 	if (!GrubFSProbe(This))
@@ -737,8 +749,9 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 
 	DevicePath = DevicePathFromHandle(ControllerHandle);
 	if (DevicePath != NULL) {
-		StrCpy(This->DevicePath, DevicePathToStr(DevicePath));
-		PrintInfo(L"FSInstall: %s\n", DevicePathToStr(DevicePath));
+		DevicePathString = DevicePathToStr(DevicePath);
+		grub_utf16_to_utf8(This->DevicePath, DevicePathString, StrLen(DevicePathString)+1);
+		PrintInfo(L"FSInstall: %s\n", DevicePathString);
 	}
 
 	/* Initialize the root handle */
@@ -791,8 +804,9 @@ static EFI_STATUS EFIAPI
 FSGetDriverName(EFI_COMPONENT_NAME_PROTOCOL *This,
 		CHAR8 *Language, CHAR16 **DriverName)
 {
-	*DriverName = WIDEN(STRINGIFY(DRIVERNAME)) L" driver v" WIDEN(STRINGIFY(FS_DRIVER_VERSION_MAJOR)) \
-			L"." WIDEN(STRINGIFY(FS_DRIVER_VERSION_MINOR)) L" (" WIDEN(PACKAGE_STRING) L")";
+	*DriverName = L"efifs " WIDEN(STRINGIFY(FS_DRIVER_VERSION_MAJOR)) L"."
+		WIDEN(STRINGIFY(FS_DRIVER_VERSION_MINOR)) L"." WIDEN(STRINGIFY(FS_DRIVER_VERSION_MICRO))
+		L" " WIDEN(STRINGIFY(DRIVERNAME)) L" driver (" WIDEN(PACKAGE_STRING) L")";
 	return EFI_SUCCESS;
 }
 

@@ -33,6 +33,7 @@
 /* Driver version */
 #define FS_DRIVER_VERSION_MAJOR 0
 #define FS_DRIVER_VERSION_MINOR 5
+#define FS_DRIVER_VERSION_MICRO 1
 
 #undef offsetof
 #if defined(__GNUC__) && (__GNUC__ > 3)
@@ -87,9 +88,10 @@ struct _EFI_FS;
 /* A file instance */
 typedef struct _EFI_GRUB_FILE {
 	BOOLEAN                IsDir;
+	INT64                  DirIndex;
 	INT32                  Mtime;
-	// TODO: have a copy of grub_file->name here, as a CHAR8*
-	char                  *basename;
+	// TODO: have a copy of the path here, as a CHAR8*
+	CHAR8                 *basename;
 	INTN                   RefCount;
 	EFI_FILE               EfiFile;
 	// TODO: use a VOID *GrubFile here
@@ -99,12 +101,12 @@ typedef struct _EFI_GRUB_FILE {
 
 /* A file system instance */
 typedef struct _EFI_FS {
-	EFI_FILE_IO_INTERFACE FileIOInterface;
-	EFI_DISK_IO           *DiskIo;
+	CHAR8                  DevicePath[MAX_PATH];
 	EFI_BLOCK_IO          *BlockIo;
-	CHAR16                 DevicePath[MAX_PATH];
-	VOID                  *GrubDevice;
+	EFI_DISK_IO           *DiskIo;
+	EFI_FILE_IO_INTERFACE  FileIOInterface;
 	EFI_GRUB_FILE          RootFile;
+	VOID                  *GrubDevice;
 } EFI_FS;
 
 /* Mirror similar constructs from GRUB, using an EFI sauce */

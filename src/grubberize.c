@@ -285,6 +285,9 @@ grub_err_t grub_device_close(grub_device_t device)
 
 EFI_STATUS GrubDeviceInit(EFI_FS* This)
 {
+	// TODO: We hijack the name parameter to pass an EFI_FS, but some filesystems
+	// such as btrfs have their own calls to grub_device_open() using a name.
+	// => Use a name <-> EFI_FS table, with the DevicePath string as our ID.
 	This->GrubDevice = (VOID *) grub_device_open((const char *) This);
 	if (This->GrubDevice == NULL)
 		return EFI_OUT_OF_RESOURCES;
