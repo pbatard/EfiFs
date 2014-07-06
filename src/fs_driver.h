@@ -17,7 +17,6 @@
  */
 
 #include <efi.h>
-#include <grub/file.h>
 
 #pragma once
 
@@ -79,23 +78,24 @@ extern void PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...);
 #define _STRINGIFY(s) #s
 #define STRINGIFY(s) _STRINGIFY(s)
 
-#define _WIDEN(s) L ## s 
+#define _WIDEN(s) L ## s
 #define WIDEN(s) _WIDEN(s)
+
+#define IS_ROOT(File) (File == File->FileSystem->RootFile)
 
 /* Forward declaration */
 struct _EFI_FS;
 
 /* A file instance */
 typedef struct _EFI_GRUB_FILE {
+	EFI_FILE               EfiFile;
 	BOOLEAN                IsDir;
 	INT64                  DirIndex;
 	INT32                  Mtime;
-	// TODO: have a copy of the path here, as a CHAR8*
+	CHAR8                 *path;
 	CHAR8                 *basename;
 	INTN                   RefCount;
-	EFI_FILE               EfiFile;
-	// TODO: use a VOID *GrubFile here
-	struct grub_file       grub_file;
+	VOID                  *GrubFile;
 	struct _EFI_FS        *FileSystem;
 } EFI_GRUB_FILE;
 
@@ -105,7 +105,7 @@ typedef struct _EFI_FS {
 	EFI_BLOCK_IO          *BlockIo;
 	EFI_DISK_IO           *DiskIo;
 	EFI_FILE_IO_INTERFACE  FileIOInterface;
-	EFI_GRUB_FILE          RootFile;
+	EFI_GRUB_FILE         *RootFile;
 	VOID                  *GrubDevice;
 } EFI_FS;
 
@@ -148,3 +148,9 @@ extern EFI_STATUS GrubDir(EFI_GRUB_FILE *File, const CHAR8 *path,
 extern VOID GrubClose(EFI_GRUB_FILE *File);
 extern EFI_STATUS GrubRead(EFI_GRUB_FILE *File, VOID *Data, UINTN *Len);
 extern EFI_STATUS GrubLabel(EFI_GRUB_FILE *File, CHAR8 **label);
+extern EFI_STATUS GrubCreateFile(EFI_GRUB_FILE **File, EFI_FS *This);
+extern VOID GrubDestroyFile(EFI_GRUB_FILE *File);
+extern UINT64 GrubGetFileSize(EFI_GRUB_FILE *File);
+extern UINT64 GrubGetFileOffset(EFI_GRUB_FILE *File);
+extern VOID GrubSetFileOffset(EFI_GRUB_FILE *File, UINT64 Offset);
+

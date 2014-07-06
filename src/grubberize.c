@@ -27,6 +27,7 @@
 #include <grub/disk.h>
 #include <grub/fs.h>
 #include <grub/dl.h>
+#include <grub/file.h>
 #include <grub/charset.h>
 
 #include "fs_driver.h"
@@ -283,7 +284,7 @@ grub_err_t grub_device_close(grub_device_t device)
 	return 0;
 }
 
-EFI_STATUS GrubDeviceInit(EFI_FS* This)
+EFI_STATUS GrubDeviceInit(EFI_FS *This)
 {
 	// TODO: We hijack the name parameter to pass an EFI_FS, but some filesystems
 	// such as btrfs have their own calls to grub_device_open() using a name.
@@ -295,12 +296,63 @@ EFI_STATUS GrubDeviceInit(EFI_FS* This)
 	return EFI_SUCCESS;
 }
 
-EFI_STATUS GrubDeviceExit(EFI_FS* This)
+EFI_STATUS GrubDeviceExit(EFI_FS *This)
 {
 	grub_device_close((grub_device_t) This->GrubDevice);
 
 	return EFI_SUCCESS;
 }
+
+EFI_STATUS GrubCreateFile(EFI_GRUB_FILE **File, EFI_FS *This)
+{
+	EFI_GRUB_FILE *NewFile;
+	grub_file_t f;
+
+	NewFile = AllocateZeroPool(sizeof(*NewFile));
+	if (NewFile == NULL)
+		return EFI_OUT_OF_RESOURCES;
+	NewFile->GrubFile = AllocateZeroPool(sizeof(*f));
+	if (NewFile->GrubFile == NULL) {
+		FreePool(NewFile);
+		return EFI_OUT_OF_RESOURCES;
+	}
+
+	/* Initialize the attributes */
+	NewFile->FileSystem = This;
+	CopyMem(&NewFile->EfiFile, &This->RootFile->EfiFile, sizeof(EFI_FILE));
+
+	f = (grub_file_t) NewFile->GrubFile;
+	f->device = (grub_device_t) This->GrubDevice;
+	f->fs = grub_fs_list;
+
+	*File = NewFile;
+	return EFI_SUCCESS;
+}
+
+VOID GrubDestroyFile(EFI_GRUB_FILE *File)
+{
+	FreePool(File->GrubFile);
+	FreePool(File);
+}
+
+UINT64 GrubGetFileSize(EFI_GRUB_FILE *File)
+{
+	grub_file_t f = (grub_file_t) File->GrubFile;
+	return (UINT64) f->size;
+}
+
+UINT64 GrubGetFileOffset(EFI_GRUB_FILE *File)
+{
+	grub_file_t f = (grub_file_t) File->GrubFile;
+	return (UINT64) f->offset;
+}
+
+VOID GrubSetFileOffset(EFI_GRUB_FILE *File, UINT64 Offset)
+{
+	grub_file_t f = (grub_file_t) File->GrubFile;
+	f->offset = (grub_off_t) Offset;
+}
+
 
 /*
  * The following provides an EFI interface for each basic GRUB fs call
@@ -309,44 +361,48 @@ EFI_STATUS GrubDir(EFI_GRUB_FILE *File, const CHAR8 *path,
 		GRUB_DIRHOOK Hook, VOID *HookData)
 {
 	grub_fs_t p = grub_fs_list;
+	grub_file_t f = (grub_file_t) File->GrubFile;
 	grub_err_t rc;
 
 	grub_errno = 0;
-	rc = p->dir(File->grub_file.device, path, (grub_fs_dir_hook_t) Hook, HookData);
+	rc = p->dir(f->device, path, (grub_fs_dir_hook_t) Hook, HookData);
 	return GrubErrToEFIStatus(rc);
 }
 
 EFI_STATUS GrubOpen(EFI_GRUB_FILE *File)
 {
 	grub_fs_t p = grub_fs_list;
+	grub_file_t f = (grub_file_t) File->GrubFile;
 	grub_err_t rc;
 
 	grub_errno = 0;
-	rc = p->open(&File->grub_file, File->grub_file.name);
+	rc = p->open(f, File->path);
 	return GrubErrToEFIStatus(rc);
 }
 
 VOID GrubClose(EFI_GRUB_FILE *File)
 {
 	grub_fs_t p = grub_fs_list;
+	grub_file_t f = (grub_file_t) File->GrubFile;
 
 	grub_errno = 0;
-	p->close(&File->grub_file);
+	p->close(f);
 }
 
 EFI_STATUS GrubRead(EFI_GRUB_FILE *File, VOID *Data, UINTN *Len)
 {
 	grub_fs_t p = grub_fs_list;
+	grub_file_t f = (grub_file_t) File->GrubFile;
 	grub_ssize_t len;
 	INTN Remaining;
 
 	/* GRUB may return an error if we request more data than available */
-	Remaining = File->grub_file.size - File->grub_file.offset;
+	Remaining = f->size - f->offset;
 
 	if (*Len > Remaining)
 		*Len = Remaining;
 
-	len = p->read(&File->grub_file, (char *) Data, *Len);
+	len = p->read(f, (char *) Data, *Len);
 
 	if (len < 0) {
 		*Len = 0;
@@ -354,7 +410,7 @@ EFI_STATUS GrubRead(EFI_GRUB_FILE *File, VOID *Data, UINTN *Len)
 	}
 
 	/* You'd think that GRUB read() would increase the offset... */
-	File->grub_file.offset += len; 
+	f->offset += len; 
 	*Len = len;
 
 	return EFI_SUCCESS;
@@ -363,10 +419,11 @@ EFI_STATUS GrubRead(EFI_GRUB_FILE *File, VOID *Data, UINTN *Len)
 EFI_STATUS GrubLabel(EFI_GRUB_FILE *File, CHAR8 **label)
 {
 	grub_fs_t p = grub_fs_list;
+	grub_file_t f = (grub_file_t) File->GrubFile;
 	grub_err_t rc;
 	
 	grub_errno = 0;
-	rc = p->label(File->grub_file.device, (char **) label);
+	rc = p->label(f->device, (char **) label);
 	return GrubErrToEFIStatus(rc);
 }
 

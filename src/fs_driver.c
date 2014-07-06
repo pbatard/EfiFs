@@ -28,7 +28,6 @@
 
 // TODO: split this file and move anything GRUB related there
 #include <grub/charset.h>
-#include <grub/misc.h>
 
 #include "fs_driver.h"
 #include "fs_guid.h"
@@ -109,16 +108,15 @@ PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...)
  * @v file			EFI file
  * @ret Name		Name
  */
-// TODO: we may want to keep a copy of the UTF16 Name in the file handle
 static const CHAR16 
 *FileName(EFI_GRUB_FILE *File)
 {
-	static CHAR16 Name[MAX_PATH];
+	static CHAR16 Path[MAX_PATH];
 
-	ZeroMem(Name, sizeof(Name));
-	grub_utf8_to_utf16(Name, ARRAYSIZE(Name), File->grub_file.name,
-		strlena(File->grub_file.name), NULL);
-	return Name;
+	ZeroMem(Path, sizeof(Path));
+	grub_utf8_to_utf16(Path, ARRAYSIZE(Path), File->path,
+		strlena(File->path), NULL);
+	return Path;
 }
 
 /* Simple hook to populate the timestamp and directory flag when opening a file */
@@ -152,9 +150,9 @@ static EFI_STATUS EFIAPI
 FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 		CHAR16 *Name, UINT64 Mode, UINT64 Attributes)
 {
+	EFI_STATUS Status;
 	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
 	EFI_GRUB_FILE *NewFile;
-	EFI_STATUS Status;
 
 	/* Why oh why doesn't GRUB provide a grub_get_num_of_utf8_bytes for UTF16
 	 * or even an UTF16 to UTF8 that does the allocation?
@@ -165,7 +163,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	BOOLEAN AbsolutePath = (*Name == L'\\');
 
 	PrintInfo(L"Open(%llx%s, \"%s\")\n", (UINT64) This,
-			(File == &File->FileSystem->RootFile)?L" <ROOT>":L"", Name);
+			IS_ROOT(File)?L" <ROOT>":L"", Name);
 
 	/* Fail unless opening read-only */
 	if (Mode != EFI_FILE_MODE_READ) {
@@ -174,15 +172,14 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	}
 
 	/* Additional failures */
-	if ((StrCmp(Name, L"..") == 0) && (File == &File->FileSystem->RootFile)) {
+	if ((StrCmp(Name, L"..") == 0) && IS_ROOT(File)) {
 		PrintInfo(L"Trying to open <ROOT>'s parent\n");
 		return EFI_NOT_FOUND;
 	}
 
 	/* See if we're trying to reopen current (which the EFI Shell insists on doing) */
 	if ((*Name == 0) || (StrCmp(Name, L".") == 0)) {
-		PrintInfo(L"  Reopening %s\n",
-				(File == &File->FileSystem->RootFile)?L"<ROOT>":FileName(File));
+		PrintInfo(L"  Reopening %s\n", IS_ROOT(File)?L"<ROOT>":FileName(File));
 		File->RefCount++;
 		*New = This;
 		PrintInfo(L"  RET: %llx\n", (UINT64) *New);
@@ -193,7 +190,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	if (AbsolutePath) {
 		len = 0;
 	} else {
-		strcpya(path, File->grub_file.name);
+		strcpya(path, File->path);
 		len = strlena(path);
 		/* Add delimiter if needed */
 		if ((len == 0) || (path[len-1] != '/'))
@@ -215,27 +212,26 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	if (clean_path[1] == 0) {
 		/* We're dealing with the root */
 		PrintInfo(L"  Reopening <ROOT>\n");
-		*New = &File->FileSystem->RootFile.EfiFile;
+		*New = &File->FileSystem->RootFile->EfiFile;
 		PrintInfo(L"  RET: %llx\n", (UINT64) *New);
 		return EFI_SUCCESS;
 	}
 
 	// TODO: eventually we should seek for already opened files and increase RefCount */
-	/* Allocate and initialise file */
-	NewFile = AllocateZeroPool(sizeof(*NewFile));
-	if (NewFile == NULL) {
-		PrintError(L"Could not allocate file resource\n");
-		return EFI_OUT_OF_RESOURCES;
+	/* Allocate and initialise an instance of a file */
+	Status = GrubCreateFile(&NewFile, File->FileSystem);
+	if (EFI_ERROR(Status)) {
+		PrintStatusError(Status, L"Could not instantiate file");
+		return Status;
 	}
-	CopyMem(&NewFile->EfiFile, &File->EfiFile, sizeof(NewFile->EfiFile));
 
-	NewFile->grub_file.name = AllocatePool(strlena(clean_path)+1);
-	if (NewFile->grub_file.name == NULL) {
-		FreePool(NewFile);
-		PrintError(L"Could not allocate grub filename\n");
+	NewFile->path = AllocatePool(strlena(clean_path)+1);
+	if (NewFile->path == NULL) {
+		GrubDestroyFile(NewFile);
+		PrintError(L"Could not instantiate path\n");
 		return EFI_OUT_OF_RESOURCES;
 	}
-	CopyMem(NewFile->grub_file.name, clean_path, strlena(path)+1);
+	strcpya(NewFile->path, clean_path);
 
 	/* Isolate the basename and dirname */
 	for (i = strlena(clean_path) - 1; i >= 0; i--) {
@@ -245,19 +241,14 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 		}
 	}
 	dirname = (i <= 0) ? "/" : clean_path;
-	NewFile->basename = &NewFile->grub_file.name[i+1];
-
-	/* Duplicate the attributes needed */
-	NewFile->grub_file.device = File->grub_file.device;
-	NewFile->grub_file.fs = File->grub_file.fs;
-	NewFile->FileSystem = File->FileSystem;
+	NewFile->basename = &NewFile->path[i+1];
 
 	/* Find if we're working with a directory and fill the grub timestamp */
 	Status = GrubDir(NewFile, dirname, InfoHook, (VOID *) NewFile);
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"Could not get file attributes for '%s'", Name);
-		FreePool(NewFile->grub_file.name);
-		FreePool(NewFile);
+		FreePool(NewFile->path);
+		GrubDestroyFile(NewFile);
 		return EFI_NOT_FOUND;
 	}
 
@@ -266,8 +257,8 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 		Status = GrubOpen(NewFile);
 		if (EFI_ERROR(Status)) {
 			PrintStatusError(Status, L"Could not open file '%s'", Name);
-			FreePool(NewFile->grub_file.name);
-			FreePool(NewFile);
+			FreePool(NewFile->path);
+			GrubDestroyFile(NewFile);
 			return EFI_NOT_FOUND;
 		}
 	}
@@ -291,18 +282,19 @@ FileClose(EFI_FILE_HANDLE This)
 	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
 
 	PrintInfo(L"Close(%llx|'%s') %s\n", (UINT64) This, FileName(File),
-		(File == &File->FileSystem->RootFile)?L"<ROOT>":L"");
+		IS_ROOT(File)?L"<ROOT>":L"");
 
 	/* Nothing to do it this is the root */
-	if (File == &File->FileSystem->RootFile)
+	if (IS_ROOT(File))
 		return EFI_SUCCESS;
 
 	if (--File->RefCount == 0) {
 		/* Close the file if it's a regular one */
 		if (!File->IsDir)
 			GrubClose(File);
-		FreePool(File->grub_file.name);
-		FreePool(File);
+		/* NB: basename points into File->path and does not need to be freed */
+		FreePool(File->path);
+		GrubDestroyFile(File);
 	}
 
 	return EFI_SUCCESS;
@@ -351,9 +343,6 @@ DirHook(const CHAR8 *name, const GRUB_DIRHOOK_INFO *DirInfo, VOID *Data)
 	if ((*Index)-- != 0)
 		return 0;
 
-//	if (*name != '$')
-//		grub_printf("PRO: %s\n", name);
-
 	strcpya(filename, name);
 
 	// TODO: check for overflow and return EFI_BUFFER_TOO_SMALL
@@ -394,10 +383,10 @@ FileReadDir(EFI_GRUB_FILE *File, UINTN *Len, VOID *Data)
 	/* And PhysicalSize as a pointer to our filename */
 	CHAR8 **basename = (CHAR8 **) &Info->PhysicalSize;
 	CHAR8 path[MAX_PATH];
-	EFI_GRUB_FILE TmpFile = { 0 };
+	EFI_GRUB_FILE *TmpFile = NULL;
 	INTN len;
 
-	/* Unless we can fill at least a 16 chars filename, forget it */
+	/* Unless we can fit MAX_PATH chars, forget it */
 	if (*Len < MINIMUM_INFO_LENGTH) {
 		*Len = MINIMUM_INFO_LENGTH;
 		return EFI_BUFFER_TOO_SMALL;
@@ -407,14 +396,14 @@ FileReadDir(EFI_GRUB_FILE *File, UINTN *Len, VOID *Data)
 	ZeroMem(Data, *Len);
 	Info->Size = *Len;
 	*Index = File->DirIndex;
-	strcpya(path, File->grub_file.name);
+	strcpya(path, File->path);
 	len = strlena(path);
 	if (path[len-1] != '/')
 		path[len++] = '/';
 	*basename = &path[len];
 
 	/* Invoke GRUB's directory listing */
-	Status = GrubDir(File, File->grub_file.name, DirHook, Data);
+	Status = GrubDir(File, File->path, DirHook, Data);
 	if (*Index >= 0) {
 		/* No more entries */
 		*Len = 0;
@@ -433,27 +422,31 @@ FileReadDir(EFI_GRUB_FILE *File, UINTN *Len, VOID *Data)
 	/* For regular files, we still need to fill the size */
 	if (!(Info->Attribute & EFI_FILE_DIRECTORY)) {
 		/* Open the file and read its size */
-		TmpFile.FileSystem = File->FileSystem;
-		TmpFile.grub_file.device = File->grub_file.device;
-		TmpFile.grub_file.fs = File->grub_file.fs;
-		TmpFile.grub_file.name = path;
-		Status = GrubOpen(&TmpFile);
-
-		if (Status == EFI_SUCCESS) {
-			Info->FileSize = TmpFile.grub_file.size;
-			Info->PhysicalSize = TmpFile.grub_file.size;
-			GrubClose(&TmpFile);
-		} else { //if (Status !=  EFI_NO_MAPPING) {
-			/* EFI_NO_MAPPING is returned for links */	// TODO: check if that still holds
-			PrintStatusError(Status, L"Unable to obtain the size of '%s'", Info->FileName);
+		Status = GrubCreateFile(&TmpFile, File->FileSystem);
+		if (EFI_ERROR(Status)) {
+			PrintStatusError(Status, L"Unable to create temporary file");
+			return Status;
 		}
+		TmpFile->path = path;
+
+		Status = GrubOpen(TmpFile);
+		if (EFI_ERROR(Status)) {
+			// TODO: EFI_NO_MAPPING is returned for links...
+			PrintStatusError(Status, L"Unable to obtain the size of '%s'", Info->FileName);
+			/* Non fatal error */
+		} else {
+			Info->FileSize = GrubGetFileSize(TmpFile);
+			Info->PhysicalSize = GrubGetFileSize(TmpFile);
+			GrubClose(TmpFile);
+		}
+		GrubDestroyFile(TmpFile);
 	}
 
 	*Len = (UINTN) Info->Size;
 	/* Advance to the next entry */
 	File->DirIndex++;
 
-//	PrintInfo(L"  Entry: '%s' %s\n", Info->FileName,
+//	PrintInfo(L"  Entry[%d]: '%s' %s\n", File->DirIndex-1, Info->FileName,
 //			(Info->Attribute&EFI_FILE_DIRECTORY)?L"<DIR>":L"");
 
 	return EFI_SUCCESS;
@@ -510,6 +503,7 @@ static EFI_STATUS EFIAPI
 FileSetPosition(EFI_FILE_HANDLE This, UINT64 Position)
 {
 	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
+	UINT64 FileSize;
 
 	PrintInfo(L"SetPosition(%llx|'%s', %lld) %s\n", (UINT64) This,
 		FileName(File), Position, (File->IsDir)?L"<DIR>":L"");
@@ -525,16 +519,17 @@ FileSetPosition(EFI_FILE_HANDLE This, UINT64 Position)
 	/* Fail if we attempt to seek past the end of the file (since
 	 * we do not support writes).
 	 */
-	if (Position > File->grub_file.size) {
+	FileSize = GrubGetFileSize(File);
+	if (Position > FileSize) {
 		PrintError(L"'%s': Cannot seek to %#llx of %llx\n",
-				FileName(File), Position, File->grub_file.size);
+				FileName(File), Position, FileSize);
 		return EFI_UNSUPPORTED;
 	}
 
 	/* Set position */
-	File->grub_file.offset = Position;
+	GrubSetFileOffset(File, Position);
 	PrintDebug(L"'%s': Position set to %llx\n",
-			FileName(File), File->grub_file.offset);
+			FileName(File), Position);
 
 	return EFI_SUCCESS;
 }
@@ -556,7 +551,7 @@ FileGetPosition(EFI_FILE_HANDLE This, UINT64 *Position)
 	if (File->IsDir)
 		*Position = File->DirIndex;
 	else
-		*Position = File->grub_file.offset;
+		*Position = GrubGetFileOffset(File);
 	return EFI_SUCCESS;
 }
 
@@ -605,8 +600,8 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 		if (File->IsDir) {
 			Info->Attribute |= EFI_FILE_DIRECTORY;
 		} else {
-			Info->FileSize = File->grub_file.size;
-			Info->PhysicalSize = File->grub_file.size;
+			Info->FileSize = GrubGetFileSize(File);
+			Info->PhysicalSize = GrubGetFileSize(File);
 		}
 
 		// TODO: check for overflow and return EFI_BUFFER_TOO_SMALL
@@ -715,7 +710,7 @@ FileOpenVolume(EFI_FILE_IO_INTERFACE *This, EFI_FILE_HANDLE *Root)
 	EFI_FS *FSInstance = container_of(This, EFI_FS, FileIOInterface);
 
 	PrintInfo(L"OpenVolume\n");
-	*Root = &FSInstance->RootFile.EfiFile;
+	*Root = &FSInstance->RootFile->EfiFile;
 
 	return EFI_SUCCESS;
 }
@@ -755,31 +750,29 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 	}
 
 	/* Initialize the root handle */
-	ZeroMem(&This->RootFile, sizeof(This->RootFile));
+	Status = GrubCreateFile(&This->RootFile, This);
+	if (EFI_ERROR(Status)) {
+		PrintStatusError(Status, L"Could not create root file");
+		return Status;
+	}
 
 	/* Setup the EFI part */
-	This->RootFile.EfiFile.Revision = EFI_FILE_HANDLE_REVISION;
-	This->RootFile.EfiFile.Open = FileOpen;
-	This->RootFile.EfiFile.Close = FileClose;
-	This->RootFile.EfiFile.Delete = FileDelete;
-	This->RootFile.EfiFile.Read = FileRead;
-	This->RootFile.EfiFile.Write = FileWrite;
-	This->RootFile.EfiFile.GetPosition = FileGetPosition;
-	This->RootFile.EfiFile.SetPosition = FileSetPosition;
-	This->RootFile.EfiFile.GetInfo = FileGetInfo;
-	This->RootFile.EfiFile.SetInfo = FileSetInfo;
-	This->RootFile.EfiFile.Flush = FileFlush;
+	This->RootFile->EfiFile.Revision = EFI_FILE_HANDLE_REVISION;
+	This->RootFile->EfiFile.Open = FileOpen;
+	This->RootFile->EfiFile.Close = FileClose;
+	This->RootFile->EfiFile.Delete = FileDelete;
+	This->RootFile->EfiFile.Read = FileRead;
+	This->RootFile->EfiFile.Write = FileWrite;
+	This->RootFile->EfiFile.GetPosition = FileGetPosition;
+	This->RootFile->EfiFile.SetPosition = FileSetPosition;
+	This->RootFile->EfiFile.GetInfo = FileGetInfo;
+	This->RootFile->EfiFile.SetInfo = FileSetInfo;
+	This->RootFile->EfiFile.Flush = FileFlush;
 
-	/* Setup the GRUB part */
-	This->RootFile.grub_file.name = "/";
-	This->RootFile.grub_file.device = (grub_device_t) This->GrubDevice;
-	This->RootFile.grub_file.fs = grub_fs_list;
-	This->RootFile.basename = &This->RootFile.grub_file.name[1];
-
-	/* Setup extra data */
-	This->RootFile.IsDir = TRUE;
-	/* We could pick it up from GrubDevice, but it's more convenient this way */
-	This->RootFile.FileSystem = This;
+	/* Setup the other attributes */
+	This->RootFile->path = "/";
+	This->RootFile->basename = &This->RootFile->path[1];
+	This->RootFile->IsDir = TRUE;
 
 	return EFI_SUCCESS;
 }
@@ -789,6 +782,8 @@ static void
 FSUninstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 {
 	PrintInfo(L"FSUninstall: %s\n", This->DevicePath);
+
+	GrubDestroyFile(This->RootFile);
 
 	LibUninstallProtocolInterfaces(ControllerHandle,
 			&FileSystemProtocol, &This->FileIOInterface,
