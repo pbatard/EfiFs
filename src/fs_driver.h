@@ -101,7 +101,7 @@ typedef struct _EFI_GRUB_FILE {
 
 /* A file system instance */
 typedef struct _EFI_FS {
-	CHAR8                  DevicePath[MAX_PATH];
+	CHAR8                 *DevicePath;
 	EFI_BLOCK_IO          *BlockIo;
 	EFI_DISK_IO           *DiskIo;
 	EFI_FILE_IO_INTERFACE  FileIOInterface;
@@ -135,8 +135,9 @@ extern void GRUB_FS_CALL(EXTRAMODULE, fini)(void);
 extern INTN LogLevel;
 extern EFI_HANDLE EfiImageHandle;
 extern EFI_GUID ShellVariable;
+extern CHAR16 *DriverNameString;
 
-extern CHAR16 *GrubGetUUID(EFI_FS *This);
+extern CHAR16 *GrubGetUuid(EFI_FS *This);
 extern BOOLEAN GrubFSProbe(EFI_FS *This);
 extern EFI_STATUS GrubDeviceInit(EFI_FS *This);
 extern EFI_STATUS GrubDeviceExit(EFI_FS *This);
@@ -153,4 +154,7 @@ extern VOID GrubDestroyFile(EFI_GRUB_FILE *File);
 extern UINT64 GrubGetFileSize(EFI_GRUB_FILE *File);
 extern UINT64 GrubGetFileOffset(EFI_GRUB_FILE *File);
 extern VOID GrubSetFileOffset(EFI_GRUB_FILE *File, UINT64 Offset);
-
+extern CHAR16 *Utf8ToUtf16Alloc(CHAR8 *src);
+extern EFI_STATUS Utf8ToUtf16NoAlloc(CHAR8 *src, CHAR16 *Dst, UINTN Len);
+extern CHAR8 *Utf16ToUtf8Alloc(CHAR16 *Src);
+extern EFI_STATUS Utf16ToUtf8NoAlloc(CHAR16 *Src, CHAR8 *dst, UINTN len);

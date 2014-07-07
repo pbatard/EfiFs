@@ -26,8 +26,7 @@
 #include <edk2/ComponentName2.h>
 #include <edk2/ShellVariableGuid.h>
 
-// TODO: split this file and move anything GRUB related there
-#include <grub/charset.h>
+// TODO: split this file between Driver and SimpleFileIO protocol calls
 
 #include "fs_driver.h"
 #include "fs_guid.h"
@@ -77,8 +76,6 @@ strcpya(IN CHAR8 *dst, IN CONST CHAR8 *src)
 	CopyMem(dst, src, len);
 }
 
-// TODO: implement our own UTF8 <-> UTF16 conversion routines
-
 /**
  * Print an error message along with a human readable EFI status code
  *
@@ -111,11 +108,15 @@ PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...)
 static const CHAR16 
 *FileName(EFI_GRUB_FILE *File)
 {
+	EFI_STATUS Status;
 	static CHAR16 Path[MAX_PATH];
 
-	ZeroMem(Path, sizeof(Path));
-	grub_utf8_to_utf16(Path, ARRAYSIZE(Path), File->path,
-		strlena(File->path), NULL);
+	Status = Utf8ToUtf16NoAlloc(File->path, Path, sizeof(Path));
+	if (EFI_ERROR(Status)) {
+		PrintStatusError(Status, L"Could not convert filename to UTF16");
+		return NULL;
+	}
+
 	return Path;
 }
 
@@ -154,10 +155,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
 	EFI_GRUB_FILE *NewFile;
 
-	/* Why oh why doesn't GRUB provide a grub_get_num_of_utf8_bytes for UTF16
-	 * or even an UTF16 to UTF8 that does the allocation?
-	 * TODO: Use dynamic buffers...
-	 */
+	// TODO: Use dynamic buffers?
 	char path[MAX_PATH], clean_path[MAX_PATH], *dirname;
 	INTN i, len;
 	BOOLEAN AbsolutePath = (*Name == L'\\');
@@ -198,7 +196,11 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	}
 
 	/* Copy the rest of the path (converted to UTF-8) */
-	grub_utf16_to_utf8(&path[len], Name, StrLen(Name) + 1);
+	Status = Utf16ToUtf8NoAlloc(Name, &path[len], sizeof(path) - len);
+	if (EFI_ERROR(Status)) {
+		PrintStatusError(Status, L"Could not convert path to UTF-8");
+		return Status;
+	}
 	/* Convert the delimiters */
 	for (i = strlena(path) - 1 ; i >= len; i--) {
 		if (path[i] == '\\')
@@ -330,6 +332,7 @@ FileDelete(EFI_FILE_HANDLE This)
 static INT32
 DirHook(const CHAR8 *name, const GRUB_DIRHOOK_INFO *DirInfo, VOID *Data)
 {
+	EFI_STATUS Status;
 	EFI_FILE_INFO *Info = (EFI_FILE_INFO *) Data;
 	INT64 *Index = (INT64 *) &Info->FileSize;
 	CHAR8 *filename = (CHAR8 *) Info->PhysicalSize;
@@ -345,9 +348,12 @@ DirHook(const CHAR8 *name, const GRUB_DIRHOOK_INFO *DirInfo, VOID *Data)
 
 	strcpya(filename, name);
 
-	// TODO: check for overflow and return EFI_BUFFER_TOO_SMALL
-	grub_utf8_to_utf16(Info->FileName, Info->Size - sizeof(EFI_FILE_INFO),
-			filename, -1, NULL);
+	Status = Utf8ToUtf16NoAlloc(filename, Info->FileName, Info->Size - sizeof(EFI_FILE_INFO));
+	if (EFI_ERROR(Status)) {
+		if (Status != EFI_BUFFER_TOO_SMALL)
+			PrintStatusError(Status, L"Could not convert directory entry to UTF-8");
+		return Status;
+	}
 	/* The Info struct size already accounts for the extra NUL */
 	Info->Size = sizeof(*Info) + StrLen(Info->FileName) * sizeof(CHAR16);
 
@@ -588,8 +594,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 			return EFI_BUFFER_TOO_SMALL;
 		}
 
-		// TODO: only zero the INFO part
-		ZeroMem(Data, *Len);
+		ZeroMem(Data, sizeof(EFI_FILE_INFO));
 
 		Info->Attribute = EFI_FILE_READ_ONLY;
 		GrubTimeToEfiTime(File->Mtime, &Time);
@@ -604,9 +609,14 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 			Info->PhysicalSize = GrubGetFileSize(File);
 		}
 
-		// TODO: check for overflow and return EFI_BUFFER_TOO_SMALL
-		grub_utf8_to_utf16(Info->FileName, Info->Size - sizeof(EFI_FILE_INFO),
-				File->basename, -1, NULL);
+		Status = Utf8ToUtf16NoAlloc(File->basename, Info->FileName,
+				Info->Size - sizeof(EFI_FILE_INFO));
+		if (EFI_ERROR(Status)) {
+			if (Status != EFI_BUFFER_TOO_SMALL)
+				PrintStatusError(Status, L"Could not convert basename to UTF-8");
+			return Status;
+		}
+
 		/* The Info struct size already accounts for the extra NUL */
 		Info->Size = sizeof(EFI_FILE_INFO) + 
 				StrLen(Info->FileName) * sizeof(CHAR16);
@@ -621,8 +631,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 			return EFI_BUFFER_TOO_SMALL;
 		}
 
-		// TODO: only zero the INFO part
-		ZeroMem(Data, *Len);
+		ZeroMem(Data, sizeof(EFI_FILE_INFO));
 		FSInfo->Size = *Len;
 		FSInfo->ReadOnly = 1;
 		/* NB: This should really be cluster size, but we don't have access to that */
@@ -640,9 +649,13 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 		if (EFI_ERROR(Status)) {
 			PrintStatusError(Status, L"Could not read disk label");
 		} else {
-			// TODO: check for overflow and return EFI_BUFFER_TOO_SMALL
-			grub_utf8_to_utf16(FSInfo->VolumeLabel,
-					FSInfo->Size - sizeof(EFI_FILE_SYSTEM_INFO), label, -1, NULL);
+			Status = Utf8ToUtf16NoAlloc(label, FSInfo->VolumeLabel,
+					FSInfo->Size - sizeof(EFI_FILE_SYSTEM_INFO));
+			if (EFI_ERROR(Status)) {
+				if (Status != EFI_BUFFER_TOO_SMALL)
+					PrintStatusError(Status, L"Could not convert label to UTF-8");
+				return Status;
+			}
 			Info->Size = sizeof(EFI_FILE_SYSTEM_INFO) +
 					StrLen(FSInfo->VolumeLabel) * sizeof(CHAR16);
 		}
@@ -745,7 +758,9 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 	DevicePath = DevicePathFromHandle(ControllerHandle);
 	if (DevicePath != NULL) {
 		DevicePathString = DevicePathToStr(DevicePath);
-		grub_utf16_to_utf8(This->DevicePath, DevicePathString, StrLen(DevicePathString)+1);
+		This->DevicePath = Utf16ToUtf8Alloc(DevicePathString);
+		if (This->DevicePath == NULL)
+			PrintWarning(L"Could not convert DevicePath %s to UTF-8\n", DevicePathString);
 		PrintInfo(L"FSInstall: %s\n", DevicePathString);
 	}
 
@@ -784,6 +799,7 @@ FSUninstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 	PrintInfo(L"FSUninstall: %s\n", This->DevicePath);
 
 	GrubDestroyFile(This->RootFile);
+	FreePool(This->DevicePath);
 
 	LibUninstallProtocolInterfaces(ControllerHandle,
 			&FileSystemProtocol, &This->FileIOInterface,
@@ -799,9 +815,7 @@ static EFI_STATUS EFIAPI
 FSGetDriverName(EFI_COMPONENT_NAME_PROTOCOL *This,
 		CHAR8 *Language, CHAR16 **DriverName)
 {
-	*DriverName = L"efifs " WIDEN(STRINGIFY(FS_DRIVER_VERSION_MAJOR)) L"."
-		WIDEN(STRINGIFY(FS_DRIVER_VERSION_MINOR)) L"." WIDEN(STRINGIFY(FS_DRIVER_VERSION_MICRO))
-		L" " WIDEN(STRINGIFY(DRIVERNAME)) L" driver (" WIDEN(PACKAGE_STRING) L")";
+	*DriverName = DriverNameString;
 	return EFI_SUCCESS;
 }
 

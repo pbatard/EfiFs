@@ -28,9 +28,12 @@
 #include <grub/fs.h>
 #include <grub/dl.h>
 #include <grub/file.h>
-#include <grub/charset.h>
 
 #include "fs_driver.h"
+
+CHAR16* DriverNameString = L"efifs " WIDEN(STRINGIFY(FS_DRIVER_VERSION_MAJOR)) L"."
+		WIDEN(STRINGIFY(FS_DRIVER_VERSION_MINOR)) L"." WIDEN(STRINGIFY(FS_DRIVER_VERSION_MICRO))
+		L" " WIDEN(STRINGIFY(DRIVERNAME)) L" driver (" WIDEN(PACKAGE_STRING) L")";
 
 void grub_exit(void)
 {
@@ -62,19 +65,25 @@ void (*grub_xputs)(const char *str) = grub_xputs_dumb;
 const char *grub_env_get(const char *var)
 {
 	EFI_STATUS Status;
-	CHAR16 wVar[64], wVal[128];
-	UINTN wValSize = sizeof(wVal);	/* EFI uses the size in bytes... */
+	CHAR16 Var[64], Val[128];
+	UINTN ValSize = sizeof(Val);
 	static char val[128] = { 0 };
 
-	/* ...whereas GRUB uses the size in characters */
-	grub_utf8_to_utf16(wVar, ARRAYSIZE(wVar), var, grub_strlen(var), NULL);
+	Status = Utf8ToUtf16NoAlloc((CHAR8 *) var, Var, ARRAYSIZE(Var));
+	if (EFI_ERROR(Status)) {
+		PrintStatusError(Status, L"Could not convert variable name to UTF-16");
+		return NULL;
+	}
 
-	Status = RT->GetVariable(wVar, &ShellVariable, NULL, &wValSize, wVal);
+	Status = RT->GetVariable(Var, &ShellVariable, NULL, &ValSize, Val);
 	if (EFI_ERROR(Status))
 		return NULL;
 
-	/* Oh, and GRUB's utf16_to_utf8 does NOT stop at NUL nor does it check the dest size!! */
-	grub_utf16_to_utf8(val, wVal, StrLen(wVal)+1);
+	Status = Utf16ToUtf8NoAlloc(Val, val, sizeof(val));
+	if (EFI_ERROR(Status)) {
+		PrintStatusError(Status, L"Could not convert value '%s' to UTF-8", Val);
+		return NULL;
+	}
 
 	return val;
 }
@@ -456,22 +465,24 @@ BOOLEAN GrubFSProbe(EFI_FS *This)
 	return TRUE;
 }
 
-CHAR16 *GrubGetUUID(EFI_FS* This)
+CHAR16 *GrubGetUuid(EFI_FS* This)
 {
-	static CHAR16 UUID[36];
+	EFI_STATUS Status;
+	grub_fs_t p = grub_fs_list;
+	grub_device_t device = (grub_device_t) This->GrubDevice;
+	static CHAR16 Uuid[36];
 	char* uuid;
 
-	if (grub_fs_list->uuid == NULL) {
-		PrintError(L"The GRUB filesystem list is not set\n");
+	if (p->uuid(device, &uuid) || (uuid == NULL))
+		return NULL;
+
+	Status = Utf8ToUtf16NoAlloc(uuid, Uuid, ARRAYSIZE(Uuid));
+	if (EFI_ERROR(Status)) {
+		PrintStatusError(Status, L"Could not convert UUID to UTF-16");
 		return NULL;
 	}
 
-	if (grub_fs_list->uuid((grub_device_t) This->GrubDevice, &uuid) || (uuid == NULL))
-		return NULL;
-
-	grub_utf8_to_utf16(UUID, ARRAYSIZE(UUID), uuid, grub_strlen(uuid), NULL);
-
-	return UUID;
+	return Uuid;
 }
 
 /* The following is adapted from glibc's (offtime.c, etc.)

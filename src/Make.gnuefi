@@ -34,7 +34,7 @@ LOCAL_CPPFLAGS  = -DDRIVERNAME=$(DRIVERNAME) $(ARCH_C_FLAGS) \
 LOCAL_LIBS      = -lgrub
 LOCAL_LDFLAGS   = -L.
 GRUB_FS_DIR     = ../grub/grub-core/fs
-OBJS            = grubberize.o fs_driver.o $(GRUB_FS_DIR)/fshelp.o $(GRUB_FS_DIR)/$(DRIVERNAME).o
+OBJS            = utf8.o grubberize.o fs_driver.o $(GRUB_FS_DIR)/fshelp.o $(GRUB_FS_DIR)/$(DRIVERNAME).o
 
 ifdef EXTRAMODULE
 LOCAL_CPPFLAGS += -DEXTRAMODULE=$(EXTRAMODULE)
