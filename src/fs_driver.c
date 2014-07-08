@@ -152,7 +152,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 		CHAR16 *Name, UINT64 Mode, UINT64 Attributes)
 {
 	EFI_STATUS Status;
-	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
+	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 	EFI_GRUB_FILE *NewFile;
 
 	// TODO: Use dynamic buffers?
@@ -165,7 +165,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 
 	/* Fail unless opening read-only */
 	if (Mode != EFI_FILE_MODE_READ) {
-		PrintError(L"File '%s' can only be opened in read-only mode\n", Name);
+		PrintWarning(L"File '%s' can only be opened in read-only mode\n", Name);
 		return EFI_WRITE_PROTECTED;
 	}
 
@@ -281,7 +281,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 static EFI_STATUS EFIAPI
 FileClose(EFI_FILE_HANDLE This)
 {
-	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
+	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 
 	PrintInfo(L"Close(%llx|'%s') %s\n", (UINT64) This, FileName(File),
 		IS_ROOT(File)?L"<ROOT>":L"");
@@ -311,7 +311,7 @@ FileClose(EFI_FILE_HANDLE This)
 static EFI_STATUS EFIAPI
 FileDelete(EFI_FILE_HANDLE This)
 {
-	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
+	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 
 	PrintError(L"Cannot delete '%s'\n", FileName(File));
 
@@ -469,7 +469,7 @@ FileReadDir(EFI_GRUB_FILE *File, UINTN *Len, VOID *Data)
 static EFI_STATUS EFIAPI
 FileRead(EFI_FILE_HANDLE This, UINTN *Len, VOID *Data)
 {
-	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
+	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 
 	PrintInfo(L"Read(%llx|'%s', %d) %s\n", This, FileName(File),
 			*Len, File->IsDir?L"<DIR>":L"");
@@ -492,7 +492,7 @@ FileRead(EFI_FILE_HANDLE This, UINTN *Len, VOID *Data)
 static EFI_STATUS EFIAPI
 FileWrite(EFI_FILE_HANDLE This, UINTN *Len, VOID *Data)
 {
-	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
+	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 
 	PrintError(L"Cannot write to '%s'\n", FileName(File));
 	return EFI_WRITE_PROTECTED;
@@ -508,7 +508,7 @@ FileWrite(EFI_FILE_HANDLE This, UINTN *Len, VOID *Data)
 static EFI_STATUS EFIAPI
 FileSetPosition(EFI_FILE_HANDLE This, UINT64 Position)
 {
-	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
+	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 	UINT64 FileSize;
 
 	PrintInfo(L"SetPosition(%llx|'%s', %lld) %s\n", (UINT64) This,
@@ -550,7 +550,7 @@ FileSetPosition(EFI_FILE_HANDLE This, UINT64 Position)
 static EFI_STATUS EFIAPI
 FileGetPosition(EFI_FILE_HANDLE This, UINT64 *Position)
 {
-	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
+	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 
 	PrintInfo(L"GetPosition(%llx|'%s', %lld)\n", This, FileName(File));
 
@@ -574,7 +574,7 @@ static EFI_STATUS EFIAPI
 FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 {
 	EFI_STATUS Status;
-	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
+	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 	EFI_FILE_SYSTEM_INFO *FSInfo = (EFI_FILE_SYSTEM_INFO *) Data;
 	EFI_FILE_INFO *Info = (EFI_FILE_INFO *) Data;
 	CHAR16 GuidString[36];
@@ -683,7 +683,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 static EFI_STATUS EFIAPI
 FileSetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN Len, VOID *Data)
 {
-	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
+	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 	CHAR16 GuidString[36];
 
 	GuidToString(GuidString, Type);
@@ -704,7 +704,7 @@ FileSetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN Len, VOID *Data)
 static EFI_STATUS EFIAPI
 FileFlush(EFI_FILE_HANDLE This)
 {
-	EFI_GRUB_FILE *File = container_of(This, EFI_GRUB_FILE, EfiFile);
+	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 
 	PrintInfo(L"Flush(%llx|'%s')\n", (UINT64)This, FileName(File));
 	return EFI_SUCCESS;
@@ -720,7 +720,7 @@ FileFlush(EFI_FILE_HANDLE This)
 static EFI_STATUS EFIAPI
 FileOpenVolume(EFI_FILE_IO_INTERFACE *This, EFI_FILE_HANDLE *Root)
 {
-	EFI_FS *FSInstance = container_of(This, EFI_FS, FileIOInterface);
+	EFI_FS *FSInstance = _CR(This, EFI_FS, FileIoInterface);
 
 	PrintInfo(L"OpenVolume\n");
 	*Root = &FSInstance->RootFile->EfiFile;
@@ -748,7 +748,7 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 
 	/* Install the simple file system protocol. */
 	Status = LibInstallProtocolInterfaces(&ControllerHandle,
-			&FileSystemProtocol, &This->FileIOInterface,
+			&FileSystemProtocol, &This->FileIoInterface,
 			NULL);
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"Could not install simple file system protocol");
@@ -796,14 +796,16 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 static void
 FSUninstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 {
-	PrintInfo(L"FSUninstall: %s\n", This->DevicePath);
+	CHAR16 *DevicePathString = Utf8ToUtf16Alloc(This->DevicePath);
+	PrintInfo(L"FSUninstall: %s\n", DevicePathString);
+	FreePool(DevicePathString);
+
+	LibUninstallProtocolInterfaces(ControllerHandle,
+			&FileSystemProtocol, &This->FileIoInterface,
+			NULL);
 
 	GrubDestroyFile(This->RootFile);
 	FreePool(This->DevicePath);
-
-	LibUninstallProtocolInterfaces(ControllerHandle,
-			&FileSystemProtocol, &This->FileIOInterface,
-			NULL);
 }
 
 /*
@@ -879,8 +881,8 @@ FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 		PrintStatusError(Status, L"Could not allocate a new file system instance");
 		return Status;
 	}
-	Instance->FileIOInterface.Revision = EFI_FILE_IO_INTERFACE_REVISION;
-	Instance->FileIOInterface.OpenVolume = FileOpenVolume,
+	Instance->FileIoInterface.Revision = EFI_FILE_IO_INTERFACE_REVISION;
+	Instance->FileIoInterface.OpenVolume = FileOpenVolume,
 
 	/* Get access to the Block IO protocol for this controller */
 	Status = BS->OpenProtocol(ControllerHandle,
@@ -934,13 +936,14 @@ FSBindingStop(EFI_DRIVER_BINDING_PROTOCOL *This,
 		EFI_HANDLE *ChildHandleBuffer)
 {
 	EFI_STATUS Status;
-	EFI_FS *Instance;
+	EFI_FS *FSInstance;
+	EFI_FILE_IO_INTERFACE *FileIoInterface;
 
 	PrintDebug(L"FSBindingStop\n");
 
 	/* Get a pointer back to our FS instance through its installed protocol */
 	Status = BS->OpenProtocol(ControllerHandle,
-			&FileSystemProtocol, (VOID **) &Instance,
+			&FileSystemProtocol, (VOID **) &FileIoInterface,
 			This->DriverBindingHandle, ControllerHandle,
 			EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 	if (EFI_ERROR(Status)) {
@@ -948,14 +951,15 @@ FSBindingStop(EFI_DRIVER_BINDING_PROTOCOL *This,
 		return Status;
 	}
 
-	FSUninstall(Instance, ControllerHandle);
+	FSInstance = _CR(FileIoInterface, EFI_FS, FileIoInterface);
+	FSUninstall(FSInstance, ControllerHandle);
 
-	Status = GrubDeviceExit(Instance);
+	Status = GrubDeviceExit(FSInstance);
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"Could not destroy grub device");
 	}
 
-	FreePool(Instance);
+	FreePool(FSInstance);
 
 	BS->CloseProtocol(ControllerHandle, &DiskIoProtocol,
 			This->DriverBindingHandle, ControllerHandle);

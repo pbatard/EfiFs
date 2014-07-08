@@ -34,21 +34,24 @@
 #define FS_DRIVER_VERSION_MINOR 5
 #define FS_DRIVER_VERSION_MICRO 1
 
-#undef offsetof
-#if defined(__GNUC__) && (__GNUC__ > 3)
-#define offsetof(TYPE, MEMBER) __builtin_offsetof(TYPE, MEMBER)
-#else
-#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
-#endif
-
-#undef container_of
-#define container_of(ptr, type, member) ({                  \
-	const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
-	(type *)( (char *)__mptr - offsetof(type,member) );})
-
 #ifndef ARRAYSIZE
-#define ARRAYSIZE(A)     (sizeof(A)/sizeof((A)[0]))
+#define ARRAYSIZE(A)            (sizeof(A)/sizeof((A)[0]))
 #endif
+
+#ifndef MIN
+#define MIN(x,y)                ((x)<(y)?(x):(y))
+#endif
+
+#define _STRINGIFY(s)           #s
+#define STRINGIFY(s)            _STRINGIFY(s)
+
+#define _WIDEN(s)               L ## s
+#define WIDEN(s)                _WIDEN(s)
+
+#define MAX_PATH 256
+#define MINIMUM_INFO_LENGTH     (sizeof(EFI_FILE_INFO) + MAX_PATH * sizeof(CHAR16))
+#define MINIMUM_FS_INFO_LENGTH  (sizeof(EFI_FILE_SYSTEM_INFO) + MAX_PATH * sizeof(CHAR16))
+#define IS_ROOT(File)           (File == File->FileSystem->RootFile)
 
 /* Logging */
 #define FS_LOGLEVEL_NONE        0
@@ -58,30 +61,12 @@
 #define FS_LOGLEVEL_DEBUG       4
 #define FS_LOGLEVEL_EXTRA       5
 
-typedef UINTN (*Print_t) (IN CHAR16 *fmt, ... );
+typedef UINTN (*Print_t)        (IN CHAR16 *fmt, ... );
 extern Print_t PrintError;
 extern Print_t PrintWarning;
 extern Print_t PrintInfo;
 extern Print_t PrintDebug;
 extern Print_t PrintExtra;
-extern void PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...);
-
-#define MAX_PATH 256
-
-#define MINIMUM_INFO_LENGTH     (sizeof(EFI_FILE_INFO) + MAX_PATH * sizeof(CHAR16))
-#define MINIMUM_FS_INFO_LENGTH  (sizeof(EFI_FILE_SYSTEM_INFO) + MAX_PATH * sizeof(CHAR16))
-
-#ifndef MIN
-#define MIN(x,y) ((x)<(y)?(x):(y))
-#endif
-
-#define _STRINGIFY(s) #s
-#define STRINGIFY(s) _STRINGIFY(s)
-
-#define _WIDEN(s) L ## s
-#define WIDEN(s) _WIDEN(s)
-
-#define IS_ROOT(File) (File == File->FileSystem->RootFile)
 
 /* Forward declaration */
 struct _EFI_FS;
@@ -101,15 +86,15 @@ typedef struct _EFI_GRUB_FILE {
 
 /* A file system instance */
 typedef struct _EFI_FS {
-	CHAR8                 *DevicePath;
+	EFI_FILE_IO_INTERFACE  FileIoInterface;
 	EFI_BLOCK_IO          *BlockIo;
 	EFI_DISK_IO           *DiskIo;
-	EFI_FILE_IO_INTERFACE  FileIOInterface;
 	EFI_GRUB_FILE         *RootFile;
 	VOID                  *GrubDevice;
+	CHAR8                 *DevicePath;
 } EFI_FS;
 
-/* Mirror similar constructs from GRUB, using an EFI sauce */
+/* Mirrors a similar construct from GRUB, while EFI-zing it */
 typedef struct _GRUB_DIRHOOK_INFO {
 	UINT32                 Dir:1;
 	UINT32                 MtimeSet:1;
@@ -137,6 +122,7 @@ extern EFI_HANDLE EfiImageHandle;
 extern EFI_GUID ShellVariable;
 extern CHAR16 *DriverNameString;
 
+extern VOID PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...);
 extern CHAR16 *GrubGetUuid(EFI_FS *This);
 extern BOOLEAN GrubFSProbe(EFI_FS *This);
 extern EFI_STATUS GrubDeviceInit(EFI_FS *This);
