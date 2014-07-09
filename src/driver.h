@@ -31,8 +31,8 @@
 
 /* Driver version */
 #define FS_DRIVER_VERSION_MAJOR 0
-#define FS_DRIVER_VERSION_MINOR 5
-#define FS_DRIVER_VERSION_MICRO 1
+#define FS_DRIVER_VERSION_MINOR 6
+#define FS_DRIVER_VERSION_MICRO 0
 
 #ifndef ARRAYSIZE
 #define ARRAYSIZE(A)            (sizeof(A)/sizeof((A)[0]))
@@ -122,13 +122,19 @@ extern EFI_HANDLE EfiImageHandle;
 extern EFI_GUID ShellVariable;
 extern CHAR16 *DriverNameString;
 
+extern VOID strcpya(CHAR8 *dst, CONST CHAR8 *src);
+extern CHAR8 *strchra(const CHAR8 *s, INTN c);
+extern CHAR8 *strrchra(const CHAR8 *s, INTN c);
+extern VOID SetLogging(VOID);
 extern VOID PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...);
+extern VOID GrubDriverInit(VOID);
+extern VOID GrubDriverExit(VOID);
 extern CHAR16 *GrubGetUuid(EFI_FS *This);
 extern BOOLEAN GrubFSProbe(EFI_FS *This);
 extern EFI_STATUS GrubDeviceInit(EFI_FS *This);
 extern EFI_STATUS GrubDeviceExit(EFI_FS *This);
 extern VOID GrubTimeToEfiTime(const INT32 t, EFI_TIME *tp);
-extern VOID copy_path_relative(char *dest, char *src, INTN len);
+extern VOID CopyPathRelative(CHAR8 *dest, CHAR8 *src, INTN len);
 extern EFI_STATUS GrubOpen(EFI_GRUB_FILE *File);
 extern EFI_STATUS GrubDir(EFI_GRUB_FILE *File, const CHAR8 *path,
 		GRUB_DIRHOOK Hook, VOID *HookData);
@@ -144,3 +150,7 @@ extern CHAR16 *Utf8ToUtf16Alloc(CHAR8 *src);
 extern EFI_STATUS Utf8ToUtf16NoAlloc(CHAR8 *src, CHAR16 *Dst, UINTN Len);
 extern CHAR8 *Utf16ToUtf8Alloc(CHAR16 *Src);
 extern EFI_STATUS Utf16ToUtf8NoAlloc(CHAR16 *Src, CHAR8 *dst, UINTN len);
+extern EFI_STATUS FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle);
+extern VOID FSUninstall(EFI_FS *This, EFI_HANDLE ControllerHandle);
+extern EFI_STATUS EFIAPI FileOpenVolume(EFI_FILE_IO_INTERFACE *This,
+		EFI_FILE_HANDLE *Root);
