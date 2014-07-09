@@ -25,7 +25,6 @@
 #include <edk2/ComponentName2.h>
 
 #include "driver.h"
-#include "guid.h"
 
 /* These ones are not defined in gnu-efi yet */
 EFI_GUID DriverBindingProtocol = EFI_DRIVER_BINDING_PROTOCOL_GUID;
@@ -47,9 +46,6 @@ typedef struct {
 } EFI_MUTEX_PROTOCOL;
 static EFI_MUTEX_PROTOCOL MutexProtocol = { 0 };
 
-/*
- * Global Driver Part
- */
 
 /* Return the driver name */
 static EFI_STATUS EFIAPI
@@ -60,9 +56,25 @@ FSGetDriverName(EFI_COMPONENT_NAME_PROTOCOL *This,
 	return EFI_SUCCESS;
 }
 
+static EFI_STATUS EFIAPI
+FSGetDriverName2(EFI_COMPONENT_NAME2_PROTOCOL *This,
+		CHAR8 *Language, CHAR16 **DriverName)
+{
+	*DriverName = DriverNameString;
+	return EFI_SUCCESS;
+}
+
 /* Return the controller name (unsupported for a filesystem) */
 static EFI_STATUS EFIAPI
 FSGetControllerName(EFI_COMPONENT_NAME_PROTOCOL *This,
+		EFI_HANDLE ControllerHandle, EFI_HANDLE ChildHandle,
+		CHAR8 *Language, CHAR16 **ControllerName)
+{
+	return EFI_UNSUPPORTED;
+}
+
+static EFI_STATUS EFIAPI
+FSGetControllerName2(EFI_COMPONENT_NAME2_PROTOCOL *This,
 		EFI_HANDLE ControllerHandle, EFI_HANDLE ChildHandle,
 		CHAR8 *Language, CHAR16 **ControllerName)
 {
@@ -223,8 +235,8 @@ static EFI_COMPONENT_NAME_PROTOCOL FSComponentName = {
 };
 
 static EFI_COMPONENT_NAME2_PROTOCOL FSComponentName2 = {
-	.GetDriverName = (EFI_COMPONENT_NAME2_GET_DRIVER_NAME) FSGetDriverName,
-	.GetControllerName = (EFI_COMPONENT_NAME2_GET_CONTROLLER_NAME) FSGetControllerName,
+	.GetDriverName = FSGetDriverName2,
+	.GetControllerName = FSGetControllerName2,
 	.SupportedLanguages = (CHAR8 *) "en"
 };
 
@@ -315,12 +327,7 @@ FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	/* Prevent the driver from being loaded twice by detecting and trying to
 	 * instantiate a custom protocol, which we use as a global mutex.
 	 */
-	MutexGUID = (EFI_GUID *) GetFSGuid(WIDEN(STRINGIFY(DRIVERNAME)));
-	if (MutexGUID == NULL) {
-		PrintError(L"No GUID is defined for " WIDEN(STRINGIFY(DRIVERNAME)) 
-				L". Please edit <fs_guid.h> to add one\n");
-		return EFI_LOAD_ERROR;
-	}
+	MutexGUID = GetFSGuid();
 
 	Status = BS->LocateProtocol(MutexGUID, NULL, &Interface);
 	if (Status == EFI_SUCCESS) {

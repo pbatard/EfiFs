@@ -154,3 +154,4 @@ extern EFI_STATUS FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle);
 extern VOID FSUninstall(EFI_FS *This, EFI_HANDLE ControllerHandle);
 extern EFI_STATUS EFIAPI FileOpenVolume(EFI_FILE_IO_INTERFACE *This,
 		EFI_FILE_HANDLE *Root);
+extern EFI_GUID *GetFSGuid(VOID);

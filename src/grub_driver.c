@@ -26,9 +26,45 @@
 
 #include "driver.h"
 
-CHAR16* DriverNameString = L"efifs " WIDEN(STRINGIFY(FS_DRIVER_VERSION_MAJOR)) L"."
+CHAR16 *DriverNameString = L"efifs " WIDEN(STRINGIFY(FS_DRIVER_VERSION_MAJOR)) L"."
 		WIDEN(STRINGIFY(FS_DRIVER_VERSION_MINOR)) L"." WIDEN(STRINGIFY(FS_DRIVER_VERSION_MICRO))
 		L" " WIDEN(STRINGIFY(DRIVERNAME)) L" driver (" WIDEN(PACKAGE_STRING) L")";
+
+/**
+ * Set a filesystem GUID according to the filesystem name
+ * We use a static ID for the first 8 bytes, and then roll the lowercase name
+ * for the last 8 bytes (eg. exfat => {'e', 'x', 'f', 'a', 't', 'e', 'x', 'f'})
+ */
+EFI_GUID *
+GetFSGuid(VOID)
+{
+	INTN i, j, k, Len = StrLen(WIDEN(STRINGIFY(DRIVERNAME)));
+	static EFI_GUID Guid = { 0xEF1F5EF1, 0xF17E, 0x5857, { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } };
+	CHAR16 *FsName = StrDuplicate(WIDEN(STRINGIFY(DRIVERNAME)));
+	const CHAR16 *PlusName = L"plus";
+	UINT8 Data4[12];	/* +4 so that we can also reduce something like "1234567plus" into "1234567+" */
+
+	StrLwr(FsName);
+	for (i = 0, j = 0, k = 0; j < ARRAYSIZE(Data4); i = (i+1)%Len, j++) {
+		/* Convert any 'plus' that is part of the name to '+' */
+		if (FsName[i] == PlusName[k]) {
+			if (++k == 4) {
+				k = 0;
+				j -= 3;
+				Data4[j] = (UINT8) '+';
+			} else {
+				Data4[j] = FsName[i];
+			}
+		} else {
+			k = 0;
+			Data4[j] = FsName[i];
+		}
+	}
+	FreePool(FsName);
+	CopyMem(Guid.Data4, Data4, 8);
+
+	return &Guid;
+}
 
 VOID
 GrubDriverInit(VOID)
