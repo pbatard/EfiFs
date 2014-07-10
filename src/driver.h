@@ -17,6 +17,7 @@
  */
 
 #include <efi.h>
+#include <efilink.h>
 
 #pragma once
 
@@ -86,12 +87,14 @@ typedef struct _EFI_GRUB_FILE {
 
 /* A file system instance */
 typedef struct _EFI_FS {
+	LIST_ENTRY            *Flink;
+	LIST_ENTRY            *Blink;
 	EFI_FILE_IO_INTERFACE  FileIoInterface;
 	EFI_BLOCK_IO          *BlockIo;
 	EFI_DISK_IO           *DiskIo;
 	EFI_GRUB_FILE         *RootFile;
 	VOID                  *GrubDevice;
-	CHAR8                 *DevicePath;
+	CHAR16                *DevicePathString;
 } EFI_FS;
 
 /* Mirrors a similar construct from GRUB, while EFI-zing it */

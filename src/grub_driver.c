@@ -26,6 +26,8 @@
 
 #include "driver.h"
 
+extern LIST_ENTRY FsListHead;
+
 CHAR16 *DriverNameString = L"efifs " WIDEN(STRINGIFY(FS_DRIVER_VERSION_MAJOR)) L"."
 		WIDEN(STRINGIFY(FS_DRIVER_VERSION_MINOR)) L"." WIDEN(STRINGIFY(FS_DRIVER_VERSION_MICRO))
 		L" " WIDEN(STRINGIFY(DRIVERNAME)) L" driver (" WIDEN(PACKAGE_STRING) L")";
@@ -69,7 +71,6 @@ GetFSGuid(VOID)
 VOID
 GrubDriverInit(VOID)
 {
-		// TODO: would be nicer to move the fs specific stuff out so we don't have to recompile fs_driver.c
 	/* Register the relevant GRUB filesystem module */
 	GRUB_FS_CALL(DRIVERNAME, init)();
 	/* The GRUB compression routines are registered as an extra module */
@@ -78,6 +79,8 @@ GrubDriverInit(VOID)
 #if defined(EXTRAMODULE)
 	GRUB_FS_CALL(EXTRAMODULE, init)();
 #endif
+
+	InitializeListHead(&FsListHead);
 }
 
 VOID

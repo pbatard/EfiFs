@@ -173,20 +173,22 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	/* Find if we're working with a directory and fill the grub timestamp */
 	Status = GrubDir(NewFile, dirname, InfoHook, (VOID *) NewFile);
 	if (EFI_ERROR(Status)) {
-		PrintStatusError(Status, L"Could not get file attributes for '%s'", Name);
+		if (Status != EFI_NOT_FOUND)
+			PrintStatusError(Status, L"Could not get file attributes for '%s'", Name);
 		FreePool(NewFile->path);
 		GrubDestroyFile(NewFile);
-		return EFI_NOT_FOUND;
+		return Status;
 	}
 
 	/* Finally we can call on GRUB open() if it's a regular file */
 	if (!NewFile->IsDir) {
 		Status = GrubOpen(NewFile);
 		if (EFI_ERROR(Status)) {
-			PrintStatusError(Status, L"Could not open file '%s'", Name);
+			if (Status != EFI_NOT_FOUND)
+				PrintStatusError(Status, L"Could not open file '%s'", Name);
 			FreePool(NewFile->path);
 			GrubDestroyFile(NewFile);
-			return EFI_NOT_FOUND;
+			return Status;
 		}
 	}
 
@@ -664,30 +666,12 @@ EFI_STATUS
 FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 {
 	EFI_STATUS Status;
-	EFI_DEVICE_PATH *DevicePath = NULL;
-	CHAR16 *DevicePathString;
 
 	/* Check if it's a filesystem we can handle */
 	if (!GrubFSProbe(This))
 		return EFI_UNSUPPORTED;
 
-	/* Install the simple file system protocol. */
-	Status = LibInstallProtocolInterfaces(&ControllerHandle,
-			&FileSystemProtocol, &This->FileIoInterface,
-			NULL);
-	if (EFI_ERROR(Status)) {
-		PrintStatusError(Status, L"Could not install simple file system protocol");
-		return Status;
-	}
-
-	DevicePath = DevicePathFromHandle(ControllerHandle);
-	if (DevicePath != NULL) {
-		DevicePathString = DevicePathToStr(DevicePath);
-		This->DevicePath = Utf16ToUtf8Alloc(DevicePathString);
-		if (This->DevicePath == NULL)
-			PrintWarning(L"Could not convert DevicePath %s to UTF-8\n", DevicePathString);
-		PrintInfo(L"FSInstall: %s\n", DevicePathString);
-	}
+	PrintInfo(L"FSInstall: %s\n", This->DevicePathString);
 
 	/* Initialize the root handle */
 	Status = GrubCreateFile(&This->RootFile, This);
@@ -714,6 +698,15 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 	This->RootFile->basename = &This->RootFile->path[1];
 	This->RootFile->IsDir = TRUE;
 
+	/* Install the simple file system protocol. */
+	Status = LibInstallProtocolInterfaces(&ControllerHandle,
+			&FileSystemProtocol, &This->FileIoInterface,
+			NULL);
+	if (EFI_ERROR(Status)) {
+		PrintStatusError(Status, L"Could not install simple file system protocol");
+		return Status;
+	}
+
 	return EFI_SUCCESS;
 }
 
@@ -721,14 +714,9 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 VOID
 FSUninstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 {
-	CHAR16 *DevicePathString = Utf8ToUtf16Alloc(This->DevicePath);
-	PrintInfo(L"FSUninstall: %s\n", DevicePathString);
-	FreePool(DevicePathString);
+	PrintInfo(L"FSUninstall: %s\n", This->DevicePathString);
 
 	LibUninstallProtocolInterfaces(ControllerHandle,
 			&FileSystemProtocol, &This->FileIoInterface,
 			NULL);
-
-	GrubDestroyFile(This->RootFile);
-	FreePool(This->DevicePath);
 }

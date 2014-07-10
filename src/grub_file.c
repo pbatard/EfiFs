@@ -34,6 +34,9 @@
 /* The file system list should only ever contain one element */
 grub_fs_t grub_fs_list = NULL;
 
+/* Keep track of the mounted filesystems */
+LIST_ENTRY FsListHead;
+
 extern EFI_STATUS GrubErrToEFIStatus(grub_err_t err);
 
 /* Don't care about refcounts for a standalone EFI FS driver */
@@ -73,11 +76,25 @@ grub_disk_read(grub_disk_t disk, grub_disk_addr_t sector,
 	return 0;
 }
 
-// TODO: btrfs DOES call on grub_device_open() with an actual name => we'll have to handle that!
 grub_device_t 
 grub_device_open(const char *name)
 {
+	CHAR16 *Name = Utf8ToUtf16Alloc((CHAR8 *) name);
 	struct grub_device* device;
+	EFI_FS *Fs;
+
+	if (Name == NULL) {
+		if (LogLevel > FS_LOGLEVEL_ERROR)
+			grub_printf("Could not convert device '%s' to UTF-16\n", name);
+		return NULL;
+	}
+	for (Fs = (EFI_FS *) FsListHead.Flink; Fs != (EFI_FS *) &FsListHead; Fs = (EFI_FS *) Fs->Flink) {
+		if (StrCmp(Fs->DevicePathString, Name) == 0) 
+			break;
+	}
+	FreePool(Name);
+	if (Fs == (EFI_FS *) &FsListHead)
+		return NULL;
 
 	device = grub_zalloc(sizeof(struct grub_device));
 	if (device == NULL)
@@ -88,7 +105,7 @@ grub_device_open(const char *name)
 		return NULL;
 	}
 	/* The private disk data is a pointer back to our EFI_FS */
-	device->disk->data = (void *) name;
+	device->disk->data = (void *) Fs;
 	/* Ideally, we'd fill the other disk data, such as total_sectors, name
 	 * and so on, but since we're doing the actual disk access through EFI
 	 * DiskIO rather than GRUB's disk.c, this doesn't seem to be needed.
@@ -97,7 +114,7 @@ grub_device_open(const char *name)
 	return device;
 }
 
-grub_err_t 
+grub_err_t
 grub_device_close(grub_device_t device)
 {
 	grub_free(device->disk);
@@ -105,15 +122,24 @@ grub_device_close(grub_device_t device)
 	return 0;
 }
 
-EFI_STATUS 
+EFI_STATUS
 GrubDeviceInit(EFI_FS *This)
 {
-	// TODO: We hijack the name parameter to pass an EFI_FS, but some filesystems
-	// such as btrfs have their own calls to grub_device_open() using a name.
-	// => Use a name <-> EFI_FS table, with the DevicePath string as our ID.
-	This->GrubDevice = (VOID *) grub_device_open((const char *) This);
-	if (This->GrubDevice == NULL)
+	CHAR8 *name = Utf16ToUtf8Alloc(This->DevicePathString);
+
+	if (name == NULL)
 		return EFI_OUT_OF_RESOURCES;
+
+	/* Insert this filesystem in our list */
+	InsertTailList(&FsListHead, (LIST_ENTRY *) This);
+
+	This->GrubDevice = (VOID *) grub_device_open((const char *) name);
+	FreePool(name);
+
+	if (This->GrubDevice == NULL) {
+		RemoveEntryList(This);
+		return EFI_NOT_FOUND;
+	}
 
 	return EFI_SUCCESS;
 }
@@ -122,6 +148,7 @@ EFI_STATUS
 GrubDeviceExit(EFI_FS *This)
 {
 	grub_device_close((grub_device_t) This->GrubDevice);
+	RemoveEntryList(This);
 
 	return EFI_SUCCESS;
 }

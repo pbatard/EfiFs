@@ -81,6 +81,13 @@ FSGetControllerName2(EFI_COMPONENT_NAME2_PROTOCOL *This,
 	return EFI_UNSUPPORTED;
 }
 
+static VOID
+FreeFsInstance(EFI_FS *Instance) {
+	FreePool(Instance->DevicePathString);
+	FreePool(Instance->RootFile);
+	FreePool(Instance);
+}
+
 /*
  * http://sourceforge.net/p/tianocore/edk2-MdeModulePkg/ci/master/tree/Universal/Disk/DiskIoDxe/DiskIo.c
  * To check if your driver has a chance to apply to the controllers sent during
@@ -122,6 +129,7 @@ FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 {
 	EFI_STATUS Status;
 	EFI_FS *Instance;
+	EFI_DEVICE_PATH *DevicePath;
 
 	PrintDebug(L"FSBindingStart\n");
 
@@ -134,6 +142,21 @@ FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 	}
 	Instance->FileIoInterface.Revision = EFI_FILE_IO_INTERFACE_REVISION;
 	Instance->FileIoInterface.OpenVolume = FileOpenVolume,
+
+	/* Fill the device path for our instance */
+	DevicePath = DevicePathFromHandle(ControllerHandle);
+	if (DevicePath == NULL) {
+		Status = EFI_NO_MAPPING;
+		PrintStatusError(Status, L"Could not get Device Path");
+		goto error;
+	}
+
+	Instance->DevicePathString = DevicePathToStr(DevicePath);
+	if (Instance->DevicePathString == NULL) {
+		Status = EFI_OUT_OF_RESOURCES;
+		PrintStatusError(Status, L"Could not allocate Device Path string");
+		goto error;
+	}
 
 	/* Get access to the Block IO protocol for this controller */
 	Status = BS->OpenProtocol(ControllerHandle,
@@ -160,6 +183,7 @@ FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 		goto error;
 	}
 
+	/* Go through GRUB target init */
 	Status = GrubDeviceInit(Instance);
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"Could not init grub device");
@@ -171,13 +195,14 @@ FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 	 * FS driver will be able to access this partition.
 	 */
 	if (EFI_ERROR(Status)) {
+		GrubDeviceExit(Instance);
 		BS->CloseProtocol(ControllerHandle, &DiskIoProtocol,
 			This->DriverBindingHandle, ControllerHandle);
 	}
 
 error:
 	if (EFI_ERROR(Status))
-		FreePool(Instance);
+		FreeFsInstance(Instance);
 	return Status;
 }
 
@@ -187,7 +212,7 @@ FSBindingStop(EFI_DRIVER_BINDING_PROTOCOL *This,
 		EFI_HANDLE *ChildHandleBuffer)
 {
 	EFI_STATUS Status;
-	EFI_FS *FSInstance;
+	EFI_FS *Instance;
 	EFI_FILE_IO_INTERFACE *FileIoInterface;
 
 	PrintDebug(L"FSBindingStop\n");
@@ -202,18 +227,18 @@ FSBindingStop(EFI_DRIVER_BINDING_PROTOCOL *This,
 		return Status;
 	}
 
-	FSInstance = _CR(FileIoInterface, EFI_FS, FileIoInterface);
-	FSUninstall(FSInstance, ControllerHandle);
+	Instance = _CR(FileIoInterface, EFI_FS, FileIoInterface);
+	FSUninstall(Instance, ControllerHandle);
 
-	Status = GrubDeviceExit(FSInstance);
+	Status = GrubDeviceExit(Instance);
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"Could not destroy grub device");
 	}
 
-	FreePool(FSInstance);
-
 	BS->CloseProtocol(ControllerHandle, &DiskIoProtocol,
 			This->DriverBindingHandle, ControllerHandle);
+
+	FreeFsInstance(Instance);
 
 	return EFI_SUCCESS;
 }
