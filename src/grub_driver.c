@@ -26,6 +26,20 @@
 
 #include "driver.h"
 
+/* Setup generic function calls for grub_<fs>_init and grub_<fs>_exit */
+#define MAKE_FN_NAME(drivername, suffix) grub_ ## drivername ## _ ## suffix
+#define GRUB_FS_CALL(drivername, suffix) MAKE_FN_NAME(drivername, suffix)
+extern void GRUB_FS_CALL(DRIVERNAME, init)(void);
+extern void GRUB_FS_CALL(DRIVERNAME, fini)(void);
+#if defined(EXTRAMODULE)
+extern void GRUB_FS_CALL(EXTRAMODULE, init)(void);
+extern void GRUB_FS_CALL(EXTRAMODULE, fini)(void);
+#endif
+#if defined(EXTRAMODULE2)
+extern void GRUB_FS_CALL(EXTRAMODULE2, init)(void);
+extern void GRUB_FS_CALL(EXTRAMODULE2, fini)(void);
+#endif
+
 extern LIST_ENTRY FsListHead;
 
 CHAR16 *DriverNameString = L"efifs " WIDEN(STRINGIFY(FS_DRIVER_VERSION_MAJOR)) L"."
@@ -73,11 +87,14 @@ GrubDriverInit(VOID)
 {
 	/* Register the relevant GRUB filesystem module */
 	GRUB_FS_CALL(DRIVERNAME, init)();
-	/* The GRUB compression routines are registered as an extra module */
+	/* The GRUB compression routines are registered as extra module(s) */
 	// TODO: Eventually, we could try to turn each GRUB module into their
 	// own EFI driver, have them register their interface and consume that.
 #if defined(EXTRAMODULE)
 	GRUB_FS_CALL(EXTRAMODULE, init)();
+#endif
+#if defined(EXTRAMODULE2)
+	GRUB_FS_CALL(EXTRAMODULE2, init)();
 #endif
 
 	InitializeListHead(&FsListHead);
@@ -90,5 +107,8 @@ GrubDriverExit(VOID)
 	GRUB_FS_CALL(DRIVERNAME, fini)();
 #if defined(EXTRAMODULE)
 	GRUB_FS_CALL(EXTRAMODULE, fini)();
+#endif
+#if defined(EXTRAMODULE2)
+	GRUB_FS_CALL(EXTRAMODULE2, fini)();
 #endif
 }

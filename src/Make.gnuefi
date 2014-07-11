@@ -33,15 +33,18 @@ LOCAL_CPPFLAGS  = -DDRIVERNAME=$(DRIVERNAME) $(ARCH_C_FLAGS) \
                   -I$(SRCDIR)/../include -I$(GRUBPATH) -I$(GRUBPATH)/include -I$(GRUBPATH)/grub-core/lib/minilzo
 LOCAL_LIBS      = -lgrub
 LOCAL_LDFLAGS   = -L.
-GRUB_FS_DIR     = ../grub/grub-core/fs
 OBJS            = utf8.o path.o missing.o logging.o grub_file.o grub_driver.o file.o driver.o \
-                  $(GRUB_FS_DIR)/fshelp.o $(GRUB_FS_DIR)/$(DRIVERNAME).o
+                  $(GRUBPATH)/grub-core/fs/fshelp.o $(GRUBPATH)/grub-core/fs/$(DRIVERNAME).o
+TARGET          = $(DRIVERNAME)_$(DRIVERARCH).efi
 
 ifdef EXTRAMODULE
 LOCAL_CPPFLAGS += -DEXTRAMODULE=$(EXTRAMODULE)
-OBJS           += $(GRUB_FS_DIR)/$(EXTRAMODULE).o
+OBJS           += $(GRUBPATH)/grub-core/$(EXTRAMODULEDIR)/$(EXTRAMODULE).o
 endif
-TARGET          = $(DRIVERNAME)_$(DRIVERARCH).efi
+ifdef EXTRAMODULE2
+LOCAL_CPPFLAGS += -DEXTRAMODULE2=$(EXTRAMODULE2)
+OBJS           += $(GRUBPATH)/grub-core/$(EXTRAMODULE2DIR)/$(EXTRAMODULE2).o
+endif
 
 all: $(TARGET)
 
@@ -54,4 +57,4 @@ $(TARGET): $(SHLIB_TARGET)
 	@chmod a-x $(TARGET)
 
 clean:
-	rm -f $(GRUB_FS_DIR)/*.o $(GRUB_FS_DIR)/*.d *.o *.d *.so *.efi
+	rm -f $(GRUBPATH)/grub-core/fs/*.o $(GRUBPATH)/grub-core/fs/*.d $(GRUBPATH)/grub-core/io/*.o $(GRUBPATH)/grub-core/io/*.d *.o *.d *.so *.efi

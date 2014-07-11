@@ -33,7 +33,7 @@
 /* Driver version */
 #define FS_DRIVER_VERSION_MAJOR 0
 #define FS_DRIVER_VERSION_MINOR 6
-#define FS_DRIVER_VERSION_MICRO 0
+#define FS_DRIVER_VERSION_MICRO 1
 
 #ifndef ARRAYSIZE
 #define ARRAYSIZE(A)            (sizeof(A)/sizeof((A)[0]))
@@ -109,16 +109,6 @@ typedef struct _GRUB_DIRHOOK_INFO {
 
 typedef INT32 (*GRUB_DIRHOOK) (const CHAR8 *name,
 		const GRUB_DIRHOOK_INFO *Info, VOID *Data);
-
-/* Setup generic function calls for grub_<fs>_init and grub_<fs>_exit */
-#define MAKE_FN_NAME(drivername, suffix) grub_ ## drivername ## _ ## suffix
-#define GRUB_FS_CALL(drivername, suffix) MAKE_FN_NAME(drivername, suffix)
-extern void GRUB_FS_CALL(DRIVERNAME, init)(void);
-extern void GRUB_FS_CALL(DRIVERNAME, fini)(void);
-#if defined(EXTRAMODULE)
-extern void GRUB_FS_CALL(EXTRAMODULE, init)(void);
-extern void GRUB_FS_CALL(EXTRAMODULE, fini)(void);
-#endif
 
 extern INTN LogLevel;
 extern EFI_HANDLE EfiImageHandle;

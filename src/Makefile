@@ -2,7 +2,7 @@
 #
 
 INSTALL_DIR     = /boot/efi/EFI/refind/drivers_x64
-FILESYSTEMS     = affs bfs exfat hfs hfsplus jfs ntfs reiserfs sfs ufs2 xfs
+FILESYSTEMS     = affs bfs btrfs exfat hfs hfsplus jfs nilfs2 ntfs reiserfs sfs ufs2 xfs
 HOSTARCH        = $(shell uname -m | sed s,i[3456789]86,ia32,)
 
 ifeq ($(HOSTARCH),ia64)
@@ -27,7 +27,7 @@ bfs:
 
 btrfs:
 	@rm -f grub_driver.o
-	+make DRIVERNAME=$@ -f Make.gnuefi
+	+make DRIVERNAME=$@ EXTRAMODULE=gzio EXTRAMODULEDIR=io -f Make.gnuefi
 
 exfat:
 	@rm -f grub_driver.o
@@ -37,10 +37,9 @@ hfs:
 	@rm -f grub_driver.o
 	+make DRIVERNAME=$@ -f Make.gnuefi
 
-# TODO: add compression
 hfsplus:
 	@rm -f grub_driver.o
-	+make DRIVERNAME=$@ -f Make.gnuefi
+	+make DRIVERNAME=$@ EXTRAMODULE=$@comp EXTRAMODULEDIR=fs EXTRAMODULE2=gzio EXTRAMODULE2DIR=io -f Make.gnuefi
 
 jfs:
 	@rm -f grub_driver.o
@@ -52,7 +51,7 @@ nilfs2:
 
 ntfs:
 	@rm -f grub_driver.o
-	+make DRIVERNAME=$@ EXTRAMODULE=$@comp -f Make.gnuefi
+	+make DRIVERNAME=$@ EXTRAMODULE=$@comp EXTRAMODULEDIR=fs -f Make.gnuefi
 
 reiserfs:
 	@rm -f grub_driver.o

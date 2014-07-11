@@ -3,7 +3,6 @@
  *  Copyright © 2014 Pete Batard <pete@akeo.ie>
  *  Based on GRUB  --  GRand Unified Bootloader
  *  Copyright © 2001-2014 Free Software Foundation, Inc.
- *  Path sanitation code by Ludwig Nussel <ludwig.nussel@suse.de>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,6 +20,7 @@
 
 #include <efi.h>
 #include <efilib.h>
+#include <efidebug.h>	/* ASSERT */
 
 #include <grub/err.h>
 #include <grub/misc.h>
@@ -37,6 +37,9 @@ grub_fs_t grub_fs_list = NULL;
 /* Keep track of the mounted filesystems */
 LIST_ENTRY FsListHead;
 
+grub_file_filter_t grub_file_filters_all[GRUB_FILE_FILTER_MAX];
+grub_file_filter_t grub_file_filters_enabled[GRUB_FILE_FILTER_MAX];
+
 extern EFI_STATUS GrubErrToEFIStatus(grub_err_t err);
 
 /* Don't care about refcounts for a standalone EFI FS driver */
@@ -50,6 +53,88 @@ grub_dl_unref(grub_dl_t mod) {
 	return 0;
 };
 
+/* The following 3 calls are copied verbatim from the GRUB kernel */
+grub_ssize_t
+grub_file_read (grub_file_t file, void *buf, grub_size_t len)
+{
+	grub_ssize_t res;
+	grub_disk_read_hook_t read_hook;
+	void *read_hook_data;
+
+	if (file->offset > file->size)
+	{
+		grub_error (GRUB_ERR_OUT_OF_RANGE,
+			N_("attempt to read past the end of file"));
+		return -1;
+	}
+
+	if (len == 0)
+		return 0;
+
+	if (len > file->size - file->offset)
+		len = file->size - file->offset;
+
+	/* Prevent an overflow.  */
+	if ((grub_ssize_t) len < 0)
+		len >>= 1;
+
+	if (len == 0)
+		return 0;
+	read_hook = file->read_hook;
+	read_hook_data = file->read_hook_data;
+	if (!file->read_hook)
+	{
+		file->read_hook = grub_file_progress_hook;
+		file->read_hook_data = file;
+		file->progress_offset = file->offset;
+	}
+	res = (file->fs->read) (file, buf, len);
+	file->read_hook = read_hook;
+	file->read_hook_data = read_hook_data;
+	if (res > 0)
+		file->offset += res;
+
+	return res;
+}
+
+grub_err_t
+grub_file_close(grub_file_t file)
+{
+	if (file->fs->close)
+		(file->fs->close) (file);
+
+	if (file->device)
+		grub_device_close (file->device);
+	grub_free (file->name);
+	grub_free (file);
+	return grub_errno;
+}
+
+grub_off_t
+grub_file_seek(grub_file_t file, grub_off_t offset)
+{
+	grub_off_t old;
+
+	if (offset > file->size)
+	{
+		grub_error (GRUB_ERR_OUT_OF_RANGE,
+			N_("attempt to seek outside of the file"));
+		return -1;
+	}
+
+	old = file->offset;
+	file->offset = offset;
+
+	return old;
+}
+
+int
+grub_device_iterate(grub_device_iterate_hook_t hook, void *hook_data)
+{
+	PrintError(L"grub_device_iterate() called\n");
+	return 0;
+}
+
 grub_disk_read_hook_t grub_file_progress_hook = NULL;
 
 grub_err_t
@@ -59,8 +144,9 @@ grub_disk_read(grub_disk_t disk, grub_disk_addr_t sector,
 	EFI_STATUS Status;
 	EFI_FS* FileSystem = (EFI_FS *) disk->data;
 
-	if ((FileSystem == NULL) || (FileSystem->DiskIo == NULL) || (FileSystem->BlockIo == NULL))
-		return GRUB_ERR_READ_ERROR;
+	ASSERT(FileSystem != NULL);
+	ASSERT(FileSystem->DiskIo != NULL);
+	ASSERT(FileSystem->BlockIo != NULL);
 
 	/* NB: We could get the actual blocksize through FileSystem->BlockIo->Media->BlockSize
 	 * but GRUB uses the fixed GRUB_DISK_SECTOR_SIZE, so we follow suit
@@ -76,24 +162,39 @@ grub_disk_read(grub_disk_t disk, grub_disk_addr_t sector,
 	return 0;
 }
 
+grub_uint64_t
+grub_disk_get_size (grub_disk_t disk)
+{
+	EFI_FS* FileSystem = (EFI_FS *) disk->data;
+
+	ASSERT(FileSystem != NULL);
+	ASSERT(FileSystem->BlockIo != NULL);
+
+	return (FileSystem->BlockIo->Media->LastBlock + 1) *
+			FileSystem->BlockIo->Media->BlockSize;
+}
+
 grub_device_t 
 grub_device_open(const char *name)
 {
 	CHAR16 *Name = Utf8ToUtf16Alloc((CHAR8 *) name);
 	struct grub_device* device;
-	EFI_FS *Fs;
+	EFI_FS *FileSystem;
+
+	ASSERT(name != NULL);
 
 	if (Name == NULL) {
 		if (LogLevel > FS_LOGLEVEL_ERROR)
 			grub_printf("Could not convert device '%s' to UTF-16\n", name);
 		return NULL;
 	}
-	for (Fs = (EFI_FS *) FsListHead.Flink; Fs != (EFI_FS *) &FsListHead; Fs = (EFI_FS *) Fs->Flink) {
-		if (StrCmp(Fs->DevicePathString, Name) == 0) 
+	for (FileSystem = (EFI_FS *) FsListHead.Flink; FileSystem != (EFI_FS *) &FsListHead;
+			FileSystem = (EFI_FS *) FileSystem->Flink) {
+		if (StrCmp(FileSystem->DevicePathString, Name) == 0) 
 			break;
 	}
 	FreePool(Name);
-	if (Fs == (EFI_FS *) &FsListHead)
+	if (FileSystem == (EFI_FS *) &FsListHead)
 		return NULL;
 
 	device = grub_zalloc(sizeof(struct grub_device));
@@ -105,7 +206,7 @@ grub_device_open(const char *name)
 		return NULL;
 	}
 	/* The private disk data is a pointer back to our EFI_FS */
-	device->disk->data = (void *) Fs;
+	device->disk->data = (void *) FileSystem;
 	/* Ideally, we'd fill the other disk data, such as total_sectors, name
 	 * and so on, but since we're doing the actual disk access through EFI
 	 * DiskIO rather than GRUB's disk.c, this doesn't seem to be needed.
@@ -117,27 +218,29 @@ grub_device_open(const char *name)
 grub_err_t
 grub_device_close(grub_device_t device)
 {
+	ASSERT(device != NULL);
+
 	grub_free(device->disk);
 	grub_free(device);
 	return 0;
 }
 
 EFI_STATUS
-GrubDeviceInit(EFI_FS *This)
+GrubDeviceInit(EFI_FS *FileSystem)
 {
-	CHAR8 *name = Utf16ToUtf8Alloc(This->DevicePathString);
+	CHAR8 *name = Utf16ToUtf8Alloc(FileSystem->DevicePathString);
 
 	if (name == NULL)
 		return EFI_OUT_OF_RESOURCES;
 
 	/* Insert this filesystem in our list */
-	InsertTailList(&FsListHead, (LIST_ENTRY *) This);
+	InsertTailList(&FsListHead, (LIST_ENTRY *) FileSystem);
 
-	This->GrubDevice = (VOID *) grub_device_open((const char *) name);
+	FileSystem->GrubDevice = (VOID *) grub_device_open((const char *) name);
 	FreePool(name);
 
-	if (This->GrubDevice == NULL) {
-		RemoveEntryList(This);
+	if (FileSystem->GrubDevice == NULL) {
+		RemoveEntryList(FileSystem);
 		return EFI_NOT_FOUND;
 	}
 
@@ -145,16 +248,16 @@ GrubDeviceInit(EFI_FS *This)
 }
 
 EFI_STATUS
-GrubDeviceExit(EFI_FS *This)
+GrubDeviceExit(EFI_FS *FileSystem)
 {
-	grub_device_close((grub_device_t) This->GrubDevice);
-	RemoveEntryList(This);
+	grub_device_close((grub_device_t) FileSystem->GrubDevice);
+	RemoveEntryList(FileSystem);
 
 	return EFI_SUCCESS;
 }
 
 EFI_STATUS
-GrubCreateFile(EFI_GRUB_FILE **File, EFI_FS *This)
+GrubCreateFile(EFI_GRUB_FILE **File, EFI_FS *FileSystem)
 {
 	EFI_GRUB_FILE *NewFile;
 	grub_file_t f;
@@ -169,11 +272,11 @@ GrubCreateFile(EFI_GRUB_FILE **File, EFI_FS *This)
 	}
 
 	/* Initialize the attributes */
-	NewFile->FileSystem = This;
-	CopyMem(&NewFile->EfiFile, &This->RootFile->EfiFile, sizeof(EFI_FILE));
+	NewFile->FileSystem = FileSystem;
+	CopyMem(&NewFile->EfiFile, &FileSystem->RootFile->EfiFile, sizeof(EFI_FILE));
 
 	f = (grub_file_t) NewFile->GrubFile;
-	f->device = (grub_device_t) This->GrubDevice;
+	f->device = (grub_device_t) FileSystem->GrubDevice;
 	f->fs = grub_fs_list;
 
 	*File = NewFile;
@@ -295,10 +398,10 @@ probe_dummy_iter (const char *filename __attribute__ ((unused)),
 }
 
 BOOLEAN 
-GrubFSProbe(EFI_FS *This)
+GrubFSProbe(EFI_FS *FileSystem)
 {
 	grub_fs_t p = grub_fs_list;
-	grub_device_t device = (grub_device_t) This->GrubDevice;
+	grub_device_t device = (grub_device_t) FileSystem->GrubDevice;
 
 	if ((p == NULL) || (device->disk == NULL)) {
 		PrintError(L"GrubFSProbe: uninitialized variables\n"); 
@@ -316,11 +419,11 @@ GrubFSProbe(EFI_FS *This)
 }
 
 CHAR16 *
-GrubGetUuid(EFI_FS* This)
+GrubGetUuid(EFI_FS* FileSystem)
 {
 	EFI_STATUS Status;
 	grub_fs_t p = grub_fs_list;
-	grub_device_t device = (grub_device_t) This->GrubDevice;
+	grub_device_t device = (grub_device_t) FileSystem->GrubDevice;
 	static CHAR16 Uuid[36];
 	char* uuid;
 
