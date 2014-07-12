@@ -2,7 +2,7 @@
 #
 
 INSTALL_DIR     = /boot/efi/EFI/refind/drivers_x64
-FILESYSTEMS     = affs bfs btrfs exfat hfs hfsplus jfs nilfs2 ntfs reiserfs sfs ufs2 xfs
+FILESYSTEMS     = affs bfs btrfs exfat ext2 hfs hfsplus iso9660 jfs nilfs2 ntfs reiserfs sfs udf ufs2 xfs
 HOSTARCH        = $(shell uname -m | sed s,i[3456789]86,ia32,)
 
 ifeq ($(HOSTARCH),ia64)
@@ -29,6 +29,10 @@ btrfs:
 	@rm -f grub_driver.o
 	+make DRIVERNAME=$@ EXTRAMODULE=gzio EXTRAMODULEDIR=io -f Make.gnuefi
 
+ext2:
+	@rm -f grub_driver.o
+	+make DRIVERNAME=$@ -f Make.gnuefi
+
 exfat:
 	@rm -f grub_driver.o
 	+make DRIVERNAME=$@ -f Make.gnuefi
@@ -40,6 +44,10 @@ hfs:
 hfsplus:
 	@rm -f grub_driver.o
 	+make DRIVERNAME=$@ EXTRAMODULE=$@comp EXTRAMODULEDIR=fs EXTRAMODULE2=gzio EXTRAMODULE2DIR=io -f Make.gnuefi
+
+iso9660:
+	@rm -f grub_driver.o
+	+make DRIVERNAME=$@ -f Make.gnuefi
 
 jfs:
 	@rm -f grub_driver.o
@@ -58,6 +66,10 @@ reiserfs:
 	+make DRIVERNAME=$@ -f Make.gnuefi
 
 sfs:
+	@rm -f grub_driver.o
+	+make DRIVERNAME=$@ -f Make.gnuefi
+
+udf:
 	@rm -f grub_driver.o
 	+make DRIVERNAME=$@ -f Make.gnuefi
 
