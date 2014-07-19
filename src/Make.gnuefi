@@ -3,7 +3,6 @@
 #
 
 SRCDIR          = .
-VPATH           = $(SRCDIR)
 GRUBPATH        = $(SRCDIR)/../grub
 HOSTARCH        = $(shell uname -m | sed s,i[3456789]86,ia32,)
 ARCH           ?= $(HOSTARCH)
@@ -34,9 +33,12 @@ LOCAL_CPPFLAGS  = -DDRIVERNAME=$(DRIVERNAME) $(ARCH_C_FLAGS) \
 LOCAL_LIBS      = -lgrub
 LOCAL_LDFLAGS   = -L.
 OBJS            = utf8.o path.o missing.o logging.o grub_file.o grub_driver.o file.o driver.o \
-                  $(GRUBPATH)/grub-core/fs/fshelp.o $(GRUBPATH)/grub-core/fs/$(DRIVERNAME).o
+                  $(GRUBPATH)/grub-core/fs/fshelp.o $(GRUBPATH)/grub-core/$(FSDIR)/$(DRIVERNAME).o
 TARGET          = $(DRIVERNAME)_$(DRIVERARCH).efi
 
+ifdef EXTRAOBJS
+OBJS           += $(addprefix $(GRUBPATH)/grub-core/$(FSDIR)/,$(EXTRAOBJS))
+endif
 ifdef EXTRAMODULE
 LOCAL_CPPFLAGS += -DEXTRAMODULE=$(EXTRAMODULE)
 OBJS           += $(GRUBPATH)/grub-core/$(EXTRAMODULEDIR)/$(EXTRAMODULE).o
@@ -57,4 +59,5 @@ $(TARGET): $(SHLIB_TARGET)
 	@chmod a-x $(TARGET)
 
 clean:
-	rm -f $(GRUBPATH)/grub-core/fs/*.o $(GRUBPATH)/grub-core/fs/*.d $(GRUBPATH)/grub-core/io/*.o $(GRUBPATH)/grub-core/io/*.d *.o *.d *.so *.efi
+	rm -f $(GRUBPATH)/grub-core/fs/*.o $(GRUBPATH)/grub-core/fs/*.d $(GRUBPATH)/grub-core/io/*.o $(GRUBPATH)/grub-core/io/*.d \
+	$(GRUBPATH)/grub-core/fs/zfs/*.o $(GRUBPATH)/grub-core/fs/zfs/*.d *.o *.d *.so *.efi

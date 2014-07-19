@@ -1,8 +1,10 @@
-efifs - Standalone EFI File System Drivers based on GRUB 2.0
-============================================================
+efifs - EFI File System Drivers
+===============================
 
-This is a __WORK IN PROGRESS__ GPLv3+ implementation of standalone EFI File System
-drivers, based on the GRUB 2.0 read-only drivers.
+This is a GPLv3+ implementation of standalone EFI File System drivers, based on
+the [GRUB 2.0](http://www.gnu.org/software/grub/) __read-only__ drivers.
+
+For additional info as well as precompiled drivers, see http://efi.akeo.ie
 
 * Requirements:
   * gnu-efi v3.0s or later 
