@@ -139,6 +139,8 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 		/* We're dealing with the root */
 		PrintInfo(L"  Reopening <ROOT>\n");
 		*New = &File->FileSystem->RootFile->EfiFile;
+		/* Must make sure that DirIndex is reset too (NB: no concurrent access!) */
+		File->FileSystem->RootFile->DirIndex = 0;
 		PrintInfo(L"  RET: %llx\n", (UINT64) *New);
 		return EFI_SUCCESS;
 	}
@@ -319,7 +321,7 @@ FileReadDir(EFI_GRUB_FILE *File, UINTN *Len, VOID *Data)
 	EFI_GRUB_FILE *TmpFile = NULL;
 	INTN len;
 
-	/* Unless we can fit MAX_PATH chars, forget it */
+	/* Unless we can fit our maximum size, forget it */
 	if (*Len < MINIMUM_INFO_LENGTH) {
 		*Len = MINIMUM_INFO_LENGTH;
 		return EFI_BUFFER_TOO_SMALL;
