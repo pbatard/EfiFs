@@ -1,6 +1,13 @@
 For detailed information about the changes below, please see the git log or
 visit: https://github.com/pbatard/efifs
 
+2014-07-28: v0.6.1
+* Add ZFS support
+* Add ISO9660 and UDF support
+* Add nilfs and compressed HFS+ support
+* Add ext2/ext3/ext4 and btrfs support (slow!!)
+* Fix an issue when listing root multiple times
+
 2014-07-10: v0.6
 * Add compressed NTFS support
 * Add support for AFFS (Amiga Fast FileSystem), BFS (BeOS FS), JFS, HFS, HFS+, 
