@@ -18,9 +18,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <efi.h>
-#include <efilib.h>
-
 #include "driver.h"
 
 /**
@@ -84,7 +81,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	INTN i, len;
 	BOOLEAN AbsolutePath = (*Name == L'\\');
 
-	PrintInfo(L"Open(%llx%s, \"%s\")\n", (UINT64) This,
+	PrintInfo(L"Open(%llx%s, \"%s\")\n", (UINTN) This,
 			IS_ROOT(File)?L" <ROOT>":L"", Name);
 
 	/* Fail unless opening read-only */
@@ -104,7 +101,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 		PrintInfo(L"  Reopening %s\n", IS_ROOT(File)?L"<ROOT>":FileName(File));
 		File->RefCount++;
 		*New = This;
-		PrintInfo(L"  RET: %llx\n", (UINT64) *New);
+		PrintInfo(L"  RET: %llx\n", (UINTN) *New);
 		return EFI_SUCCESS;
 	}
 
@@ -141,7 +138,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 		*New = &File->FileSystem->RootFile->EfiFile;
 		/* Must make sure that DirIndex is reset too (NB: no concurrent access!) */
 		File->FileSystem->RootFile->DirIndex = 0;
-		PrintInfo(L"  RET: %llx\n", (UINT64) *New);
+		PrintInfo(L"  RET: %llx\n", (UINTN) *New);
 		return EFI_SUCCESS;
 	}
 
@@ -197,8 +194,15 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	NewFile->RefCount++;
 	*New = &NewFile->EfiFile;
 
-	PrintInfo(L"  RET: %llx\n", (UINT64) *New);
+	PrintInfo(L"  RET: %llx\n", (UINTN) *New);
 	return EFI_SUCCESS;
+}
+
+static EFI_STATUS EFIAPI
+FileOpenEx(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
+         CHAR16 *Name, UINT64 Mode, UINT64 Attributes, EFI_FILE_IO_TOKEN *Token)
+{
+    return FileOpen(This, New, Name, Mode, Attributes);
 }
 
 /**
@@ -212,7 +216,7 @@ FileClose(EFI_FILE_HANDLE This)
 {
 	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 
-	PrintInfo(L"Close(%llx|'%s') %s\n", (UINT64) This, FileName(File),
+	PrintInfo(L"Close(%llx|'%s') %s\n", (UINTN) This, FileName(File),
 		IS_ROOT(File)?L"<ROOT>":L"");
 
 	/* Nothing to do it this is the root */
@@ -264,7 +268,11 @@ DirHook(const CHAR8 *name, const GRUB_DIRHOOK_INFO *DirInfo, VOID *Data)
 	EFI_STATUS Status;
 	EFI_FILE_INFO *Info = (EFI_FILE_INFO *) Data;
 	INT64 *Index = (INT64 *) &Info->FileSize;
+#if defined(MDE_CPU_IA32)
+	CHAR8 *filename = (CHAR8 *) ((UINT32)Info->PhysicalSize);
+#else
 	CHAR8 *filename = (CHAR8 *) Info->PhysicalSize;
+#endif
 	EFI_TIME Time = { 1970, 01, 01, 00, 00, 00, 0, 0, 0, 0, 0};
 
 	// Eliminate '.' or '..'
@@ -410,6 +418,12 @@ FileRead(EFI_FILE_HANDLE This, UINTN *Len, VOID *Data)
 	return GrubRead(File, Data, Len);
 }
 
+static EFI_STATUS EFIAPI
+FileReadEx(IN EFI_FILE_PROTOCOL *This, IN OUT EFI_FILE_IO_TOKEN *Token)
+{
+    return FileRead(This, &(Token->BufferSize), Token->Buffer);
+}
+
 /**
  * Write to file
  *
@@ -427,6 +441,12 @@ FileWrite(EFI_FILE_HANDLE This, UINTN *Len, VOID *Data)
 	return EFI_WRITE_PROTECTED;
 }
 
+static EFI_STATUS EFIAPI
+FileWriteEx(IN EFI_FILE_PROTOCOL *This, IN OUT EFI_FILE_IO_TOKEN *Token)
+{
+    return FileWrite(This, &(Token->BufferSize), Token->Buffer);
+}
+
 /**
  * Set file position
  *
@@ -440,7 +460,7 @@ FileSetPosition(EFI_FILE_HANDLE This, UINT64 Position)
 	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 	UINT64 FileSize;
 
-	PrintInfo(L"SetPosition(%llx|'%s', %lld) %s\n", (UINT64) This,
+	PrintInfo(L"SetPosition(%llx|'%s', %lld) %s\n", (UINTN) This,
 		FileName(File), Position, (File->IsDir)?L"<DIR>":L"");
 
 	/* If this is a directory, reset the Index to the start */
@@ -506,15 +526,14 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 	EFI_FILE_SYSTEM_INFO *FSInfo = (EFI_FILE_SYSTEM_INFO *) Data;
 	EFI_FILE_INFO *Info = (EFI_FILE_INFO *) Data;
-	CHAR16 GuidString[36];
 	EFI_TIME Time;
 	CHAR8* label;
 
-	PrintInfo(L"GetInfo(%llx|'%s', %d) %s\n", (UINT64) This,
+	PrintInfo(L"GetInfo(%llx|'%s', %d) %s\n", (UINTN) This,
 		FileName(File), *Len, File->IsDir?L"<DIR>":L"");
 
 	/* Determine information to return */
-	if (CompareMem(Type, &GenericFileInfo, sizeof(*Type)) == 0) {
+	if (CompareMem(Type, &gEfiFileInfoGuid, sizeof(*Type)) == 0) {
 
 		/* Fill file information */
 		PrintExtra(L"Get regular file information\n");
@@ -551,7 +570,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 				StrLen(Info->FileName) * sizeof(CHAR16);
 		return EFI_SUCCESS;
 
-	} else if (CompareMem(Type, &FileSystemInfo, sizeof(*Type)) == 0) {
+	} else if (CompareMem(Type, &gEfiFileSystemInfoGuid, sizeof(*Type)) == 0) {
 
 		/* Get file system information */
 		PrintExtra(L"Get file system information\n");
@@ -564,13 +583,24 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 		FSInfo->Size = *Len;
 		FSInfo->ReadOnly = 1;
 		/* NB: This should really be cluster size, but we don't have access to that */
-		FSInfo->BlockSize = File->FileSystem->BlockIo->Media->BlockSize;
+        if (File->FileSystem->BlockIo2 != NULL)
+        {
+            FSInfo->BlockSize = File->FileSystem->BlockIo2->Media->BlockSize;
+        } else {
+            FSInfo->BlockSize = File->FileSystem->BlockIo->Media->BlockSize;
+        }
 		if (FSInfo->BlockSize  == 0) {
 			PrintWarning(L"Corrected Media BlockSize\n");
 			FSInfo->BlockSize = 512;
 		}
-		FSInfo->VolumeSize = (File->FileSystem->BlockIo->Media->LastBlock + 1) *
+        if (File->FileSystem->BlockIo2 != NULL)
+        {
+            FSInfo->VolumeSize = (File->FileSystem->BlockIo2->Media->LastBlock + 1) *
 			FSInfo->BlockSize;
+        } else {
+            FSInfo->VolumeSize = (File->FileSystem->BlockIo->Media->LastBlock + 1) *
+			FSInfo->BlockSize;
+        }
 		/* No idea if we can easily get this for GRUB, and the device is RO anyway */
 		FSInfo->FreeSpace = 0;
 
@@ -592,9 +622,9 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 
 	} else {
 
-		GuidToString(GuidString, Type);
-		PrintError(L"'%s': Cannot get information of type %s\n",
-				FileName(File), GuidString);
+		Print(L"'%s': Cannot get information of type ", FileName(File));
+        PrintGuid(Type);
+        Print(L"\n");
 		return EFI_UNSUPPORTED;
 
 	}
@@ -613,11 +643,11 @@ static EFI_STATUS EFIAPI
 FileSetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN Len, VOID *Data)
 {
 	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
-	CHAR16 GuidString[36];
 
-	GuidToString(GuidString, Type);
-	PrintError(L"Cannot set information of type %s for file '%s'\n",
-			GuidString, FileName(File));
+	Print(L"Cannot set information of type ");
+    PrintGuid(Type);
+    Print(L" for file '%s'\n", FileName(File));
+
 	return EFI_WRITE_PROTECTED;
 }
 
@@ -635,8 +665,14 @@ FileFlush(EFI_FILE_HANDLE This)
 {
 	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 
-	PrintInfo(L"Flush(%llx|'%s')\n", (UINT64)This, FileName(File));
+	PrintInfo(L"Flush(%llx|'%s')\n", (UINTN)This, FileName(File));
 	return EFI_SUCCESS;
+}
+
+static EFI_STATUS EFIAPI
+FileFlushEx(EFI_FILE_HANDLE This, EFI_FILE_IO_TOKEN *Token)
+{
+    return FileFlush(This);
 }
 
 /**
@@ -647,7 +683,7 @@ FileFlush(EFI_FILE_HANDLE This)
  * @ret Status		EFI status code
  */
 EFI_STATUS EFIAPI
-FileOpenVolume(EFI_FILE_IO_INTERFACE *This, EFI_FILE_HANDLE *Root)
+FileOpenVolume(EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *This, EFI_FILE_HANDLE *Root)
 {
 	EFI_FS *FSInstance = _CR(This, EFI_FS, FileIoInterface);
 
@@ -694,6 +730,10 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 	This->RootFile->EfiFile.GetInfo = FileGetInfo;
 	This->RootFile->EfiFile.SetInfo = FileSetInfo;
 	This->RootFile->EfiFile.Flush = FileFlush;
+    This->RootFile->EfiFile.OpenEx = FileOpenEx;
+    This->RootFile->EfiFile.ReadEx = FileReadEx;
+    This->RootFile->EfiFile.WriteEx = FileWriteEx;
+    This->RootFile->EfiFile.FlushEx = FileFlushEx;
 
 	/* Setup the other attributes */
 	This->RootFile->path = "/";
@@ -701,8 +741,8 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 	This->RootFile->IsDir = TRUE;
 
 	/* Install the simple file system protocol. */
-	Status = LibInstallProtocolInterfaces(&ControllerHandle,
-			&FileSystemProtocol, &This->FileIoInterface,
+	Status = BS->InstallMultipleProtocolInterfaces(&ControllerHandle,
+			&gEfiSimpleFileSystemProtocolGuid, &This->FileIoInterface,
 			NULL);
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"Could not install simple file system protocol");
@@ -718,7 +758,7 @@ FSUninstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 {
 	PrintInfo(L"FSUninstall: %s\n", This->DevicePathString);
 
-	LibUninstallProtocolInterfaces(ControllerHandle,
-			&FileSystemProtocol, &This->FileIoInterface,
+	BS->UninstallMultipleProtocolInterfaces(ControllerHandle,
+			&gEfiSimpleFileSystemProtocolGuid, &This->FileIoInterface,
 			NULL);
 }

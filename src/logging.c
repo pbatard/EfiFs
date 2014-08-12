@@ -1,6 +1,6 @@
 /* logging.c - EFI logging */
 /*
- *  Copyright © 2014 Pete Batard <pete@akeo.ie>
+ *  Copyright ï¿½ 2014 Pete Batard <pete@akeo.ie>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,10 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <efi.h>
-#include <efilib.h>
-#include <efistdarg.h>
-#include <edk2/ShellVariableGuid.h>
+#include <Guid/ShellVariableGuid.h>
 
 #include "driver.h"
 
@@ -51,17 +48,19 @@ INTN LogLevel = DEFAULT_LOGLEVEL;
 VOID
 PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...)
 {
-	CHAR16 StatusString[64];
 	va_list ap;
+    CHAR8 *param;
 
 	if (LogLevel < FS_LOGLEVEL_ERROR)
 		return;
 
-	StatusToString(StatusString, Status);
 	va_start(ap, Format);
-	VPrint((CHAR16 *)Format, ap);
+    while ((param = VA_ARG(ap, CHAR8 *)) != NULL)
+    {
+      AsciiPrint(param);
+    }
 	va_end(ap);
-	Print(L": [%d] %s\n", Status, StatusString); 
+	Print(L": [%d]\n", Status);
 }
 
 /* You can control the verbosity of the driver output by setting the shell environment
@@ -72,14 +71,14 @@ SetLogging(VOID)
 {
 	EFI_STATUS Status;
 	CHAR16 LogVar[4];
-	UINTN i, LogVarSize = sizeof(LogVar);
+	UINTN /*i,*/ LogVarSize = sizeof(LogVar);
 
 	Status = RT->GetVariable(L"FS_LOGGING", &ShellVariable, NULL, &LogVarSize, LogVar);
 	if (Status == EFI_SUCCESS)
 		LogLevel = Atoi(LogVar);
 
-	for (i=0; i<ARRAYSIZE(PrintTable); i++)
-		*PrintTable[i] = (i < LogLevel)?Print:PrintNone;
+	/*for (i=0; i<ARRAYSIZE(PrintTable); i++)
+		*PrintTable[i] = (i < LogLevel) ? Print : PrintNone;*/
 
 	PrintExtra(L"LogLevel = %d\n", LogLevel);
 }

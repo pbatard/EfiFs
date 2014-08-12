@@ -16,18 +16,62 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <efi.h>
-#include <efilink.h>
+# include <Base.h>
+# include <Uefi.h>
+
+# include <Library/DebugLib.h>
+# include <Library/BaseLib.h>
+# include <Library/BaseMemoryLib.h>
+# include <Library/UefiRuntimeServicesTableLib.h>
+# include <Library/UefiDriverEntryPoint.h>
+# include <Library/UefiBootServicesTableLib.h>
+# include <Library/MemoryAllocationLib.h>
+# include <Library/DevicePathLib.h>
+# include <Library/PrintLib.h>
+# include <Library/UefiLib.h>
+
+# include <Protocol/UnicodeCollation.h>
+# include <Protocol/LoadedImage.h>
+# include <Protocol/DriverBinding.h>
+# include <Protocol/DevicePathFromText.h>
+# include <Protocol/DevicePathToText.h>
+# include <Protocol/DebugPort.h>
+# include <Protocol/DebugSupport.h>
+# include <Protocol/SimpleFileSystem.h>
+# include <Protocol/BlockIo.h>
+# include <Protocol/BlockIo2.h>
+# include <Protocol/DiskIo.h>
+# include <Protocol/DiskIo2.h>
+# include <Protocol/ComponentName.h>
+# include <Protocol/ComponentName2.h>
+
+# include <Guid/FileSystemInfo.h>
+# include <Guid/FileInfo.h>
+# include <Guid/FileSystemVolumeLabelInfo.h>
+
+# define va_list VA_LIST
+# define va_start VA_START
+# define va_end VA_END
+# define Atoi (INTN)StrDecimalToUintn
+# define APrint AsciiPrint
+# define strlena AsciiStrLen
+# define strcmpa AsciiStrCmp
+# define BS gBS
+# define RT gRT
+# define ST gST
+# define PROTO_NAME(x) gEfi ## x ## Guid
+# define GUID_NAME(x) gEfi ## x ## Guid
+
+# define EFI_FILE_HANDLE_REVISION EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_REVISION
+# define SIZE_OF_EFI_FILE_SYSTEM_VOLUME_LABEL_INFO  SIZE_OF_EFI_FILE_SYSTEM_VOLUME_LABEL
+# define EFI_FILE_SYSTEM_VOLUME_LABEL_INFO EFI_FILE_SYSTEM_VOLUME_LABEL
+# define EFI_SIGNATURE_32(a, b, c, d) SIGNATURE_32(a, b, c, d)
+# define DivU64x32(x,y,z) DivU64x32((x),(y))
 
 #pragma once
 
 #if !defined(__GNUC__) || (__GNUC__ < 4) || (__GNUC__ == 4 && __GNUC_MINOR__ < 7)
 #error gcc 4.7 or later is required for the compilation of this driver.
-#endif
-
-/* Having GNU_EFI_USE_MS_ABI should avoid the need for that ugly uefi_call_wrapper */
-#if !defined(__MAKEWITH_GNUEFI) || !defined(GNU_EFI_USE_MS_ABI)
-#error gnu-efi, with option GNU_EFI_USE_MS_ABI, is required for the compilation of this driver.
 #endif
 
 /* Driver version */
@@ -62,6 +106,8 @@
 #define FS_LOGLEVEL_DEBUG       4
 #define FS_LOGLEVEL_EXTRA       5
 
+#define _CR BASE_CR
+
 typedef UINTN (*Print_t)        (IN CHAR16 *fmt, ... );
 extern Print_t PrintError;
 extern Print_t PrintWarning;
@@ -87,11 +133,15 @@ typedef struct _EFI_GRUB_FILE {
 
 /* A file system instance */
 typedef struct _EFI_FS {
-	LIST_ENTRY            *Flink;
-	LIST_ENTRY            *Blink;
-	EFI_FILE_IO_INTERFACE  FileIoInterface;
-	EFI_BLOCK_IO          *BlockIo;
-	EFI_DISK_IO           *DiskIo;
+	LIST_ENTRY            *ForwardLink;
+	LIST_ENTRY            *BackLink;
+	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL FileIoInterface;
+	EFI_BLOCK_IO_PROTOCOL *BlockIo;
+	EFI_BLOCK_IO2_PROTOCOL *BlockIo2;
+	EFI_BLOCK_IO2_TOKEN   BlockIo2Token;
+	EFI_DISK_IO_PROTOCOL  *DiskIo;
+	EFI_DISK_IO2_PROTOCOL *DiskIo2;
+    EFI_DISK_IO2_TOKEN    DiskIo2Token;
 	EFI_GRUB_FILE         *RootFile;
 	VOID                  *GrubDevice;
 	CHAR16                *DevicePathString;
@@ -145,6 +195,6 @@ extern CHAR8 *Utf16ToUtf8Alloc(CHAR16 *Src);
 extern EFI_STATUS Utf16ToUtf8NoAlloc(CHAR16 *Src, CHAR8 *dst, UINTN len);
 extern EFI_STATUS FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle);
 extern VOID FSUninstall(EFI_FS *This, EFI_HANDLE ControllerHandle);
-extern EFI_STATUS EFIAPI FileOpenVolume(EFI_FILE_IO_INTERFACE *This,
-		EFI_FILE_HANDLE *Root);
+extern EFI_STATUS EFIAPI FileOpenVolume(EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *This, EFI_FILE_HANDLE *Root);
 extern EFI_GUID *GetFSGuid(VOID);
+extern EFI_STATUS PrintGuid (IN EFI_GUID *Guid);

@@ -18,9 +18,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <efi.h>
-#include <efilib.h>
-
 #include <grub/err.h>
 #include <grub/misc.h>
 
@@ -131,7 +128,7 @@ grub_realloc(void *p, grub_size_t new_size)
 
 	if (ptr != NULL) {
 		ptr = &ptr[-1];
-		ptr = ReallocatePool(ptr, *ptr, new_size + sizeof(grub_size_t));
+		ptr = ReallocatePool(*ptr, new_size + sizeof(grub_size_t), ptr);
 		if (ptr != NULL)
 			*ptr++ = new_size;
 	}

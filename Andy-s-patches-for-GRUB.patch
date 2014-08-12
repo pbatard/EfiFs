@@ -1,0 +1,754 @@
+From 5252c85f054a3dbff3a349c179b7a75a6731044c Mon Sep 17 00:00:00 2001
+From: Andy Vandijck <andyvand@gmail.com>
+Date: Tue, 12 Aug 2014 20:02:07 +0200
+Subject: [PATCH] Andy's patches for GRUB
+
+---
+ grub-core/boot/decompressor/xz.c  |  1 +
+ grub-core/fs/hfsplus.c            | 23 +++++----------
+ grub-core/fs/hfspluscomp.c        | 19 +++++++------
+ grub-core/fs/ntfs.c               |  6 +---
+ grub-core/fs/ntfscomp.c           | 11 +++----
+ grub-core/fs/proc.c               | 24 +++++++++++++++-
+ grub-core/fs/reiserfs.c           |  2 ++
+ grub-core/fs/squash4.c            |  1 +
+ grub-core/io/gzio.c               |  4 +++
+ grub-core/io/xzio.c               |  1 +
+ grub-core/kern/err.c              |  1 -
+ grub-core/kern/misc.c             |  3 --
+ grub-core/lib/minilzo/lzoconf.h   | 21 ++++++++++++--
+ grub-core/lib/minilzo/lzodefs.h   | 11 +++----
+ grub-core/lib/minilzo/minilzo.c   | 60 +++++++++++++++------------------------
+ grub-core/lib/xzembed/xz.h        |  8 ++++--
+ grub-core/lib/xzembed/xz_config.h | 29 ++++++++++++-------
+ include/grub/efi/api.h            |  2 ++
+ include/grub/hfsplus.h            |  4 +--
+ include/grub/misc.h               | 13 ++++++++-
+ include/grub/ntfs.h               |  4 +--
+ 21 files changed, 141 insertions(+), 107 deletions(-)
+
+diff --git a/grub-core/boot/decompressor/xz.c b/grub-core/boot/decompressor/xz.c
+index 2279118..6071753 100644
+--- a/grub-core/boot/decompressor/xz.c
++++ b/grub-core/boot/decompressor/xz.c
+@@ -20,6 +20,7 @@
+ #include <grub/misc.h>
+ #include <grub/decompressor.h>
+ 
++#include "xz_config.h"
+ #include "xz.h"
+ #include "xz_stream.h"
+ 
+diff --git a/grub-core/fs/hfsplus.c b/grub-core/fs/hfsplus.c
+index 950d8a1..3887dd3 100644
+--- a/grub-core/fs/hfsplus.c
++++ b/grub-core/fs/hfsplus.c
+@@ -105,14 +105,6 @@ enum grub_hfsplus_filetype
+ 
+ static grub_dl_t my_mod;
+ 
+-
+-
+-grub_err_t (*grub_hfsplus_open_compressed) (struct grub_fshelp_node *node);
+-grub_ssize_t (*grub_hfsplus_read_compressed) (struct grub_hfsplus_file *node,
+-					      grub_off_t pos,
+-					      grub_size_t len,
+-					      char *buf);
+-
+ /* Find the extent that points to FILEBLOCK.  If it is not in one of
+    the 8 extents described by EXTENT, return -1.  In that case set
+    FILEBLOCK to the next block.  */
+@@ -832,13 +824,10 @@ grub_hfsplus_open (struct grub_file *file, const char *name)
+   if (grub_errno)
+     goto fail;
+ 
+-  if (grub_hfsplus_open_compressed)
+-    {
+-      grub_err_t err;
+-      err = grub_hfsplus_open_compressed (fdiro);
+-      if (err)
+-	goto fail;
+-    }
++  grub_err_t err;
++  err = grub_hfsplus_open_compressed (fdiro);
++  if (err)
++    goto fail;
+ 
+   file->size = fdiro->size;
+   data->opened_file = *fdiro;
+@@ -885,9 +874,11 @@ grub_hfsplus_read (grub_file_t file, char *buf, grub_size_t len)
+ 
+   data->opened_file.file = file;
+ 
+-  if (grub_hfsplus_read_compressed && data->opened_file.compressed)
++  if (data->opened_file.compressed)
++  {
+     return grub_hfsplus_read_compressed (&data->opened_file,
+ 					 file->offset, len, buf);
++  }
+ 
+   return grub_hfsplus_read_file (&data->opened_file,
+ 				 file->read_hook, file->read_hook_data,
+diff --git a/grub-core/fs/hfspluscomp.c b/grub-core/fs/hfspluscomp.c
+index d76f3f1..7b031d3 100644
+--- a/grub-core/fs/hfspluscomp.c
++++ b/grub-core/fs/hfspluscomp.c
+@@ -179,6 +179,13 @@ hfsplus_read_compressed_real (struct grub_hfsplus_file *node,
+   return len0;
+ }
+ 
++grub_ssize_t
++grub_hfsplus_read_compressed(struct grub_hfsplus_file *node,
++                             grub_off_t pos, grub_size_t len, char *buf)
++{
++    return hfsplus_read_compressed_real(node, pos, len, buf);
++}
++
+ static grub_err_t 
+ hfsplus_open_compressed_real (struct grub_hfsplus_file *node)
+ {
+@@ -304,14 +311,8 @@ hfsplus_open_compressed_real (struct grub_hfsplus_file *node)
+   return 0;
+ }
+ 
+-GRUB_MOD_INIT(hfspluscomp)
+-{
+-  grub_hfsplus_open_compressed = hfsplus_open_compressed_real;  
+-  grub_hfsplus_read_compressed = hfsplus_read_compressed_real;  
+-}
+-
+-GRUB_MOD_FINI(hfspluscomp)
++grub_err_t
++grub_hfsplus_open_compressed (struct grub_hfsplus_file *node)
+ {
+-  grub_hfsplus_open_compressed = 0;
+-  grub_hfsplus_read_compressed = 0;
++    return hfsplus_open_compressed_real (node);
+ }
+diff --git a/grub-core/fs/ntfs.c b/grub-core/fs/ntfs.c
+index d3a91f5..a934677 100644
+--- a/grub-core/fs/ntfs.c
++++ b/grub-core/fs/ntfs.c
+@@ -52,8 +52,6 @@ u64at (void *ptr, grub_size_t ofs)
+   return grub_le_to_cpu64 (grub_get_unaligned64 ((char *) ptr + ofs));
+ }
+ 
+-grub_ntfscomp_func_t grub_ntfscomp_func;
+-
+ static grub_err_t
+ fixup (grub_uint8_t *buf, grub_size_t len, const grub_uint8_t *magic)
+ {
+@@ -400,9 +398,7 @@ read_data (struct grub_ntfs_attr *at, grub_uint8_t *pa, grub_uint8_t *dest,
+       if (!cached)
+ 	return grub_error (GRUB_ERR_BAD_FS, "attribute can\'t be compressed");
+ 
+-      return (grub_ntfscomp_func) ? grub_ntfscomp_func (dest, ofs, len, ctx)
+-	: grub_error (GRUB_ERR_BAD_FS, N_("module `%s' isn't loaded"),
+-		      "ntfscomp");
++      return grub_ntfscomp_func (dest, ofs, len, ctx);
+     }
+ 
+   ctx->target_vcn = ofs >> (GRUB_NTFS_BLK_SHR + ctx->comp.log_spc);
+diff --git a/grub-core/fs/ntfscomp.c b/grub-core/fs/ntfscomp.c
+index 2e1ce51..1b0dfc6 100644
+--- a/grub-core/fs/ntfscomp.c
++++ b/grub-core/fs/ntfscomp.c
+@@ -432,12 +432,9 @@ quit:
+   return ret;
+ }
+ 
+-GRUB_MOD_INIT (ntfscomp)
++grub_err_t
++grub_ntfscomp_func (grub_uint8_t *dest, grub_disk_addr_t ofs,
++          grub_size_t len, struct grub_ntfs_rlst *ctx)
+ {
+-  grub_ntfscomp_func = ntfscomp;
+-}
+-
+-GRUB_MOD_FINI (ntfscomp)
+-{
+-  grub_ntfscomp_func = NULL;
++    return ntfscomp(dest, ofs, len, ctx);
+ }
+diff --git a/grub-core/fs/proc.c b/grub-core/fs/proc.c
+index a03469e..ec7a87a 100644
+--- a/grub-core/fs/proc.c
++++ b/grub-core/fs/proc.c
+@@ -16,8 +16,8 @@
+  *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
+  */
+ 
+-#include <grub/procfs.h>
+ #include <grub/disk.h>
++#include <grub/procfs.h>
+ #include <grub/fs.h>
+ #include <grub/file.h>
+ #include <grub/mm.h>
+@@ -25,6 +25,28 @@
+ 
+ GRUB_MOD_LICENSE ("GPLv3+");
+ 
++grub_disk_dev_t grub_disk_dev_list;
++
++void
++grub_disk_dev_register (grub_disk_dev_t dev)
++{
++    dev->next = grub_disk_dev_list;
++    grub_disk_dev_list = dev;
++}
++
++void
++grub_disk_dev_unregister (grub_disk_dev_t dev)
++{
++    grub_disk_dev_t *p, q;
++    
++    for (p = &grub_disk_dev_list, q = *p; q; p = &(q->next), q = q->next)
++        if (q == dev)
++        {
++            *p = q->next;
++            break;
++        }
++}
++
+ struct grub_procfs_entry *grub_procfs_entries;
+ 
+ static int
+diff --git a/grub-core/fs/reiserfs.c b/grub-core/fs/reiserfs.c
+index ac65054..7515d1b 100644
+--- a/grub-core/fs/reiserfs.c
++++ b/grub-core/fs/reiserfs.c
+@@ -42,11 +42,13 @@
+ 
+ GRUB_MOD_LICENSE ("GPLv3+");
+ 
++#undef  MIN
+ #define MIN(a, b) \
+   ({ typeof (a) _a = (a); \
+      typeof (b) _b = (b); \
+      _a < _b ? _a : _b; })
+ 
++#undef  MAX
+ #define MAX(a, b) \
+   ({ typeof (a) _a = (a); \
+      typeof (b) _b = (b); \
+diff --git a/grub-core/fs/squash4.c b/grub-core/fs/squash4.c
+index b97b344..3404b69 100644
+--- a/grub-core/fs/squash4.c
++++ b/grub-core/fs/squash4.c
+@@ -28,6 +28,7 @@
+ #include <grub/deflate.h>
+ #include <minilzo.h>
+ 
++#include "xz_config.h"
+ #include "xz.h"
+ #include "xz_stream.h"
+ 
+diff --git a/grub-core/io/gzio.c b/grub-core/io/gzio.c
+index 129209e..d60fb63 100644
+--- a/grub-core/io/gzio.c
++++ b/grub-core/io/gzio.c
+@@ -142,7 +142,11 @@ eat_field (grub_file_t file, int len)
+ /* Compression methods (see algorithm.doc) */
+ #define STORED      0
+ #define COMPRESSED  1
++#ifndef PACKED
+ #define PACKED      2
++#else /* PACKED is in use */
++#define GZPACKED    2
++#endif
+ #define LZHED       3
+ /* methods 4 to 7 reserved */
+ #define DEFLATED    8
+diff --git a/grub-core/io/xzio.c b/grub-core/io/xzio.c
+index a3536ad..41272f3 100644
+--- a/grub-core/io/xzio.c
++++ b/grub-core/io/xzio.c
+@@ -26,6 +26,7 @@
+ 
+ GRUB_MOD_LICENSE ("GPLv3+");
+ 
++#include "xz_config.h"
+ #include "xz.h"
+ #include "xz_stream.h"
+ 
+diff --git a/grub-core/kern/err.c b/grub-core/kern/err.c
+index 53c734d..4275cab 100644
+--- a/grub-core/kern/err.c
++++ b/grub-core/kern/err.c
+@@ -19,7 +19,6 @@
+ 
+ #include <grub/err.h>
+ #include <grub/misc.h>
+-#include <stdarg.h>
+ #include <grub/i18n.h>
+ 
+ #define GRUB_ERROR_STACK_SIZE	10
+diff --git a/grub-core/kern/misc.c b/grub-core/kern/misc.c
+index c5c815d..6c161bb 100644
+--- a/grub-core/kern/misc.c
++++ b/grub-core/kern/misc.c
+@@ -20,7 +20,6 @@
+ #include <grub/misc.h>
+ #include <grub/err.h>
+ #include <grub/mm.h>
+-#include <stdarg.h>
+ #include <grub/term.h>
+ #include <grub/env.h>
+ #include <grub/i18n.h>
+@@ -157,7 +156,6 @@ grub_puts_ (const char *s)
+   return grub_puts (_(s));
+ }
+ 
+-#if defined (__APPLE__) && ! defined (GRUB_UTIL)
+ int
+ grub_err_printf (const char *fmt, ...)
+ {
+@@ -170,7 +168,6 @@ grub_err_printf (const char *fmt, ...)
+ 
+ 	return ret;
+ }
+-#endif
+ 
+ #if ! defined (__APPLE__) && ! defined (GRUB_UTIL)
+ int grub_err_printf (const char *fmt, ...)
+diff --git a/grub-core/lib/minilzo/lzoconf.h b/grub-core/lib/minilzo/lzoconf.h
+index 1d0fe14..155b47d 100644
+--- a/grub-core/lib/minilzo/lzoconf.h
++++ b/grub-core/lib/minilzo/lzoconf.h
+@@ -44,17 +44,29 @@
+ #ifndef __LZOCONF_H_INCLUDED
+ #define __LZOCONF_H_INCLUDED 1
+ 
++#include <Uefi.h>
++#include <Library/UefiLib.h>
++#include <Library/BaseMemoryLib.h>
++
+ #define LZO_VERSION             0x2050
+ #define LZO_VERSION_STRING      "2.05"
+ #define LZO_VERSION_DATE        "Apr 23 2011"
+ 
++#define CHAR_BIT 8
++#define UCHAR_MAX 0xFF
++#define USHRT_MAX 0xFFFF
++#define ULONG_MAX 0xFFFFFFFF
++
++#if defined(MDE_CPU_IA32) || defined(MDE_CPU_ARM)
++#define UINT_MAX 0xFFFFFFFF
++#else
++#define UINT_MAX 0xFFFFFFFFFFFFFFFF
++#endif
++
+ /* internal Autoconf configuration file - only used when building LZO */
+ #if defined(LZO_HAVE_CONFIG_H)
+ #  include <config.h>
+ #endif
+-#include <limits.h>
+-#include <stddef.h>
+-
+ 
+ /***********************************************************************
+ // LZO requires a conforming <limits.h>
+@@ -118,6 +130,7 @@ extern "C" {
+      typedef unsigned __int64   lzo_uint;
+      typedef __int64            lzo_int;
+ #    else
++     typedef unsigned long long size_t;
+      typedef unsigned long long lzo_uint;
+      typedef long long          lzo_int;
+ #    endif
+@@ -125,12 +138,14 @@ extern "C" {
+ #    define LZO_INT_MAX         9223372036854775807LL
+ #    define LZO_INT_MIN         (-1LL - LZO_INT_MAX)
+ #  elif defined(LZO_ABI_IP32L64) /* MIPS R5900 */
++     typedef unsigned int       size_t;
+      typedef unsigned int       lzo_uint;
+      typedef int                lzo_int;
+ #    define LZO_UINT_MAX        UINT_MAX
+ #    define LZO_INT_MAX         INT_MAX
+ #    define LZO_INT_MIN         INT_MIN
+ #  elif (ULONG_MAX >= LZO_0xffffffffL)
++     typedef unsigned long      size_t;
+      typedef unsigned long      lzo_uint;
+      typedef long               lzo_int;
+ #    define LZO_UINT_MAX        ULONG_MAX
+diff --git a/grub-core/lib/minilzo/lzodefs.h b/grub-core/lib/minilzo/lzodefs.h
+index 0e40e33..f62bf36 100644
+--- a/grub-core/lib/minilzo/lzodefs.h
++++ b/grub-core/lib/minilzo/lzodefs.h
+@@ -664,7 +664,7 @@
+ #  endif
+ #endif
+ #if !defined(__LZO_ARCH_OVERRIDE)
+-#if (LZO_ARCH_GENERIC)
++#if (LZO_ARCH_GENERIC) || defined(MDE_CPU_EBC)
+ #  define LZO_INFO_ARCH             "generic"
+ #elif (LZO_OS_DOS16 || LZO_OS_OS216 || LZO_OS_WIN16)
+ #  define LZO_ARCH_I086             1
+@@ -676,10 +676,10 @@
+ #elif (LZO_ARCH_CRAY_MPP) && (defined(_CRAYT3D) || defined(_CRAYT3E))
+ #  define LZO_ARCH_ALPHA            1
+ #  define LZO_INFO_ARCH             "alpha"
+-#elif defined(__amd64__) || defined(__x86_64__) || defined(_M_AMD64)
++#elif defined(__amd64__) || defined(__x86_64__) || defined(_M_AMD64) || defined(MDE_CPU_X64)
+ #  define LZO_ARCH_AMD64            1
+ #  define LZO_INFO_ARCH             "amd64"
+-#elif defined(__thumb__) || (defined(_M_ARM) && defined(_M_THUMB))
++#elif defined(__thumb__) || (defined(_M_ARM) && defined(_M_THUMB)) || defined(MDE_CPU_ARM) || defined(MDE_CPU_AARCH64)
+ #  define LZO_ARCH_ARM              1
+ #  define LZO_ARCH_ARM_THUMB        1
+ #  define LZO_INFO_ARCH             "arm_thumb"
+@@ -720,7 +720,7 @@
+ #elif defined(__hppa__) || defined(__hppa)
+ #  define LZO_ARCH_HPPA             1
+ #  define LZO_INFO_ARCH             "hppa"
+-#elif defined(__386__) || defined(__i386__) || defined(__i386) || defined(_M_IX86) || defined(_M_I386)
++#elif defined(__386__) || defined(__i386__) || defined(__i386) || defined(_M_IX86) || defined(_M_I386) || defined(MDE_CPU_IA32)
+ #  define LZO_ARCH_I386             1
+ #  define LZO_ARCH_IA32             1
+ #  define LZO_INFO_ARCH             "i386"
+@@ -732,7 +732,7 @@
+ #  define LZO_ARCH_I386             1
+ #  define LZO_ARCH_IA32             1
+ #  define LZO_INFO_ARCH             "i386"
+-#elif defined(__ia64__) || defined(__ia64) || defined(_M_IA64)
++#elif defined(__ia64__) || defined(__ia64) || defined(_M_IA64) || defined(MDE_CPU_IPF)
+ #  define LZO_ARCH_IA64             1
+ #  define LZO_INFO_ARCH             "ia64"
+ #elif (UINT_MAX == LZO_0xffffL) && defined(__m32c__)
+@@ -1251,6 +1251,7 @@ extern "C" {
+ #    error "LZO_MM"
+ #  endif
+ #else
++#  define ptrdiff_t                 size_t
+ #  define LZO_SIZEOF_PTRDIFF_T      LZO_SIZEOF_SIZE_T
+ #endif
+ #endif
+diff --git a/grub-core/lib/minilzo/minilzo.c b/grub-core/lib/minilzo/minilzo.c
+index 25a1f68..f4dddb6 100644
+--- a/grub-core/lib/minilzo/minilzo.c
++++ b/grub-core/lib/minilzo/minilzo.c
+@@ -57,8 +57,7 @@
+ #ifdef MINILZO_HAVE_CONFIG_H
+ #  include <config.h>
+ #endif
+-#include <limits.h>
+-#include <stddef.h>
++
+ #if defined(MINILZO_CFG_USE_INTERNAL_LZODEFS)
+ 
+ #ifndef __LZODEFS_H_INCLUDED
+@@ -1947,7 +1946,6 @@ extern "C" {
+ #  define ACC_WANT_ACC_INCE_H 1
+ #  define ACC_WANT_ACC_INCI_H 1
+ #elif 1
+-#  include <string.h>
+ #else
+ #  define ACC_WANT_ACC_INCD_H 1
+ #endif
+@@ -1986,22 +1984,22 @@ LZO_COMPILE_TIME_ASSERT_HEADER(sizeof(lzo_uintptr_t) >= sizeof(lzo_voidp))
+ #endif
+ #if 1 && !defined(HAVE_MEMCMP)
+ #define HAVE_MEMCMP 1
++#define memcmp CompareMem
+ #endif
+ #if 1 && !defined(HAVE_MEMCPY)
+ #define HAVE_MEMCPY 1
++#define memcpy CopyMem
+ #endif
+ #if 1 && !defined(HAVE_MEMMOVE)
+ #define HAVE_MEMMOVE 1
++#define memmove CopyMem
+ #endif
+ #if 1 && !defined(HAVE_MEMSET)
+ #define HAVE_MEMSET 1
++#define memset(s,c,n) SetMem(s,n,c)
+ #endif
+ #endif
+ 
+-#if 1 && defined(HAVE_STRING_H)
+-#include <string.h>
+-#endif
+-
+ #if (LZO_CFG_FREESTANDING)
+ #  undef HAVE_MEMCMP
+ #  undef HAVE_MEMCPY
+@@ -2011,52 +2009,41 @@ LZO_COMPILE_TIME_ASSERT_HEADER(sizeof(lzo_uintptr_t) >= sizeof(lzo_voidp))
+ 
+ #if !(HAVE_MEMCMP)
+ #  undef memcmp
+-#  define memcmp(a,b,c)         lzo_memcmp(a,b,c)
++#  define memcmp(a,b,c)         CompareMem(a,b,c)
+ #elif !(__LZO_MMODEL_HUGE)
+ #  undef lzo_memcmp
+-#  define lzo_memcmp(a,b,c)     memcmp(a,b,c)
++#  define lzo_memcmp(a,b,c)     CompareMem(a,b,c)
+ #endif
+ #if !(HAVE_MEMCPY)
+ #  undef memcpy
+-#  define memcpy(a,b,c)         lzo_memcpy(a,b,c)
++#  define memcpy(a,b,c)         CopyMem(a,b,c)
+ #elif !(__LZO_MMODEL_HUGE)
+ #  undef lzo_memcpy
+-#  define lzo_memcpy(a,b,c)     memcpy(a,b,c)
++#  define lzo_memcpy(a,b,c)     CopyMem(a,b,c)
+ #endif
+ #if !(HAVE_MEMMOVE)
+ #  undef memmove
+-#  define memmove(a,b,c)        lzo_memmove(a,b,c)
++#  define memmove(a,b,c)        CopyMem(a,b,c)
+ #elif !(__LZO_MMODEL_HUGE)
+ #  undef lzo_memmove
+-#  define lzo_memmove(a,b,c)    memmove(a,b,c)
++#  define lzo_memmove(a,b,c)    CopyMem(a,b,c)
+ #endif
+ #if !(HAVE_MEMSET)
+ #  undef memset
+-#  define memset(a,b,c)         lzo_memset(a,b,c)
++#  define memset(s,c,n)         SetMem(s,n,c)
+ #elif !(__LZO_MMODEL_HUGE)
+ #  undef lzo_memset
+-#  define lzo_memset(a,b,c)     memset(a,b,c)
++#  define lzo_memset(s,c,n)     SetMem(s,n,c)
+ #endif
+ 
+ #undef NDEBUG
+-#if (LZO_CFG_FREESTANDING)
+-#  undef LZO_DEBUG
+-#  define NDEBUG 1
+-#  undef assert
+-#  define assert(e) ((void)0)
+-#else
+-#  if !defined(LZO_DEBUG)
+-#    define NDEBUG 1
+-#  endif
+-#  include <assert.h>
+-#endif
++#undef LZO_DEBUG
++#define NDEBUG 1
++#undef assert
++#define assert(e) ((void)0)
+ 
+-#if 0 && defined(__BOUNDS_CHECKING_ON)
+-#  include <unchecked.h>
+-#else
+-#  define BOUNDS_CHECKING_OFF_DURING(stmt)      stmt
+-#  define BOUNDS_CHECKING_OFF_IN_EXPR(expr)     (expr)
+-#endif
++#define BOUNDS_CHECKING_OFF_DURING(stmt)      stmt
++#define BOUNDS_CHECKING_OFF_IN_EXPR(expr)     (expr)
+ 
+ #if !defined(__lzo_inline)
+ #  define __lzo_inline              /*empty*/
+@@ -2470,7 +2457,7 @@ LZOLIB_PUBLIC(int, lzo_hmemcmp) (const lzo_hvoid_p s1, const lzo_hvoid_p s2, lzo
+     } while __lzo_likely(--len > 0);
+     return 0;
+ #else
+-    return memcmp(s1, s2, len);
++    return CompareMem(s1, s2, len);
+ #endif
+ }
+ LZOLIB_PUBLIC(lzo_hvoid_p, lzo_hmemcpy) (lzo_hvoid_p dest, const lzo_hvoid_p src, lzo_hsize_t len)
+@@ -2485,7 +2472,7 @@ LZOLIB_PUBLIC(lzo_hvoid_p, lzo_hmemcpy) (lzo_hvoid_p dest, const lzo_hvoid_p src
+     while __lzo_likely(--len > 0);
+     return dest;
+ #else
+-    return memcpy(dest, src, len);
++    return CopyMem(dest, src, len);
+ #endif
+ }
+ LZOLIB_PUBLIC(lzo_hvoid_p, lzo_hmemmove) (lzo_hvoid_p dest, const lzo_hvoid_p src, lzo_hsize_t len)
+@@ -2511,7 +2498,7 @@ LZOLIB_PUBLIC(lzo_hvoid_p, lzo_hmemmove) (lzo_hvoid_p dest, const lzo_hvoid_p sr
+     }
+     return dest;
+ #else
+-    return memmove(dest, src, len);
++    return CopyMem(dest, src, len);
+ #endif
+ }
+ LZOLIB_PUBLIC(lzo_hvoid_p, lzo_hmemset) (lzo_hvoid_p s, int c, lzo_hsize_t len)
+@@ -2523,7 +2510,7 @@ LZOLIB_PUBLIC(lzo_hvoid_p, lzo_hmemset) (lzo_hvoid_p s, int c, lzo_hsize_t len)
+     while __lzo_likely(--len > 0);
+     return s;
+ #else
+-    return memset(s, c, len);
++    return SetMem(s, len, c);
+ #endif
+ }
+ #undef LZOLIB_PUBLIC
+@@ -4559,4 +4546,3 @@ lookbehind_overrun:
+ #endif
+ 
+ /***** End of minilzo.c *****/
+-
+diff --git a/grub-core/lib/xzembed/xz.h b/grub-core/lib/xzembed/xz.h
+index fe7158b..0ecfe6f 100644
+--- a/grub-core/lib/xzembed/xz.h
++++ b/grub-core/lib/xzembed/xz.h
+@@ -24,9 +24,11 @@
+ #ifndef XZ_H
+ #define XZ_H
+ 
+-#include <stdint.h>
+-#include <unistd.h>
+-#include <string.h>
++#include <Uefi.h>
++#include <Library/UefiLib.h>
++#include <Library/BaseMemoryLib.h>
++#include <Library/MemoryAllocationLib.h>
++
+ #include <grub/misc.h>
+ 
+ #ifndef GRUB_POSIX_BOOL_DEFINED
+diff --git a/grub-core/lib/xzembed/xz_config.h b/grub-core/lib/xzembed/xz_config.h
+index 24d570f..9388575 100644
+--- a/grub-core/lib/xzembed/xz_config.h
++++ b/grub-core/lib/xzembed/xz_config.h
+@@ -24,6 +24,12 @@
+ #ifndef XZ_CONFIG_H
+ #define XZ_CONFIG_H
+ 
++#define uint8_t UINT8
++#define uint16_t UINT16
++#define uint32_t UINT32
++#define uint64_t UINT64
++#define size_t UINTN
++
+ /* Enable BCJ filter decoders. */
+ 
+ #ifndef GRUB_EMBED_DECOMPRESSOR
+@@ -37,7 +43,7 @@
+ 
+ #else
+ 
+-#if defined(__i386__) || defined(__x86_64__)
++#if defined(__i386__) || defined(__x86_64__) || defined(MDE_CPU_IA32) || defined(MDE_CPU_X64) || defined(MDE_CPU_EBC)
+   #define XZ_DEC_X86
+ #endif
+ 
+@@ -45,15 +51,15 @@
+   #define XZ_DEC_POWERPC
+ #endif
+ 
+-#ifdef __ia64__
++#if defined(__ia64__) || defined(MDE_CPU_IPF)
+   #define XZ_DEC_IA64
+ #endif
+ 
+-#ifdef __arm__
++#if defined(__arm__) || defined(MDE_CPU_ARM) || defined(MDE_CPU_AARCH64)
+   #define XZ_DEC_ARM
+ #endif
+ 
+-#ifdef __arm__
++#if defined(__arm__) || defined(MDE_CPU_ARM) || defined(MDE_CPU_AARCH64)
+   #define XZ_DEC_ARMTHUMB
+ #endif
+ 
+@@ -63,15 +69,16 @@
+ #endif
+ 
+ #include "xz.h"
+-#include <stdlib.h>
+ 
+-#define kmalloc(size, flags) malloc(size)
+-#define kfree(ptr) free(ptr)
+-#define vmalloc(size) malloc(size)
+-#define vfree(ptr) free(ptr)
++#define realloc(p, s) ReallocatePool ((UINTN)s, (UINTN)s, p)
++#define kmalloc(size, flags) AllocateZeroPool(size)
++#define kfree(ptr) FreePool(ptr)
++#define vmalloc(size) AllocateZeroPool(size)
++#define vfree(ptr) FreePool(ptr)
+ 
+-#define memeq(a, b, size) (memcmp(a, b, size) == 0)
+-#define memzero(buf, size) memset(buf, 0, size)
++#define memeq(a, b, size) (CompareMem(a, b, size) == 0)
++#define memzero(buf, size) CopyMem(buf, 0, size)
++#define memcpy(tbuf, buf, size) CopyMem(tbuf, buf, size)
+ 
+ #define min(x, y) ((x) < (y) ? (x) : (y))
+ #define min_t(type, x, y) min(x, y)
+diff --git a/include/grub/efi/api.h b/include/grub/efi/api.h
+index e5dd543..4de82a2 100644
+--- a/include/grub/efi/api.h
++++ b/include/grub/efi/api.h
+@@ -111,10 +111,12 @@
+     { 0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b } \
+   }
+ 
++#ifndef EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL_GUID
+ #define EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL_GUID \
+   { 0xdd9e7534, 0x7762, 0x4698, \
+     { 0x8c, 0x14, 0xf5, 0x85, 0x17, 0xa6, 0x25, 0xaa } \
+   }
++#endif
+ 
+ #define GRUB_EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL_GUID \
+   { 0x387477c2, 0x69c7, 0x11d2, \
+diff --git a/include/grub/hfsplus.h b/include/grub/hfsplus.h
+index 8ba8f32..601fd49 100644
+--- a/include/grub/hfsplus.h
++++ b/include/grub/hfsplus.h
+@@ -229,8 +229,8 @@ grub_hfsplus_btree_recptr (struct grub_hfsplus_btree *btree,
+   return (struct grub_hfsplus_key *) &cnode[offset];
+ }
+ 
+-extern grub_err_t (*grub_hfsplus_open_compressed) (struct grub_hfsplus_file *node);
+-extern grub_ssize_t (*grub_hfsplus_read_compressed) (struct grub_hfsplus_file *node,
++extern grub_err_t grub_hfsplus_open_compressed (struct grub_hfsplus_file *node);
++extern grub_ssize_t grub_hfsplus_read_compressed (struct grub_hfsplus_file *node,
+ 						     grub_off_t pos,
+ 						     grub_size_t len,
+ 						     char *buf);
+diff --git a/include/grub/misc.h b/include/grub/misc.h
+index c6cd456..405ff90 100644
+--- a/include/grub/misc.h
++++ b/include/grub/misc.h
+@@ -20,13 +20,24 @@
+ #ifndef GRUB_MISC_HEADER
+ #define GRUB_MISC_HEADER	1
+ 
+-#include <stdarg.h>
++//#include <stdarg.h>
+ #include <grub/types.h>
+ #include <grub/symbol.h>
+ #include <grub/err.h>
+ #include <grub/i18n.h>
+ #include <grub/compiler.h>
+ 
++#define va_list VA_LIST
++#define va_start VA_START
++#define va_end VA_END
++#define va_arg VA_ARG
++#define memcmp CompareMem
++#define strcpy AsciiStrCpy
++#define memmove CopyMem
++#define memset(s,c,n) SetMem(s,n,c)
++#define bzero(s,n) SetMem(s,n,0)
++#define __bzero(s,n) SetMem(s,n,0)
++
+ #define ALIGN_UP(addr, align) \
+ 	((addr + (typeof (addr)) align - 1) & ~((typeof (addr)) align - 1))
+ #define ALIGN_UP_OVERHEAD(addr, align) ((-(addr)) & ((typeof (addr)) (align) - 1))
+diff --git a/include/grub/ntfs.h b/include/grub/ntfs.h
+index d1a6af6..a99437b 100644
+--- a/include/grub/ntfs.h
++++ b/include/grub/ntfs.h
+@@ -186,13 +186,11 @@ struct grub_ntfs_rlst
+   void *file;
+ };
+ 
+-typedef grub_err_t (*grub_ntfscomp_func_t) (grub_uint8_t *dest,
++grub_err_t grub_ntfscomp_func (grub_uint8_t *dest,
+ 					    grub_disk_addr_t ofs,
+ 					    grub_size_t len,
+ 					    struct grub_ntfs_rlst * ctx);
+ 
+-extern grub_ntfscomp_func_t grub_ntfscomp_func;
+-
+ grub_err_t grub_ntfs_read_run_list (struct grub_ntfs_rlst *ctx);
+ 
+ #endif /* ! GRUB_NTFS_H */
+-- 
+2.8.1.windows.1
+

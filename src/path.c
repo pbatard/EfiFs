@@ -17,9 +17,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <efi.h>
-#include <efilib.h>
-
 #include "driver.h"
 
 /* copy src into dest converting the path to a relative one inside the current
