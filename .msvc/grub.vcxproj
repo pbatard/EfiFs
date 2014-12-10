@@ -10,8 +10,19 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\grub\grub-core\fs\fshelp.c" />
+    <ClCompile Include="..\grub\grub-core\kern\err.c" />
+    <ClCompile Include="..\grub\grub-core\kern\list.c" />
+    <ClCompile Include="..\grub\grub-core\kern\misc.c" />
+    <ClCompile Include="..\grub\grub-core\lib\crc.c" />
+    <ClCompile Include="..\grub\grub-core\lib\minilzo\minilzo.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="config.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{3135D563-9596-4584-9ED6-616ADEC52974}</ProjectGuid>
+    <ProjectGuid>{628E3F58-0AA9-40BB-8E49-D8CC513AAD63}</ProjectGuid>
     <RootNamespace>gnuefi</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -50,8 +61,8 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\gnu-efi\inc\protocol;$(SolutionDir)\gnu-efi\lib</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;GRUB_FILE=__FILE__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -67,8 +78,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\gnu-efi\inc\protocol;$(SolutionDir)\gnu-efi\lib</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;GRUB_FILE=__FILE__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -85,38 +96,6 @@
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
     </Lib>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\gnu-efi\lib\boxdraw.c" />
-    <ClCompile Include="..\gnu-efi\lib\cmdline.c" />
-    <ClCompile Include="..\gnu-efi\lib\console.c" />
-    <ClCompile Include="..\gnu-efi\lib\crc.c" />
-    <ClCompile Include="..\gnu-efi\lib\data.c" />
-    <ClCompile Include="..\gnu-efi\lib\debug.c" />
-    <ClCompile Include="..\gnu-efi\lib\dpath.c" />
-    <ClCompile Include="..\gnu-efi\lib\error.c" />
-    <ClCompile Include="..\gnu-efi\lib\event.c" />
-    <ClCompile Include="..\gnu-efi\lib\guid.c" />
-    <ClCompile Include="..\gnu-efi\lib\hand.c" />
-    <ClCompile Include="..\gnu-efi\lib\hw.c" />
-    <ClCompile Include="..\gnu-efi\lib\init.c" />
-    <ClCompile Include="..\gnu-efi\lib\lock.c" />
-    <ClCompile Include="..\gnu-efi\lib\misc.c" />
-    <ClCompile Include="..\gnu-efi\lib\print.c" />
-    <ClCompile Include="..\gnu-efi\lib\runtime\efirtlib.c" />
-    <ClCompile Include="..\gnu-efi\lib\runtime\rtdata.c" />
-    <ClCompile Include="..\gnu-efi\lib\runtime\rtlock.c" />
-    <ClCompile Include="..\gnu-efi\lib\runtime\rtstr.c" />
-    <ClCompile Include="..\gnu-efi\lib\runtime\vm.c" />
-    <ClCompile Include="..\gnu-efi\lib\smbios.c" />
-    <ClCompile Include="..\gnu-efi\lib\sread.c" />
-    <ClCompile Include="..\gnu-efi\lib\str.c" />
-    <ClCompile Include="..\gnu-efi\lib\x86_64\callwrap.c" />
-    <ClCompile Include="..\gnu-efi\lib\x86_64\initplat.c" />
-    <ClCompile Include="..\gnu-efi\lib\x86_64\math.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\gnu-efi\lib\x86_64\efi_stub.S" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

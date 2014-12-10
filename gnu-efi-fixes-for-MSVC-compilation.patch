@@ -1,6 +1,6 @@
-From 9c51eee1de151fbec6752a598230094383e2fb29 Mon Sep 17 00:00:00 2001
+From 907864ab8f9e0a54412ef7ad5c8a7b12ec6adf53 Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Mon, 8 Dec 2014 02:10:07 +0000
+Date: Wed, 10 Dec 2014 21:08:34 +0000
 Subject: [PATCH] fixes for MSVC compilation
 
 These fixes are needed to address the following error and warnings when compiling the library part
@@ -10,26 +10,143 @@ using Visual Studio 2013 Community Edition (as in https://github.com/pbatard/uef
 * "lib\print.c(98): error C2059: syntax error : '('" due to placement of EFIAPI macro
 * "lib\cmdline.c(94): warning C4090: 'function' : different 'const' qualifiers"
 * "lib\smbios.c(25): warning C4068: unknown pragma"
-* Also fix the definition of EFI_FUNCTION in "lib\x86_64\efibind.h"
+* Also update macro definitions in "inc\<arch>\efibind.h" for MSVC
 ---
- inc/x86_64/efibind.h |  7 ++++++-
+ inc/ia32/efibind.h   |  9 +++++++--
+ inc/ia64/efibind.h   | 44 +++++++++++++++++++++++++-------------------
+ inc/x86_64/efibind.h | 18 ++++++++++++++----
  lib/cmdline.c        |  4 ++--
  lib/print.c          | 12 ++++++------
  lib/smbios.c         |  2 ++
  lib/x86_64/math.c    |  8 ++++----
- 5 files changed, 20 insertions(+), 13 deletions(-)
+ 7 files changed, 60 insertions(+), 37 deletions(-)
 
+diff --git a/inc/ia32/efibind.h b/inc/ia32/efibind.h
+index deb9d16..b8db581 100644
+--- a/inc/ia32/efibind.h
++++ b/inc/ia32/efibind.h
+@@ -233,9 +233,13 @@ typedef uint32_t   UINTN;
+ 
+ //
+ // When build similiar to FW, then link everything together as
+-// one big module.
++// one big module. For the MSVC toolchain, we simply tell the
++// linker what our driver init function is using /ENTRY.
+ //
+-
++#if defined(_MSC_EXTENSIONS)
++    #define EFI_DRIVER_ENTRY_POINT(InitFunction) \
++        __pragma(comment(linker, "/ENTRY:" # InitFunction))
++#else
+     #define EFI_DRIVER_ENTRY_POINT(InitFunction)    \
+         UINTN                                       \
+         InitializeDriver (                          \
+@@ -252,6 +256,7 @@ typedef uint32_t   UINTN;
+             EFI_SYSTEM_TABLE *systab                \
+             ) __attribute__((weak,                  \
+                     alias ("InitializeDriver")));
++#endif
+ 
+     #define LOAD_INTERNAL_DRIVER(_if, type, name, entry)    \
+             (_if)->LoadInternal(type, name, entry)
+diff --git a/inc/ia64/efibind.h b/inc/ia64/efibind.h
+index 6926876..6f9a6f7 100644
+--- a/inc/ia64/efibind.h
++++ b/inc/ia64/efibind.h
+@@ -179,27 +179,33 @@ void __mf (void);
+ #pragma intrinsic (__mf)  
+ #define MEMORY_FENCE()    __mf()
+ #endif
++
+ //
+ // When build similiar to FW, then link everything together as
+-// one big module.
+-//
+-
+-#define EFI_DRIVER_ENTRY_POINT(InitFunction)    \
+-    UINTN                                       \
+-    InitializeDriver (                          \
+-        VOID    *ImageHandle,                   \
+-        VOID    *SystemTable                    \
+-        )                                       \
+-    {                                           \
+-        return InitFunction(ImageHandle,        \
+-                SystemTable);                   \
+-    }                                           \
+-                                                \
+-    EFI_STATUS efi_main(                        \
+-        EFI_HANDLE image,                       \
+-        EFI_SYSTEM_TABLE *systab                \
+-        ) __attribute__((weak,                  \
+-                alias ("InitializeDriver")));
++// one big module. For the MSVC toolchain, we simply tell the
++// linker what our driver init function is using /ENTRY.
++//
++#if defined(_MSC_EXTENSIONS)
++    #define EFI_DRIVER_ENTRY_POINT(InitFunction) \
++        __pragma(comment(linker, "/ENTRY:" # InitFunction))
++#else
++    #define EFI_DRIVER_ENTRY_POINT(InitFunction)    \
++        UINTN                                       \
++        InitializeDriver (                          \
++            VOID    *ImageHandle,                   \
++            VOID    *SystemTable                    \
++            )                                       \
++        {                                           \
++            return InitFunction(ImageHandle,        \
++                    SystemTable);                   \
++        }                                           \
++                                                    \
++        EFI_STATUS efi_main(                        \
++            EFI_HANDLE image,                       \
++            EFI_SYSTEM_TABLE *systab                \
++            ) __attribute__((weak,                  \
++                    alias ("InitializeDriver")));
++#endif
+ 
+ #define LOAD_INTERNAL_DRIVER(_if, type, name, entry)    \
+         (_if)->LoadInternal(type, name, entry)
 diff --git a/inc/x86_64/efibind.h b/inc/x86_64/efibind.h
-index 2133798..2bc7a3d 100644
+index 2133798..6bbd337 100644
 --- a/inc/x86_64/efibind.h
 +++ b/inc/x86_64/efibind.h
-@@ -371,7 +371,12 @@ UINT64 efi_call10(void *func, UINT64 arg1, UINT64 arg2, UINT64 arg3,
+@@ -245,9 +245,13 @@ typedef uint64_t   UINTN;
+ 
+ //
+ // When build similiar to FW, then link everything together as
+-// one big module.
++// one big module. For the MSVC toolchain, we simply tell the
++// linker what our driver init function is using /ENTRY.
+ //
+-
++#if defined(_MSC_EXTENSIONS)
++    #define EFI_DRIVER_ENTRY_POINT(InitFunction) \
++        __pragma(comment(linker, "/ENTRY:" # InitFunction))
++#else
+     #define EFI_DRIVER_ENTRY_POINT(InitFunction)    \
+         UINTN                                       \
+         InitializeDriver (                          \
+@@ -264,11 +268,12 @@ typedef uint64_t   UINTN;
+             EFI_SYSTEM_TABLE *systab                \
+             ) __attribute__((weak,                  \
+                     alias ("InitializeDriver")));
++#endif
+ 
+     #define LOAD_INTERNAL_DRIVER(_if, type, name, entry)    \
+             (_if)->LoadInternal(type, name, entry)
+ 
+-#endif // EFI_FW_NT 
++#endif // EFI_NT_EMULATOR
+ 
+ //
+ // Some compilers don't support the forward reference construct:
+@@ -371,7 +376,12 @@ UINT64 efi_call10(void *func, UINT64 arg1, UINT64 arg2, UINT64 arg3,
    __VA_ARG_NSUFFIX__(_cast64_efi_call, __VA_ARGS__) (func , ##__VA_ARGS__)
  
  #endif
 -#define EFI_FUNCTION __attribute__((ms_abi))
 +
-+#if !defined(_MSC_EXTENSIONS) && defined(HAVE_USE_MS_ABI) 
++#if defined(HAVE_USE_MS_ABI) && !defined(_MSC_EXTENSIONS)
 +    #define EFI_FUNCTION __attribute__((ms_abi))
 +#else
 +    #define EFI_FUNCTION
@@ -118,7 +235,7 @@ index 92b2d3e..d349fb6 100644
  EFI_STATUS
  LibGetSmbiosSystemGuidAndSerialNumber (
 diff --git a/lib/x86_64/math.c b/lib/x86_64/math.c
-index 4f40388..66b2aa1 100644
+index 4f40388..aa02431 100644
 --- a/lib/x86_64/math.c
 +++ b/lib/x86_64/math.c
 @@ -42,7 +42,7 @@ LShiftU64 (
@@ -126,7 +243,7 @@ index 4f40388..66b2aa1 100644
  // Left shift 64bit by 32bit and get a 64bit result
  {
 -#ifdef __GNUC__
-+#if defined(__GNUC__) || defined(_MSC_VER)
++#if defined(__GNUC__) || defined(_MSC_EXTENSIONS)
      return Operand << Count;
  #else
      UINT64      Result;
@@ -135,7 +252,7 @@ index 4f40388..66b2aa1 100644
  // Right shift 64bit by 32bit and get a 64bit result
  {
 -#ifdef __GNUC__
-+#if defined(__GNUC__) || defined(_MSC_VER)
++#if defined(__GNUC__) || defined(_MSC_EXTENSIONS)
      return Operand >> Count;
  #else
      UINT64      Result;
@@ -144,7 +261,7 @@ index 4f40388..66b2aa1 100644
  // Multiple 64bit by 32bit and get a 64bit result
  {
 -#ifdef __GNUC__
-+#if defined(__GNUC__) || defined(_MSC_VER)
++#if defined(__GNUC__) || defined(_MSC_EXTENSIONS)
      return Multiplicand * Multiplier;
  #else
      UINT64      Result;
@@ -153,7 +270,7 @@ index 4f40388..66b2aa1 100644
  // N.B. only works for 31bit divisors!!
  {
 -#ifdef __GNUC__
-+#if defined(__GNUC__) || defined(_MSC_VER)
++#if defined(__GNUC__) || defined(_MSC_EXTENSIONS)
      if (Remainder)
  	*Remainder = Dividend % Divisor;
      return Dividend / Divisor;

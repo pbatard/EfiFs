@@ -1,15 +1,15 @@
-From 8e6595aa07276dd216e4464240a3c941669edfda Mon Sep 17 00:00:00 2001
+From 2c656e50f93efa3f24d25ea846f24a599244341e Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
 Date: Wed, 10 Dec 2014 02:07:53 +0000
 Subject: [PATCH] fixes for MSVC compilation
 
 ---
  grub-core/fs/ntfs.c         |  6 ++++--
- grub-core/kern/misc.c       | 14 +++++++-------
+ grub-core/kern/misc.c       |  6 +++---
  include/grub/ntfs.h         |  2 ++
  include/grub/types.h        | 22 ++++++++++++++++++++++
  include/grub/x86_64/types.h |  2 +-
- 5 files changed, 36 insertions(+), 10 deletions(-)
+ 5 files changed, 32 insertions(+), 6 deletions(-)
 
 diff --git a/grub-core/fs/ntfs.c b/grub-core/fs/ntfs.c
 index d3a91f5..50f6ab0 100644
@@ -44,24 +44,15 @@ index d3a91f5..50f6ab0 100644
    return ctx->hook (filename, &info, ctx->hook_data);
  }
 diff --git a/grub-core/kern/misc.c b/grub-core/kern/misc.c
-index c5c815d..f590c7a 100644
+index c5c815d..6df0a06 100644
 --- a/grub-core/kern/misc.c
 +++ b/grub-core/kern/misc.c
-@@ -95,7 +95,7 @@ grub_memmove (void *dest, const void *src, grub_size_t n)
-   return dest;
- }
- 
--#ifndef __APPLE__
-+#if !defined (__APPLE__) && !defined (_MSC_VER)
- void *memmove (void *dest, const void *src, grub_size_t n)
-   __attribute__ ((alias ("grub_memmove")));
- /* GCC emits references to memcpy() for struct copies etc.  */
 @@ -157,7 +157,7 @@ grub_puts_ (const char *s)
    return grub_puts (_(s));
  }
  
 -#if defined (__APPLE__) && ! defined (GRUB_UTIL)
-+#if (defined (__APPLE__) || defined (_MSC_VER)) && ! defined (GRUB_UTIL)
++#if ( defined (__APPLE__) || defined (_MSC_VER) ) && ! defined (GRUB_UTIL)
  int
  grub_err_printf (const char *fmt, ...)
  {
@@ -70,37 +61,10 @@ index c5c815d..f590c7a 100644
  #endif
  
 -#if ! defined (__APPLE__) && ! defined (GRUB_UTIL)
-+#if ! defined (__APPLE__) && !defined (_MSC_VER) && ! defined (GRUB_UTIL)
++#if ! defined (__APPLE__) && ! defined (_MSC_VER) && ! defined (GRUB_UTIL)
  int grub_err_printf (const char *fmt, ...)
  __attribute__ ((alias("grub_printf")));
  #endif
-@@ -253,7 +253,7 @@ grub_memcmp (const void *s1, const void *s2, grub_size_t n)
- 
-   return 0;
- }
--#ifndef __APPLE__
-+#if ! defined (__APPLE__) && ! defined (_MSC_VER)
- int memcmp (const void *s1, const void *s2, grub_size_t n)
-   __attribute__ ((alias ("grub_memcmp")));
- #else
-@@ -532,7 +532,7 @@ grub_memset (void *s, int c, grub_size_t len)
- 
-   return s;
- }
--#ifndef __APPLE__
-+#if !defined(__APPLE__) && !defined(_MSC_VER)
- void *memset (void *s, int c, grub_size_t n)
-   __attribute__ ((alias ("grub_memset")));
- #else
-@@ -544,7 +544,7 @@ memset (void *s, int c, grub_size_t n)
- 
- #endif
- 
--#if !defined(GRUB_UTIL) && defined(__APPLE__)
-+#if !defined(GRUB_UTIL) && (defined(__APPLE__) || defined(_MSC_VER))
- void GRUB_BUILTIN_ATTR
- __bzero (void *s, grub_size_t n)
- {
 @@ -1136,7 +1136,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
  	  {
  	    grub_size_t len = 0;

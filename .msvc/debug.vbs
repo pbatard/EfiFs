@@ -7,7 +7,6 @@
 ' Note: You may get a prompt from the firewall when trying to download files
 
 ' Modify these variables as needed
-FS_LOGGING = 0  ' Logging level for the driver
 QEMU_PATH  = "C:\Program Files\qemu\"
 QEMU_EXE   = "qemu-system-x86_64w.exe"
 OVMF_ZIP   = "OVMF-X64-r15214.zip"
@@ -105,11 +104,12 @@ End If
 ' Copy the files where required, and start QEMU
 Call shell.Run("%COMSPEC% /c mkdir ""image\efi\boot""", 0, True)
 Call fso.CopyFile(WScript.Arguments(0), "image\ntfs_x64.efi", True)
-' Create a startup.nsh that: sets logging, loads the driver and executes an "Hello World" app from the NTFS disk
+' Create a startup.nsh that: sets logging (script arg #2), loads the driver and executes an "Hello World" app from the NTFS disk
 Set file = fso.CreateTextFile("image\efi\boot\startup.nsh", True)
-Call file.Write("set FS_LOGGING " & FS_LOGGING & vbCrLf &_
+Call file.Write("set FS_LOGGING " & WScript.Arguments(1) & vbCrLf &_
   "load fs0:/ntfs_x64.efi" & vbCrLf &_
   "map -r" & vbCrLf &_
   "fs1:/EFI/Boot/bootx64.efi" & vbCrLf)
 Call file.Close()
+' Add something like "-S -gdb tcp:127.0.0.1:1234" if you want to use gdb to debug
 Call shell.Run("""" & QEMU_PATH & QEMU_EXE & """ -L . -bios OVMF.fd -net none -hda fat:image -hdb ntfs.vhd", 1, True)

@@ -32,28 +32,19 @@
     <ClCompile Include="..\src\logging.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\missing.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\path.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\utf8.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\grub\grub-core\fs\fshelp.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\grub\grub-core\fs\ntfs.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\grub\grub-core\kern\err.c">
+    <ClCompile Include="..\grub\grub-core\fs\ntfscomp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\grub\grub-core\kern\list.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\grub\grub-core\kern\misc.c">
+    <ClCompile Include="..\src\missing.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -64,9 +55,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\driver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
