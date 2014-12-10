@@ -76,14 +76,6 @@
       <SubSystem>EFI Runtime</SubSystem>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\gnu-efi;$(SolutionDir)$(Platform)\$(Configuration)\grub;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
-    <PostBuildEvent />
-    <PreBuildEvent>
-      <Command>if not exist "$(SolutionDir)\grub\include\grub\cpu" (
-  echo Duplicating GRUB include\grub\x86_64\ to include\grub\cpu\
-  xcopy "$(SolutionDir)\grub\include\grub\x86_64" "$(SolutionDir)\grub\include\grub\cpu" /i /q /s /y /z
-) </Command>
-      <Message>Duplicate GRUB include\grub\x86_64 to include\grub\cpu</Message>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -112,14 +104,6 @@
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\gnu-efi;$(SolutionDir)$(Platform)\$(Configuration)\grub;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <LinkStatus>false</LinkStatus>
     </Link>
-    <PostBuildEvent />
-    <PreBuildEvent>
-      <Command>if not exist "$(SolutionDir)\grub\include\grub\cpu" (
-  echo Duplicating GRUB include\grub\x86_64\ to include\grub\cpu\
-  xcopy "$(SolutionDir)\grub\include\grub\x86_64" "$(SolutionDir)\grub\include\grub\cpu" /i /q /s /y /z
-) </Command>
-      <Message>Duplicate GRUB include\grub\x86_64 to include\grub\cpu</Message>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\grub\grub-core\fs\ntfs.c" />

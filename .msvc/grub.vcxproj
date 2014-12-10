@@ -74,6 +74,13 @@
       <SubSystem>EFI Application</SubSystem>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
     </Lib>
+    <PreBuildEvent>
+      <Command>if not exist "$(SolutionDir)\grub\include\grub\cpu" (
+  echo Duplicating GRUB include\grub\x86_64\ to include\grub\cpu\
+  xcopy "$(SolutionDir)\grub\include\grub\x86_64" "$(SolutionDir)\grub\include\grub\cpu" /i /q /s /y /z
+)</Command>
+      <Message>Duplicate GRUB include\grub\x86_64 to include\grub\cpu</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -95,6 +102,13 @@
       <SubSystem>EFI Application</SubSystem>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
     </Lib>
+    <PreBuildEvent>
+      <Command>if not exist "$(SolutionDir)\grub\include\grub\cpu" (
+  echo Duplicating GRUB include\grub\x86_64\ to include\grub\cpu\
+  xcopy "$(SolutionDir)\grub\include\grub\x86_64" "$(SolutionDir)\grub\include\grub\cpu" /i /q /s /y /z
+)</Command>
+      <Message>Duplicate GRUB include\grub\x86_64 to include\grub\cpu</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
