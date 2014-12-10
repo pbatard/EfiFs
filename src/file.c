@@ -281,7 +281,7 @@ DirHook(const CHAR8 *name, const GRUB_DIRHOOK_INFO *DirInfo, VOID *Data)
 	if (EFI_ERROR(Status)) {
 		if (Status != EFI_BUFFER_TOO_SMALL)
 			PrintStatusError(Status, L"Could not convert directory entry to UTF-8");
-		return Status;
+		return (INT32) Status;
 	}
 	/* The Info struct size already accounts for the extra NUL */
 	Info->Size = sizeof(*Info) + StrLen(Info->FileName) * sizeof(CHAR16);

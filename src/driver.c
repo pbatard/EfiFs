@@ -406,5 +406,10 @@ FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	return EFI_SUCCESS;
 }
 
-/* Designate the driver entrypoint */
+/*
+ * Designate the driver entrypoint
+ * Not needed for Visual Studio, as this is done through the /ENTRY linker option
+ */
+#if !defined(_MSC_VER)
 EFI_DRIVER_ENTRY_POINT(FSDriverInstall)
+#endif

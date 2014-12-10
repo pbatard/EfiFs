@@ -1,0 +1,247 @@
+From 8e6595aa07276dd216e4464240a3c941669edfda Mon Sep 17 00:00:00 2001
+From: Pete Batard <pete@akeo.ie>
+Date: Wed, 10 Dec 2014 02:07:53 +0000
+Subject: [PATCH] fixes for MSVC compilation
+
+---
+ grub-core/fs/ntfs.c         |  6 ++++--
+ grub-core/kern/misc.c       | 14 +++++++-------
+ include/grub/ntfs.h         |  2 ++
+ include/grub/types.h        | 22 ++++++++++++++++++++++
+ include/grub/x86_64/types.h |  2 +-
+ 5 files changed, 36 insertions(+), 10 deletions(-)
+
+diff --git a/grub-core/fs/ntfs.c b/grub-core/fs/ntfs.c
+index d3a91f5..50f6ab0 100644
+--- a/grub-core/fs/ntfs.c
++++ b/grub-core/fs/ntfs.c
+@@ -635,6 +635,7 @@ list_file (struct grub_ntfs_file *diro, grub_uint8_t *pos,
+   return 0;
+ }
+ 
++PRAGMA_BEGIN_PACKED
+ struct symlink_descriptor
+ {
+   grub_uint32_t type;
+@@ -644,6 +645,7 @@ struct symlink_descriptor
+   grub_uint16_t off2;
+   grub_uint16_t len2;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ static char *
+ grub_ntfs_read_symlink (grub_fshelp_node_t node)
+@@ -985,9 +987,9 @@ grub_ntfs_dir_iter (const char *filename, enum grub_fshelp_filetype filetype,
+   grub_memset (&info, 0, sizeof (info));
+   info.dir = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_DIR);
+   info.mtimeset = 1;
+-  info.mtime = grub_divmod64 (node->mtime, 10000000, 0) 
++  info.mtime = (grub_int32_t) (grub_divmod64 (node->mtime, 10000000, 0) 
+     - 86400ULL * 365 * (1970 - 1601)
+-    - 86400ULL * ((1970 - 1601) / 4) + 86400ULL * ((1970 - 1601) / 100);
++    - 86400ULL * ((1970 - 1601) / 4) + 86400ULL * ((1970 - 1601) / 100));
+   grub_free (node);
+   return ctx->hook (filename, &info, ctx->hook_data);
+ }
+diff --git a/grub-core/kern/misc.c b/grub-core/kern/misc.c
+index c5c815d..f590c7a 100644
+--- a/grub-core/kern/misc.c
++++ b/grub-core/kern/misc.c
+@@ -95,7 +95,7 @@ grub_memmove (void *dest, const void *src, grub_size_t n)
+   return dest;
+ }
+ 
+-#ifndef __APPLE__
++#if !defined (__APPLE__) && !defined (_MSC_VER)
+ void *memmove (void *dest, const void *src, grub_size_t n)
+   __attribute__ ((alias ("grub_memmove")));
+ /* GCC emits references to memcpy() for struct copies etc.  */
+@@ -157,7 +157,7 @@ grub_puts_ (const char *s)
+   return grub_puts (_(s));
+ }
+ 
+-#if defined (__APPLE__) && ! defined (GRUB_UTIL)
++#if (defined (__APPLE__) || defined (_MSC_VER)) && ! defined (GRUB_UTIL)
+ int
+ grub_err_printf (const char *fmt, ...)
+ {
+@@ -172,7 +172,7 @@ grub_err_printf (const char *fmt, ...)
+ }
+ #endif
+ 
+-#if ! defined (__APPLE__) && ! defined (GRUB_UTIL)
++#if ! defined (__APPLE__) && !defined (_MSC_VER) && ! defined (GRUB_UTIL)
+ int grub_err_printf (const char *fmt, ...)
+ __attribute__ ((alias("grub_printf")));
+ #endif
+@@ -253,7 +253,7 @@ grub_memcmp (const void *s1, const void *s2, grub_size_t n)
+ 
+   return 0;
+ }
+-#ifndef __APPLE__
++#if ! defined (__APPLE__) && ! defined (_MSC_VER)
+ int memcmp (const void *s1, const void *s2, grub_size_t n)
+   __attribute__ ((alias ("grub_memcmp")));
+ #else
+@@ -532,7 +532,7 @@ grub_memset (void *s, int c, grub_size_t len)
+ 
+   return s;
+ }
+-#ifndef __APPLE__
++#if !defined(__APPLE__) && !defined(_MSC_VER)
+ void *memset (void *s, int c, grub_size_t n)
+   __attribute__ ((alias ("grub_memset")));
+ #else
+@@ -544,7 +544,7 @@ memset (void *s, int c, grub_size_t n)
+ 
+ #endif
+ 
+-#if !defined(GRUB_UTIL) && defined(__APPLE__)
++#if !defined(GRUB_UTIL) && (defined(__APPLE__) || defined(_MSC_VER))
+ void GRUB_BUILTIN_ATTR
+ __bzero (void *s, grub_size_t n)
+ {
+@@ -1136,7 +1136,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
+ 	  {
+ 	    grub_size_t len = 0;
+ 	    grub_size_t fill;
+-	    const char *p = ((char *) (grub_addr_t) curarg) ? : "(null)";
++	    const char *p = (curarg != 0) ? ((char *) (grub_addr_t) curarg) : "(null)";
+ 	    grub_size_t i;
+ 
+ 	    while (len < format2 && p[len])
+diff --git a/include/grub/ntfs.h b/include/grub/ntfs.h
+index d1a6af6..203e014 100644
+--- a/include/grub/ntfs.h
++++ b/include/grub/ntfs.h
+@@ -101,6 +101,7 @@ enum
+     GRUB_NTFS_RF_BLNK		= 1
+   };
+ 
++PRAGMA_BEGIN_PACKED
+ struct grub_ntfs_bpb
+ {
+   grub_uint8_t jmp_boot[3];
+@@ -126,6 +127,7 @@ struct grub_ntfs_bpb
+   grub_uint64_t num_serial;
+   grub_uint32_t checksum;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ struct grub_ntfs_attr
+ {
+diff --git a/include/grub/types.h b/include/grub/types.h
+index 79f765c..aa8a129 100644
+--- a/include/grub/types.h
++++ b/include/grub/types.h
+@@ -26,10 +26,20 @@
+ 
+ #ifdef __MINGW32__
+ #define GRUB_PACKED __attribute__ ((packed,gcc_struct))
++#elif defined(_MSC_VER)
++#define GRUB_PACKED 
+ #else
+ #define GRUB_PACKED __attribute__ ((packed))
+ #endif
+ 
++#ifdef _MSC_VER
++#define PRAGMA_BEGIN_PACKED __pragma(pack(push, 1))
++#define PRAGMA_END_PACKED   __pragma(pack(pop))
++#else
++#define PRAGMA_BEGIN_PACKED
++#define PRAGMA_END_PACKED
++#endif
++
+ #ifdef GRUB_BUILD
+ # define GRUB_CPU_SIZEOF_VOID_P	BUILD_SIZEOF_VOID_P
+ # define GRUB_CPU_SIZEOF_LONG	BUILD_SIZEOF_LONG
+@@ -256,10 +266,12 @@ static inline grub_uint64_t grub_swap_bytes64(grub_uint64_t _x)
+ 
+ static inline grub_uint16_t grub_get_unaligned16 (const void *ptr)
+ {
++PRAGMA_BEGIN_PACKED
+   struct grub_unaligned_uint16_t
+   {
+     grub_uint16_t d;
+   } GRUB_PACKED;
++PRAGMA_END_PACKED
+   const struct grub_unaligned_uint16_t *dd
+     = (const struct grub_unaligned_uint16_t *) ptr;
+   return dd->d;
+@@ -267,20 +279,24 @@ static inline grub_uint16_t grub_get_unaligned16 (const void *ptr)
+ 
+ static inline void grub_set_unaligned16 (void *ptr, grub_uint16_t val)
+ {
++PRAGMA_BEGIN_PACKED
+   struct grub_unaligned_uint16_t
+   {
+     grub_uint16_t d;
+   } GRUB_PACKED;
++PRAGMA_END_PACKED
+   struct grub_unaligned_uint16_t *dd = (struct grub_unaligned_uint16_t *) ptr;
+   dd->d = val;
+ }
+ 
+ static inline grub_uint32_t grub_get_unaligned32 (const void *ptr)
+ {
++PRAGMA_BEGIN_PACKED
+   struct grub_unaligned_uint32_t
+   {
+     grub_uint32_t d;
+   } GRUB_PACKED;
++PRAGMA_END_PACKED
+   const struct grub_unaligned_uint32_t *dd
+     = (const struct grub_unaligned_uint32_t *) ptr;
+   return dd->d;
+@@ -288,18 +304,22 @@ static inline grub_uint32_t grub_get_unaligned32 (const void *ptr)
+ 
+ static inline void grub_set_unaligned32 (void *ptr, grub_uint32_t val)
+ {
++PRAGMA_BEGIN_PACKED
+   struct grub_unaligned_uint32_t
+   {
+     grub_uint32_t d;
+   } GRUB_PACKED;
++PRAGMA_END_PACKED
+   struct grub_unaligned_uint32_t *dd = (struct grub_unaligned_uint32_t *) ptr;
+   dd->d = val;
+ }
+ 
++PRAGMA_BEGIN_PACKED
+ struct grub_unaligned_uint64
+ {
+   grub_uint64_t val;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ typedef struct grub_unaligned_uint64 grub_unaligned_uint64_t;
+ 
+@@ -312,10 +332,12 @@ static inline grub_uint64_t grub_get_unaligned64 (const void *ptr)
+ 
+ static inline void grub_set_unaligned64 (void *ptr, grub_uint64_t val)
+ {
++PRAGMA_BEGIN_PACKED
+   struct grub_unaligned_uint64_t
+   {
+     grub_uint64_t d;
+   } GRUB_PACKED;
++PRAGMA_END_PACKED
+   struct grub_unaligned_uint64_t *dd = (struct grub_unaligned_uint64_t *) ptr;
+   dd->d = val;
+ }
+diff --git a/include/grub/x86_64/types.h b/include/grub/x86_64/types.h
+index fec9109..5459a49 100644
+--- a/include/grub/x86_64/types.h
++++ b/include/grub/x86_64/types.h
+@@ -23,7 +23,7 @@
+ #define GRUB_TARGET_SIZEOF_VOID_P	8
+ 
+ /* The size of long.  */
+-#ifdef __MINGW32__
++#if defined(__MINGW32__) || defined(_MSC_VER)
+ #define GRUB_TARGET_SIZEOF_LONG		4
+ #else
+ #define GRUB_TARGET_SIZEOF_LONG		8
+-- 
+1.9.4.msysgit.2
+

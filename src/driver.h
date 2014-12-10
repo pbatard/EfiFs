@@ -21,6 +21,7 @@
 
 #pragma once
 
+#if !defined(_MSC_VER)
 #if !defined(__GNUC__) || (__GNUC__ < 4) || (__GNUC__ == 4 && __GNUC_MINOR__ < 7)
 #error gcc 4.7 or later is required for the compilation of this driver.
 #endif
@@ -28,6 +29,7 @@
 /* Having GNU_EFI_USE_MS_ABI should avoid the need for that ugly uefi_call_wrapper */
 #if !defined(__MAKEWITH_GNUEFI) || !defined(GNU_EFI_USE_MS_ABI)
 #error gnu-efi, with option GNU_EFI_USE_MS_ABI, is required for the compilation of this driver.
+#endif
 #endif
 
 /* Driver version */
@@ -110,7 +112,7 @@ typedef struct _GRUB_DIRHOOK_INFO {
 typedef INT32 (*GRUB_DIRHOOK) (const CHAR8 *name,
 		const GRUB_DIRHOOK_INFO *Info, VOID *Data);
 
-extern INTN LogLevel;
+extern UINTN LogLevel;
 extern EFI_HANDLE EfiImageHandle;
 extern EFI_GUID ShellVariable;
 extern CHAR16 *DriverNameString;

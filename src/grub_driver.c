@@ -69,11 +69,11 @@ GetFSGuid(VOID)
 				j -= 3;
 				Data4[j] = (UINT8) '+';
 			} else {
-				Data4[j] = FsName[i];
+				Data4[j] = (UINT8) FsName[i];
 			}
 		} else {
 			k = 0;
-			Data4[j] = FsName[i];
+			Data4[j] = (UINT8) FsName[i];
 		}
 	}
 	FreePool(FsName);

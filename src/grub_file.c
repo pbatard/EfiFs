@@ -170,7 +170,7 @@ grub_disk_get_size (grub_disk_t disk)
 	ASSERT(FileSystem != NULL);
 	ASSERT(FileSystem->BlockIo != NULL);
 
-	return (FileSystem->BlockIo->Media->LastBlock + 1) *
+	return (grub_uint64_t) (FileSystem->BlockIo->Media->LastBlock + 1) *
 			FileSystem->BlockIo->Media->BlockSize;
 }
 
@@ -354,15 +354,15 @@ GrubRead(EFI_GRUB_FILE *File, VOID *Data, UINTN *Len)
 	grub_fs_t p = grub_fs_list;
 	grub_file_t f = (grub_file_t) File->GrubFile;
 	grub_ssize_t len;
-	INTN Remaining;
+	UINTN Remaining;
 
 	/* GRUB may return an error if we request more data than available */
-	Remaining = f->size - f->offset;
+	Remaining = (f->size > f->offset)? f->size - f->offset : 0;
 
 	if (*Len > Remaining)
 		*Len = Remaining;
 
-	len = p->read(f, (char *) Data, *Len);
+	len = p->read(f, (char *) Data, (grub_size_t) *Len);
 
 	if (len < 0) {
 		*Len = 0;

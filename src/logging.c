@@ -39,7 +39,7 @@ Print_t* PrintTable[] = { &PrintError, &PrintWarning, &PrintInfo,
 #if !defined(DEFAULT_LOGLEVEL)
 #define DEFAULT_LOGLEVEL FS_LOGLEVEL_NONE
 #endif
-INTN LogLevel = DEFAULT_LOGLEVEL;
+UINTN LogLevel = DEFAULT_LOGLEVEL;
 
 /**
  * Print an error message along with a human readable EFI status code

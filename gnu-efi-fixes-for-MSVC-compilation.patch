@@ -1,0 +1,162 @@
+From 9c51eee1de151fbec6752a598230094383e2fb29 Mon Sep 17 00:00:00 2001
+From: Pete Batard <pete@akeo.ie>
+Date: Mon, 8 Dec 2014 02:10:07 +0000
+Subject: [PATCH] fixes for MSVC compilation
+
+These fixes are needed to address the following error and warnings when compiling the library part
+using Visual Studio 2013 Community Edition (as in https://github.com/pbatard/uefi-simple):
+* "lib\x86_64\math.c(49): error C4235: nonstandard extension used : '_asm' keyword not supported
+  on this architecture"
+* "lib\print.c(98): error C2059: syntax error : '('" due to placement of EFIAPI macro
+* "lib\cmdline.c(94): warning C4090: 'function' : different 'const' qualifiers"
+* "lib\smbios.c(25): warning C4068: unknown pragma"
+* Also fix the definition of EFI_FUNCTION in "lib\x86_64\efibind.h"
+---
+ inc/x86_64/efibind.h |  7 ++++++-
+ lib/cmdline.c        |  4 ++--
+ lib/print.c          | 12 ++++++------
+ lib/smbios.c         |  2 ++
+ lib/x86_64/math.c    |  8 ++++----
+ 5 files changed, 20 insertions(+), 13 deletions(-)
+
+diff --git a/inc/x86_64/efibind.h b/inc/x86_64/efibind.h
+index 2133798..2bc7a3d 100644
+--- a/inc/x86_64/efibind.h
++++ b/inc/x86_64/efibind.h
+@@ -371,7 +371,12 @@ UINT64 efi_call10(void *func, UINT64 arg1, UINT64 arg2, UINT64 arg3,
+   __VA_ARG_NSUFFIX__(_cast64_efi_call, __VA_ARGS__) (func , ##__VA_ARGS__)
+ 
+ #endif
+-#define EFI_FUNCTION __attribute__((ms_abi))
++
++#if !defined(_MSC_EXTENSIONS) && defined(HAVE_USE_MS_ABI) 
++    #define EFI_FUNCTION __attribute__((ms_abi))
++#else
++    #define EFI_FUNCTION
++#endif
+ 
+ #ifdef _MSC_EXTENSIONS
+ #pragma warning ( disable : 4731 )  // Suppress warnings about modification of EBP
+diff --git a/lib/cmdline.c b/lib/cmdline.c
+index abbaec4..a4baba7 100644
+--- a/lib/cmdline.c
++++ b/lib/cmdline.c
+@@ -86,7 +86,7 @@ INTN GetShellArgcArgv(EFI_HANDLE ImageHandle, CHAR16 **Argv[])
+ 
+   Status = uefi_call_wrapper(BS->OpenProtocol, 6,
+                              ImageHandle,
+-                             &EfiShellParametersProtocolGuid,
++                             (EFI_GUID*)&EfiShellParametersProtocolGuid,
+                              (VOID **)&EfiShellParametersProtocol,
+                              ImageHandle,
+                              NULL,
+@@ -103,7 +103,7 @@ INTN GetShellArgcArgv(EFI_HANDLE ImageHandle, CHAR16 **Argv[])
+   // try to get shell 1.0 interface instead.
+   Status = uefi_call_wrapper(BS->OpenProtocol, 6,
+                              ImageHandle,
+-                             &ShellInterfaceProtocolGuid,
++                             (EFI_GUID*)&ShellInterfaceProtocolGuid,
+                              (VOID **)&EfiShellInterfaceProtocol,
+                              ImageHandle,
+                              NULL,
+diff --git a/lib/print.c b/lib/print.c
+index a717cff..0db4fbf 100644
+--- a/lib/print.c
++++ b/lib/print.c
+@@ -95,8 +95,8 @@ typedef struct _pstate {
+     UINTN       AttrHighlight;
+     UINTN       AttrError;
+ 
+-    INTN EFIAPI       (*Output)(VOID *context, CHAR16 *str);
+-    INTN EFIAPI       (*SetAttr)(VOID *context, UINTN attr);
++    INTN        (EFIAPI *Output)(VOID *context, CHAR16 *str);
++    INTN        (EFIAPI *SetAttr)(VOID *context, UINTN attr);
+     VOID        *Context;    
+ 
+     // Current item being formatted
+@@ -235,7 +235,7 @@ Returns:
+     if (DbgOut) {
+         ps.Attr = DbgOut->Mode->Attribute;
+         ps.Context = DbgOut;
+-        ps.SetAttr = (INTN EFIAPI (*)(VOID *, UINTN))  DbgOut->SetAttribute;
++        ps.SetAttr = (INTN (EFIAPI *)(VOID *, UINTN))  DbgOut->SetAttribute;
+     }
+ 
+     SavedAttribute = ps.Attr;
+@@ -403,7 +403,7 @@ _PoolCatPrint (
+     IN CHAR16           *fmt,
+     IN va_list          args,
+     IN OUT POOL_PRINT   *spc,
+-    IN INTN EFIAPI      (*Output)(VOID *context, CHAR16 *str)
++    IN INTN             (EFIAPI *Output)(VOID *context, CHAR16 *str)
+     )
+ // Dispath function for SPrint, PoolPrint, and CatPrint
+ {
+@@ -781,8 +781,8 @@ _IPrint (
+ 
+     ZeroMem (&ps, sizeof(ps));
+     ps.Context = Out;
+-    ps.Output  = (INTN EFIAPI (*)(VOID *, CHAR16 *)) Out->OutputString;
+-    ps.SetAttr = (INTN EFIAPI (*)(VOID *, UINTN))  Out->SetAttribute;
++    ps.Output  = (INTN (EFIAPI *)(VOID *, CHAR16 *)) Out->OutputString;
++    ps.SetAttr = (INTN (EFIAPI *)(VOID *, UINTN))  Out->SetAttribute;
+     ps.Attr = Out->Mode->Attribute;
+    
+     back = (ps.Attr >> 4) & 0xF;
+diff --git a/lib/smbios.c b/lib/smbios.c
+index 92b2d3e..d349fb6 100644
+--- a/lib/smbios.c
++++ b/lib/smbios.c
+@@ -22,7 +22,9 @@ Revision History
+  * "warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]"
+  * we can safely ignore them here.
+  */
++#ifdef __GNUC__
+ #pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
++#endif
+ 
+ EFI_STATUS
+ LibGetSmbiosSystemGuidAndSerialNumber (
+diff --git a/lib/x86_64/math.c b/lib/x86_64/math.c
+index 4f40388..66b2aa1 100644
+--- a/lib/x86_64/math.c
++++ b/lib/x86_64/math.c
+@@ -42,7 +42,7 @@ LShiftU64 (
+     )
+ // Left shift 64bit by 32bit and get a 64bit result
+ {
+-#ifdef __GNUC__
++#if defined(__GNUC__) || defined(_MSC_VER)
+     return Operand << Count;
+ #else
+     UINT64      Result;
+@@ -77,7 +77,7 @@ RShiftU64 (
+     )
+ // Right shift 64bit by 32bit and get a 64bit result
+ {
+-#ifdef __GNUC__
++#if defined(__GNUC__) || defined(_MSC_VER)
+     return Operand >> Count;
+ #else
+     UINT64      Result;
+@@ -113,7 +113,7 @@ MultU64x32 (
+     )
+ // Multiple 64bit by 32bit and get a 64bit result
+ {
+-#ifdef __GNUC__
++#if defined(__GNUC__) || defined(_MSC_VER)
+     return Multiplicand * Multiplier;
+ #else
+     UINT64      Result;
+@@ -140,7 +140,7 @@ DivU64x32 (
+ // divide 64bit by 32bit and get a 64bit result
+ // N.B. only works for 31bit divisors!!
+ {
+-#ifdef __GNUC__
++#if defined(__GNUC__) || defined(_MSC_VER)
+     if (Remainder)
+ 	*Remainder = Dividend % Divisor;
+     return Dividend / Divisor;
+-- 
+1.9.4.msysgit.2
+

@@ -1,0 +1,150 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{DFA0BA98-D0BA-4176-9A34-B5BA6355B1DE}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+    <ProjectName>ntfs</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <TargetExt>.efi</TargetExt>
+    <GenerateManifest>false</GenerateManifest>
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <TargetExt>.efi</TargetExt>
+    <GenerateManifest>false</GenerateManifest>
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\include;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>DRIVERNAME=ntfs;GRUB_FILE=__FILE__;_UNICODE;UNICODE;_MSC_EXTENSIONS;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>false</ExceptionHandling>
+      <CompileAs>CompileAsC</CompileAs>
+      <WarningLevel>Level3</WarningLevel>
+    </ClCompile>
+    <Lib>
+      <SubSystem>EFI Application</SubSystem>
+    </Lib>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+    </ProjectReference>
+    <Link>
+      <AdditionalDependencies>libcmtd.lib;;gnu-efi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>false</DataExecutionPrevention>
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <EntryPointSymbol>FSDriverInstall</EntryPointSymbol>
+      <SubSystem>EFI Runtime</SubSystem>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\gnu-efi;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent />
+    <PreBuildEvent>
+      <Command>if not exist "$(SolutionDir)\grub\include\grub\cpu" (
+  echo Duplicating GRUB include\grub\x86_64\ to include\grub\cpu\
+  xcopy "$(SolutionDir)\grub\include\grub\x86_64" "$(SolutionDir)\grub\include\grub\cpu" /i /q /s /y /z
+) </Command>
+      <Message>Duplicate GRUB include\grub\x86_64 to include\grub\cpu</Message>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\include;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>DRIVERNAME=ntfs;GRUB_FILE=__FILE__;_UNICODE;UNICODE;_MSC_EXTENSIONS;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>false</ExceptionHandling>
+      <CompileAs>CompileAsC</CompileAs>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <Optimization>MinSpace</Optimization>
+      <WarningLevel>Level3</WarningLevel>
+    </ClCompile>
+    <Lib>
+      <SubSystem>EFI Application</SubSystem>
+    </Lib>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+    </ProjectReference>
+    <Link>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+    </Link>
+    <Link>
+      <DataExecutionPrevention>false</DataExecutionPrevention>
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <EntryPointSymbol>FSDriverInstall</EntryPointSymbol>
+      <SubSystem>EFI Runtime</SubSystem>
+      <AdditionalDependencies>libcmt.lib;gnu-efi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\gnu-efi;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <LinkStatus>false</LinkStatus>
+    </Link>
+    <PostBuildEvent />
+    <PreBuildEvent>
+      <Command>if not exist "$(SolutionDir)\grub\include\grub\cpu" (
+  echo Duplicating GRUB include\grub\x86_64\ to include\grub\cpu\
+  xcopy "$(SolutionDir)\grub\include\grub\x86_64" "$(SolutionDir)\grub\include\grub\cpu" /i /q /s /y /z
+) </Command>
+      <Message>Duplicate GRUB include\grub\x86_64 to include\grub\cpu</Message>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\grub\grub-core\fs\fshelp.c" />
+    <ClCompile Include="..\grub\grub-core\fs\ntfs.c" />
+    <ClCompile Include="..\grub\grub-core\kern\err.c" />
+    <ClCompile Include="..\grub\grub-core\kern\list.c" />
+    <ClCompile Include="..\grub\grub-core\kern\misc.c" />
+    <ClCompile Include="..\src\driver.c" />
+    <ClCompile Include="..\src\file.c" />
+    <ClCompile Include="..\src\grub.c" />
+    <ClCompile Include="..\src\grub_driver.c" />
+    <ClCompile Include="..\src\grub_file.c" />
+    <ClCompile Include="..\src\logging.c" />
+    <ClCompile Include="..\src\missing.c" />
+    <ClCompile Include="..\src\path.c" />
+    <ClCompile Include="..\src\utf8.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="debug.vbs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\driver.h" />
+    <ClInclude Include="config.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

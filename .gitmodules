@@ -2,3 +2,7 @@
 	path = grub
 	url = git://git.savannah.gnu.org/grub.git
 	ignore = dirty
+[submodule "gnu-efi"]
+	path = gnu-efi
+	url = git://git.code.sf.net/p/gnu-efi/code
+	ignore = dirty
