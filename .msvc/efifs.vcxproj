@@ -11,20 +11,20 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\grub\grub-core\fs\fshelp.c" />
-    <ClCompile Include="..\grub\grub-core\kern\err.c" />
-    <ClCompile Include="..\grub\grub-core\kern\list.c" />
-    <ClCompile Include="..\grub\grub-core\kern\misc.c" />
-    <ClCompile Include="..\grub\grub-core\lib\crc.c" />
-    <ClCompile Include="..\grub\grub-core\lib\minilzo\minilzo.c" />
-    <ClCompile Include="..\src\grub.c" />
+    <ClCompile Include="..\src\driver.c" />
+    <ClCompile Include="..\src\file.c" />
+    <ClCompile Include="..\src\grub_file.c" />
+    <ClCompile Include="..\src\logging.c" />
+    <ClCompile Include="..\src\missing.c" />
+    <ClCompile Include="..\src\path.c" />
+    <ClCompile Include="..\src\utf8.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="config.h" />
+    <ClInclude Include="..\src\driver.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{628E3F58-0AA9-40BB-8E49-D8CC513AAD63}</ProjectGuid>
-    <RootNamespace>grub</RootNamespace>
+    <ProjectGuid>{E65DAD8F-B2D7-4CF7-9151-FBFCEF766968}</ProjectGuid>
+    <RootNamespace>efifs</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -62,7 +62,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\include;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
@@ -86,7 +86,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\include;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>

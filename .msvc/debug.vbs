@@ -4,7 +4,7 @@
 ' bunch of files, as well as launch QEMU, and neither Powershell or a standard batch
 ' can do that without having an extra console appearing.
 '
-' Note: You may get a prompt from the firewall when trying to download files
+' Note: You may get a prompt from the Windows firewall when trying to download files
 
 ' Modify these variables as needed
 QEMU_PATH  = "C:\Program Files\qemu\"
@@ -14,10 +14,10 @@ OVMF_BIOS  = "OVMF.fd"
 FTP_SERVER = "ftp.heanet.ie"
 FTP_FILE   = "pub/download.sourceforge.net/pub/sourceforge/e/ed/edk2/OVMF/" & OVMF_ZIP
 FTP_URL    = "ftp://" & FTP_SERVER & "/" & FTP_FILE
-VHD_ZIP    = "ntfs.zip"
-VHD_IMG    = "ntfs.vhd"
+VHD_ZIP    = WScript.Arguments(0) & ".zip"
+VHD_IMG    = WScript.Arguments(0) & ".vhd"
 VHD_URL    = "http://efi.akeo.ie/test/" & VHD_ZIP
-DRV        = "ntfs_x64.efi"
+DRV        = WScript.Arguments(0) & "_x64.efi"
 DRV_URL    = "http://efi.akeo.ie/downloads/efifs-0.6.1/x64/" & DRV
 
 ' Globals
@@ -90,26 +90,26 @@ If Not fso.FileExists(OVMF_BIOS) Then
   Call WScript.Quit(1)
 End If
 
-' Fetch the NTFS VHD image
+' Fetch the VHD image
 If Not fso.FileExists(VHD_IMG) Then
   Call DownloadHttp(VHD_URL, VHD_ZIP)
   Call Unzip(VHD_ZIP, VHD_IMG)
   Call fso.DeleteFile(VHD_ZIP)
 End If
 If Not fso.FileExists(VHD_IMG) Then
-  Call WScript.Echo("There was a problem downloading or unzipping the NTFS VHD image.")
+  Call WScript.Echo("There was a problem downloading or unzipping the VHD image.")
   Call WScript.Quit(1)
 End If
 
 ' Copy the files where required, and start QEMU
 Call shell.Run("%COMSPEC% /c mkdir ""image\efi\boot""", 0, True)
-Call fso.CopyFile(WScript.Arguments(0), "image\ntfs_x64.efi", True)
-' Create a startup.nsh that: sets logging (script arg #2), loads the driver and executes an "Hello World" app from the NTFS disk
+Call fso.CopyFile(WScript.Arguments(1), "image\" & DRV, True)
+' Create a startup.nsh that: sets logging, loads the driver and executes an "Hello World" app from the disk
 Set file = fso.CreateTextFile("image\efi\boot\startup.nsh", True)
-Call file.Write("set FS_LOGGING " & WScript.Arguments(1) & vbCrLf &_
-  "load fs0:/ntfs_x64.efi" & vbCrLf &_
+Call file.Write("set FS_LOGGING " & WScript.Arguments(2) & vbCrLf &_
+  "load fs0:/" & DRV & vbCrLf &_
   "map -r" & vbCrLf &_
   "fs1:/EFI/Boot/bootx64.efi" & vbCrLf)
 Call file.Close()
 ' Add something like "-S -gdb tcp:127.0.0.1:1234" if you want to use gdb to debug
-Call shell.Run("""" & QEMU_PATH & QEMU_EXE & """ -L . -bios OVMF.fd -net none -hda fat:image -hdb ntfs.vhd", 1, True)
+Call shell.Run("""" & QEMU_PATH & QEMU_EXE & """ -L . -bios OVMF.fd -net none -hda fat:image -hdb " & VHD_IMG, 1, True)

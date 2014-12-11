@@ -76,3 +76,6 @@ GRUB_MOD_EXIT GrubModuleExit[] = {
 #endif
 	NULL
 };
+
+// Designate the driver entrypoint
+EFI_DRIVER_ENTRY_POINT(FSDriverInstall)

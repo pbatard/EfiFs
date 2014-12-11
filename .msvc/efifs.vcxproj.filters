@@ -9,25 +9,29 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{b1c3b304-e868-4b07-988c-36ad7bc57300}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\this.c">
+    <ClCompile Include="..\src\driver.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\grub\grub-core\fs\ntfs.c">
+    <ClCompile Include="..\src\file.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\grub\grub-core\fs\ntfscomp.c">
+    <ClCompile Include="..\src\grub_file.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="debug.vbs">
-      <Filter>Resource Files</Filter>
-    </None>
+    <ClCompile Include="..\src\logging.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\missing.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\path.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\utf8.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\driver.h">

@@ -448,6 +448,3 @@ FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	PrintDebug(L"FS driver installed.\n");
 	return EFI_SUCCESS;
 }
-
-// Designate the driver entrypoint
-EFI_DRIVER_ENTRY_POINT(FSDriverInstall)

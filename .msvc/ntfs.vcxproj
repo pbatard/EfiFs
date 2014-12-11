@@ -54,8 +54,8 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\include;$(SolutionDir)\grub\include;$(ProjectDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DRIVERNAME=ntfs;GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(ProjectDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <WarningLevel>Level3</WarningLevel>
@@ -69,18 +69,18 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>gnu-efi.lib;grub.lib;libcmtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gnu-efi.lib;grub.lib;efifs.lib;libcmtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>false</DataExecutionPrevention>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
       <SubSystem>EFI Runtime</SubSystem>
-      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\gnu-efi;$(SolutionDir)$(Platform)\$(Configuration)\grub;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\gnu-efi;$(SolutionDir)$(Platform)\$(Configuration)\grub;$(SolutionDir)$(Platform)\$(Configuration)\efifs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\include;$(SolutionDir)\grub\include;$(ProjectDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DRIVERNAME=ntfs;GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(ProjectDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
@@ -100,22 +100,16 @@
       <DataExecutionPrevention>false</DataExecutionPrevention>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
       <SubSystem>EFI Runtime</SubSystem>
-      <AdditionalDependencies>gnu-efi.lib;grub.lib;libcmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\gnu-efi;$(SolutionDir)$(Platform)\$(Configuration)\grub;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>gnu-efi.lib;grub.lib;efifs.lib;libcmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\gnu-efi;$(SolutionDir)$(Platform)\$(Configuration)\grub;$(SolutionDir)$(Platform)\$(Configuration)\efifs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <LinkStatus>false</LinkStatus>
+      <AdditionalOptions>/IGNORE:4210 %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\grub\grub-core\fs\ntfs.c" />
     <ClCompile Include="..\grub\grub-core\fs\ntfscomp.c" />
-    <ClCompile Include="..\src\driver.c" />
-    <ClCompile Include="..\src\file.c" />
-    <ClCompile Include="..\src\grub_file.c" />
-    <ClCompile Include="..\src\logging.c" />
-    <ClCompile Include="..\src\missing.c" />
-    <ClCompile Include="..\src\path.c" />
     <ClCompile Include="..\src\this.c" />
-    <ClCompile Include="..\src\utf8.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="debug.vbs" />
