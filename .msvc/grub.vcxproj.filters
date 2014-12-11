@@ -29,6 +29,9 @@
     <ClCompile Include="..\grub\grub-core\lib\minilzo\minilzo.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\grub.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h">

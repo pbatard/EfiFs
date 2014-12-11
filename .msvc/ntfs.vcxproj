@@ -110,12 +110,11 @@
     <ClCompile Include="..\grub\grub-core\fs\ntfscomp.c" />
     <ClCompile Include="..\src\driver.c" />
     <ClCompile Include="..\src\file.c" />
-    <ClCompile Include="..\src\grub.c" />
-    <ClCompile Include="..\src\grub_driver.c" />
     <ClCompile Include="..\src\grub_file.c" />
     <ClCompile Include="..\src\logging.c" />
     <ClCompile Include="..\src\missing.c" />
     <ClCompile Include="..\src\path.c" />
+    <ClCompile Include="..\src\this.c" />
     <ClCompile Include="..\src\utf8.c" />
   </ItemGroup>
   <ItemGroup>

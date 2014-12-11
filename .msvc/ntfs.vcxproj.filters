@@ -20,12 +20,6 @@
     <ClCompile Include="..\src\file.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\grub.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\grub_driver.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\grub_file.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -33,6 +27,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\path.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\this.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\utf8.c">

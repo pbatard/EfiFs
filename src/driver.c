@@ -52,7 +52,7 @@ static EFI_STATUS EFIAPI
 FSGetDriverName(EFI_COMPONENT_NAME_PROTOCOL *This,
 		CHAR8 *Language, CHAR16 **DriverName)
 {
-	*DriverName = DriverNameString;
+	*DriverName = FullDriverName;
 	return EFI_SUCCESS;
 }
 
@@ -60,7 +60,7 @@ static EFI_STATUS EFIAPI
 FSGetDriverName2(EFI_COMPONENT_NAME2_PROTOCOL *This,
 		CHAR8 *Language, CHAR16 **DriverName)
 {
-	*DriverName = DriverNameString;
+	*DriverName = FullDriverName;
 	return EFI_SUCCESS;
 }
 
@@ -282,6 +282,42 @@ static EFI_DRIVER_BINDING_PROTOCOL FSDriverBinding = {
 };
 
 /**
+ * Set a filesystem GUID according to the filesystem name
+ * We use a static ID for the first 8 bytes, and then roll the lowercase name
+ * for the last 8 bytes (eg. exfat => {'e', 'x', 'f', 'a', 't', 'e', 'x', 'f'})
+ */
+EFI_GUID *
+GetFSGuid(VOID)
+{
+	INTN i, j, k, Len = StrLen(ShortDriverName);
+	static EFI_GUID Guid = { 0xEF1F5EF1, 0xF17E, 0x5857, { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } };
+	CHAR16 *FsName = StrDuplicate(ShortDriverName);
+	const CHAR16 *PlusName = L"plus";
+	UINT8 Data4[12];	/* +4 so that we can also reduce something like "1234567plus" into "1234567+" */
+
+	StrLwr(FsName);
+	for (i = 0, j = 0, k = 0; j < ARRAYSIZE(Data4); i = (i+1)%Len, j++) {
+		/* Convert any 'plus' that is part of the name to '+' */
+		if (FsName[i] == PlusName[k]) {
+			if (++k == 4) {
+				k = 0;
+				j -= 3;
+				Data4[j] = (UINT8) '+';
+			} else {
+				Data4[j] = (UINT8) FsName[i];
+			}
+		} else {
+			k = 0;
+			Data4[j] = (UINT8) FsName[i];
+		}
+	}
+	FreePool(FsName);
+	CopyMem(Guid.Data4, Data4, 8);
+
+	return &Guid;
+}
+
+/**
  * Uninstall EFI driver
  *
  * @v ImageHandle       Handle identifying the loaded image
@@ -318,8 +354,9 @@ FSDriverUninstall(EFI_HANDLE ImageHandle)
 			&ComponentName2Protocol, &FSComponentName2,
 			NULL);
 
-	/* Release the relevant GRUB fs module(s) */
-	GrubDriverExit();
+	/* Release the relevant GRUB module(s) */
+	for (i = 0; GrubModuleExit[i] != NULL; i++)
+		GrubModuleExit[i]();
 
 	/* Uninstall our mutex (we're the only instance that can run this code) */
 	LibUninstallProtocolInterfaces(MutexHandle,
@@ -344,6 +381,7 @@ FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	EFI_STATUS Status;
 	EFI_LOADED_IMAGE *LoadedImage = NULL;
 	VOID *Interface;
+	UINTN i;
 
 	InitializeLib(ImageHandle, SystemTable);
 	SetLogging();
@@ -400,7 +438,12 @@ FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	LoadedImage->Unload = FSDriverUninstall;
 
 	/* Initialize the relevant GRUB fs module(s) */
-	GrubDriverInit();
+	// TODO: Eventually, we could try to turn each GRUB module into their
+	// own EFI driver, have them register their interface and consume that.
+	for (i = 0; GrubModuleInit[i] != NULL; i++) 
+		GrubModuleInit[i]();
+
+	InitializeListHead(&FsListHead);
 
 	PrintDebug(L"FS driver installed.\n");
 	return EFI_SUCCESS;

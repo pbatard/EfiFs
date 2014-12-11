@@ -34,8 +34,8 @@
 
 /* Driver version */
 #define FS_DRIVER_VERSION_MAJOR 0
-#define FS_DRIVER_VERSION_MINOR 6
-#define FS_DRIVER_VERSION_MICRO 1
+#define FS_DRIVER_VERSION_MINOR 7
+#define FS_DRIVER_VERSION_MICRO 0
 
 #ifndef ARRAYSIZE
 #define ARRAYSIZE(A)            (sizeof(A)/sizeof((A)[0]))
@@ -111,11 +111,16 @@ typedef struct _GRUB_DIRHOOK_INFO {
 
 typedef INT32 (*GRUB_DIRHOOK) (const CHAR8 *name,
 		const GRUB_DIRHOOK_INFO *Info, VOID *Data);
+typedef VOID(*GRUB_MOD_INIT)(VOID);
+typedef VOID(*GRUB_MOD_EXIT)(VOID);
 
 extern UINTN LogLevel;
 extern EFI_HANDLE EfiImageHandle;
 extern EFI_GUID ShellVariable;
-extern CHAR16 *DriverNameString;
+extern LIST_ENTRY FsListHead;
+extern CHAR16 *ShortDriverName, *FullDriverName;
+extern GRUB_MOD_INIT GrubModuleInit[];
+extern GRUB_MOD_EXIT GrubModuleExit[];
 
 extern VOID strcpya(CHAR8 *dst, CONST CHAR8 *src);
 extern CHAR8 *strchra(const CHAR8 *s, INTN c);
@@ -149,4 +154,3 @@ extern EFI_STATUS FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle);
 extern VOID FSUninstall(EFI_FS *This, EFI_HANDLE ControllerHandle);
 extern EFI_STATUS EFIAPI FileOpenVolume(EFI_FILE_IO_INTERFACE *This,
 		EFI_FILE_HANDLE *Root);
-extern EFI_GUID *GetFSGuid(VOID);

@@ -32,7 +32,7 @@ LOCAL_CPPFLAGS  = -DDRIVERNAME=$(DRIVERNAME) $(ARCH_C_FLAGS) \
                   -I$(SRCDIR)/../include -I$(GRUBPATH) -I$(GRUBPATH)/include -I$(GRUBPATH)/grub-core/lib/minilzo
 LOCAL_LIBS      = -lgrub
 LOCAL_LDFLAGS   = -L.
-OBJS            = utf8.o path.o missing.o logging.o grub_file.o grub_driver.o file.o driver.o \
+OBJS            = utf8.o path.o missing.o logging.o grub_file.o this.o file.o driver.o \
                   $(GRUBPATH)/grub-core/fs/fshelp.o $(GRUBPATH)/grub-core/$(FSDIR)/$(DRIVERNAME).o
 TARGET          = $(DRIVERNAME)_$(DRIVERARCH).efi
 

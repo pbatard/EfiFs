@@ -34,7 +34,7 @@ grub_exit(void)
 }
 
 /* Screen I/O */
-int grub_term_inputs = 0;
+struct grub_term_input *EXPORT_VAR(grub_term_inputs) = NULL;
 
 void
 grub_refresh(void) { }

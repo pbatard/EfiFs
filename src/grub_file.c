@@ -1,4 +1,4 @@
-/* grubberize.c - The elastic binding between grub and standalone EFI */
+/* grub_file.c - GRUB file handling interface */
 /*
  *  Copyright © 2014 Pete Batard <pete@akeo.ie>
  *  Based on GRUB  --  GRand Unified Bootloader

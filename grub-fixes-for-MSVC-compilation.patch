@@ -1,18 +1,18 @@
-From 2c656e50f93efa3f24d25ea846f24a599244341e Mon Sep 17 00:00:00 2001
+From 4eb1dc19932e2b45dcf06d52830da66492842cc5 Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
 Date: Wed, 10 Dec 2014 02:07:53 +0000
 Subject: [PATCH] fixes for MSVC compilation
 
 ---
  grub-core/fs/ntfs.c         |  6 ++++--
- grub-core/kern/misc.c       |  6 +++---
+ grub-core/kern/misc.c       | 16 ++++++++--------
  include/grub/ntfs.h         |  2 ++
  include/grub/types.h        | 22 ++++++++++++++++++++++
  include/grub/x86_64/types.h |  2 +-
- 5 files changed, 32 insertions(+), 6 deletions(-)
+ 5 files changed, 37 insertions(+), 11 deletions(-)
 
 diff --git a/grub-core/fs/ntfs.c b/grub-core/fs/ntfs.c
-index d3a91f5..50f6ab0 100644
+index d3a91f5..1c9bd59 100644
 --- a/grub-core/fs/ntfs.c
 +++ b/grub-core/fs/ntfs.c
 @@ -635,6 +635,7 @@ list_file (struct grub_ntfs_file *diro, grub_uint8_t *pos,
@@ -36,7 +36,7 @@ index d3a91f5..50f6ab0 100644
    info.dir = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_DIR);
    info.mtimeset = 1;
 -  info.mtime = grub_divmod64 (node->mtime, 10000000, 0) 
-+  info.mtime = (grub_int32_t) (grub_divmod64 (node->mtime, 10000000, 0) 
++  info.mtime = (grub_int32_t) (grub_divmod64 (node->mtime, 10000000, 0)
      - 86400ULL * 365 * (1970 - 1601)
 -    - 86400ULL * ((1970 - 1601) / 4) + 86400ULL * ((1970 - 1601) / 100);
 +    - 86400ULL * ((1970 - 1601) / 4) + 86400ULL * ((1970 - 1601) / 100));
@@ -44,7 +44,7 @@ index d3a91f5..50f6ab0 100644
    return ctx->hook (filename, &info, ctx->hook_data);
  }
 diff --git a/grub-core/kern/misc.c b/grub-core/kern/misc.c
-index c5c815d..6df0a06 100644
+index c5c815d..c178571 100644
 --- a/grub-core/kern/misc.c
 +++ b/grub-core/kern/misc.c
 @@ -157,7 +157,7 @@ grub_puts_ (const char *s)
@@ -65,6 +65,33 @@ index c5c815d..6df0a06 100644
  int grub_err_printf (const char *fmt, ...)
  __attribute__ ((alias("grub_printf")));
  #endif
+@@ -233,7 +233,7 @@ grub_vprintf (const char *fmt, va_list ap)
+   if (curbuf != buf)
+     grub_free (curbuf);
+ 
+-  return s;
++  return (int) s;
+ }
+ 
+ int
+@@ -787,7 +787,7 @@ grub_lltoa (char *str, int c, unsigned long long n)
+ 	grub_uint64_t m;
+ 
+ 	n = grub_divmod64 (n, 10, &m);
+-	*p++ = m + '0';
++	*p++ = (char)m + '0';
+       }
+     while (n);
+ 
+@@ -1094,7 +1094,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
+ 
+ 	case 'C':
+ 	  {
+-	    grub_uint32_t code = curarg;
++	    grub_uint32_t code = (grub_uint32_t) curarg;
+ 	    int shift;
+ 	    unsigned mask;
+ 
 @@ -1136,7 +1136,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
  	  {
  	    grub_size_t len = 0;
@@ -74,8 +101,26 @@ index c5c815d..6df0a06 100644
  	    grub_size_t i;
  
  	    while (len < format2 && p[len])
+@@ -1168,7 +1168,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
+     str[count] = '\0';
+   else
+     str[max_len] = '\0';
+-  return count;
++  return (int) count;
+ }
+ 
+ int
+@@ -1188,7 +1188,7 @@ grub_vsnprintf (char *str, grub_size_t n, const char *fmt, va_list ap)
+ 
+   free_printf_args (&args);
+ 
+-  return ret < n ? ret : n;
++  return (int) (ret < n ? ret : n);
+ }
+ 
+ int
 diff --git a/include/grub/ntfs.h b/include/grub/ntfs.h
-index d1a6af6..203e014 100644
+index d1a6af6..f43bdef 100644
 --- a/include/grub/ntfs.h
 +++ b/include/grub/ntfs.h
 @@ -101,6 +101,7 @@ enum
@@ -95,7 +140,7 @@ index d1a6af6..203e014 100644
  struct grub_ntfs_attr
  {
 diff --git a/include/grub/types.h b/include/grub/types.h
-index 79f765c..aa8a129 100644
+index 79f765c..fd4fe0f 100644
 --- a/include/grub/types.h
 +++ b/include/grub/types.h
 @@ -26,10 +26,20 @@
@@ -194,7 +239,7 @@ index 79f765c..aa8a129 100644
    dd->d = val;
  }
 diff --git a/include/grub/x86_64/types.h b/include/grub/x86_64/types.h
-index fec9109..5459a49 100644
+index fec9109..5be8ffa 100644
 --- a/include/grub/x86_64/types.h
 +++ b/include/grub/x86_64/types.h
 @@ -23,7 +23,7 @@
