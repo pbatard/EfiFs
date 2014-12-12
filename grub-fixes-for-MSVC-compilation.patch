@@ -1,16 +1,71 @@
-From 4eb1dc19932e2b45dcf06d52830da66492842cc5 Mon Sep 17 00:00:00 2001
+From ce45cee1199497b3ab661cd4712e485bcf7035aa Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
 Date: Wed, 10 Dec 2014 02:07:53 +0000
 Subject: [PATCH] fixes for MSVC compilation
 
 ---
+ grub-core/fs/fat.c          |  8 ++++++--
  grub-core/fs/ntfs.c         |  6 ++++--
  grub-core/kern/misc.c       | 16 ++++++++--------
  include/grub/ntfs.h         |  2 ++
  include/grub/types.h        | 22 ++++++++++++++++++++++
  include/grub/x86_64/types.h |  2 +-
- 5 files changed, 37 insertions(+), 11 deletions(-)
+ 6 files changed, 43 insertions(+), 13 deletions(-)
 
+diff --git a/grub-core/fs/fat.c b/grub-core/fs/fat.c
+index 79fe864..eef80fa 100644
+--- a/grub-core/fs/fat.c
++++ b/grub-core/fs/fat.c
+@@ -74,6 +74,7 @@ enum
+   {
+     FLAG_CONTIGUOUS = 2
+   };
++PRAGMA_BEGIN_PACKED
+ struct grub_fat_dir_entry
+ {
+   grub_uint8_t entry_type;
+@@ -114,6 +115,7 @@ struct grub_fat_dir_entry
+     }  GRUB_PACKED  volume_label;
+   }  GRUB_PACKED type_specific;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ struct grub_fat_dir_node
+ {
+@@ -128,6 +130,7 @@ struct grub_fat_dir_node
+ typedef struct grub_fat_dir_node grub_fat_dir_node_t;
+ 
+ #else
++PRAGMA_BEGIN_PACKED
+ struct grub_fat_dir_entry
+ {
+   grub_uint8_t name[11];
+@@ -155,6 +158,7 @@ struct grub_fat_long_name_entry
+   grub_uint16_t first_cluster;
+   grub_uint16_t name3[2];
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ typedef struct grub_fat_dir_entry grub_fat_dir_node_t;
+ 
+@@ -721,7 +725,7 @@ grub_fat_iterate_dir_next (grub_disk_t disk, struct grub_fat_data *data,
+       grub_dprintf ("exfat", "unknown primary type 0x%02x\n",
+ 		    dir.entry_type);
+     }
+-  return grub_errno ? : GRUB_ERR_EOF;
++  return grub_errno ? grub_errno : GRUB_ERR_EOF;
+ }
+ 
+ #else
+@@ -846,7 +850,7 @@ grub_fat_iterate_dir_next (grub_disk_t disk, struct grub_fat_data *data,
+       return GRUB_ERR_NONE;
+     }
+ 
+-  return grub_errno ? : GRUB_ERR_EOF;
++  return grub_errno ? grub_errno : GRUB_ERR_EOF;
+ }
+ 
+ #endif
 diff --git a/grub-core/fs/ntfs.c b/grub-core/fs/ntfs.c
 index d3a91f5..1c9bd59 100644
 --- a/grub-core/fs/ntfs.c

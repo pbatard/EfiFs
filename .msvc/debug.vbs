@@ -97,7 +97,7 @@ If Not fso.FileExists(VHD_IMG) Then
   Call fso.DeleteFile(VHD_ZIP)
 End If
 If Not fso.FileExists(VHD_IMG) Then
-  Call WScript.Echo("There was a problem downloading or unzipping the VHD image.")
+  Call WScript.Echo("There was a problem downloading or unzipping the " & WScript.Arguments(0) &" VHD image.")
   Call WScript.Quit(1)
 End If
 
