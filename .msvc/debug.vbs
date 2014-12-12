@@ -14,10 +14,15 @@ OVMF_BIOS  = "OVMF.fd"
 FTP_SERVER = "ftp.heanet.ie"
 FTP_FILE   = "pub/download.sourceforge.net/pub/sourceforge/e/ed/edk2/OVMF/" & OVMF_ZIP
 FTP_URL    = "ftp://" & FTP_SERVER & "/" & FTP_FILE
-VHD_ZIP    = WScript.Arguments(0) & ".zip"
-VHD_IMG    = WScript.Arguments(0) & ".vhd"
-VHD_URL    = "http://efi.akeo.ie/test/" & VHD_ZIP
-DRV        = WScript.Arguments(0) & "_x64.efi"
+FS         = WScript.Arguments(0)
+IMG_EXT    = ".vhd"
+If ((FS = "iso9660") Or (FS = "udf")) Then
+  IMG_EXT  = ".iso"
+End If
+IMG        = FS & IMG_EXT
+IMG_ZIP    = FS & ".zip"
+IMG_URL    = "http://efi.akeo.ie/test/" & IMG_ZIP
+DRV        = FS & "_x64.efi"
 DRV_URL    = "http://efi.akeo.ie/downloads/efifs-0.6.1/x64/" & DRV
 
 ' Globals
@@ -91,13 +96,13 @@ If Not fso.FileExists(OVMF_BIOS) Then
 End If
 
 ' Fetch the VHD image
-If Not fso.FileExists(VHD_IMG) Then
-  Call DownloadHttp(VHD_URL, VHD_ZIP)
-  Call Unzip(VHD_ZIP, VHD_IMG)
-  Call fso.DeleteFile(VHD_ZIP)
+If Not fso.FileExists(IMG) Then
+  Call DownloadHttp(IMG_URL, IMG_ZIP)
+  Call Unzip(IMG_ZIP, IMG)
+  Call fso.DeleteFile(IMG_ZIP)
 End If
-If Not fso.FileExists(VHD_IMG) Then
-  Call WScript.Echo("There was a problem downloading or unzipping the " & WScript.Arguments(0) &" VHD image.")
+If Not fso.FileExists(IMG) Then
+  Call WScript.Echo("There was a problem downloading or unzipping the " & FS & " image.")
   Call WScript.Quit(1)
 End If
 
@@ -112,4 +117,4 @@ Call file.Write("set FS_LOGGING " & WScript.Arguments(2) & vbCrLf &_
   "fs1:/EFI/Boot/bootx64.efi" & vbCrLf)
 Call file.Close()
 ' Add something like "-S -gdb tcp:127.0.0.1:1234" if you want to use gdb to debug
-Call shell.Run("""" & QEMU_PATH & QEMU_EXE & """ -L . -bios OVMF.fd -net none -hda fat:image -hdb " & VHD_IMG, 1, True)
+Call shell.Run("""" & QEMU_PATH & QEMU_EXE & """ -L . -bios OVMF.fd -net none -hda fat:image -hdb " & IMG, 1, True)

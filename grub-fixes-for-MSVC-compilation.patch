@@ -1,16 +1,17 @@
-From ce45cee1199497b3ab661cd4712e485bcf7035aa Mon Sep 17 00:00:00 2001
+From 820da5e4525b84273294abf757c14f1b5a46547e Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Wed, 10 Dec 2014 02:07:53 +0000
+Date: Fri, 12 Dec 2014 01:11:53 +0000
 Subject: [PATCH] fixes for MSVC compilation
 
 ---
  grub-core/fs/fat.c          |  8 ++++++--
+ grub-core/fs/iso9660.c      | 36 ++++++++++++++++++++++++------------
  grub-core/fs/ntfs.c         |  6 ++++--
  grub-core/kern/misc.c       | 16 ++++++++--------
  include/grub/ntfs.h         |  2 ++
  include/grub/types.h        | 22 ++++++++++++++++++++++
  include/grub/x86_64/types.h |  2 +-
- 6 files changed, 43 insertions(+), 13 deletions(-)
+ 7 files changed, 67 insertions(+), 25 deletions(-)
 
 diff --git a/grub-core/fs/fat.c b/grub-core/fs/fat.c
 index 79fe864..eef80fa 100644
@@ -66,6 +67,117 @@ index 79fe864..eef80fa 100644
  }
  
  #endif
+diff --git a/grub-core/fs/iso9660.c b/grub-core/fs/iso9660.c
+index 6a66773..decd8d3 100644
+--- a/grub-core/fs/iso9660.c
++++ b/grub-core/fs/iso9660.c
+@@ -49,6 +49,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
+ #define GRUB_ISO9660_VOLDESC_END	255
+ 
+ /* The head of a volume descriptor.  */
++PRAGMA_BEGIN_PACKED
+ struct grub_iso9660_voldesc
+ {
+   grub_uint8_t type;
+@@ -129,8 +130,18 @@ struct grub_iso9660_susp_entry
+ {
+   grub_uint8_t sig[2];
+   grub_uint8_t len;
+-  grub_uint8_t version;
+-  grub_uint8_t data[0];
++/*! MSVC compilers cannot handle a zero sized array in the middle
++    of a struct, and grub_iso9660_susp_entry is reused within
++    grub_iso9660_susp_ce. Therefore, instead of defining:
++        grub_uint8_t version;
++        grub_uint8_t data[];
++    we leverage the fact that these attributes are the same size
++    and use an union. The only gotcha is that the actual
++    payload of u.data[] starts at 1, not 0. */
++  union {
++    grub_uint8_t  version;
++    grub_uint8_t  data[1];
++  } u;
+ } GRUB_PACKED;
+ 
+ /* The CE entry.  This is used to describe the next block where data
+@@ -145,6 +156,7 @@ struct grub_iso9660_susp_ce
+   grub_uint32_t len;
+   grub_uint32_t len_be;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ struct grub_iso9660_data
+ {
+@@ -412,7 +424,7 @@ set_rockridge (struct grub_iso9660_data *data)
+ 
+       /* The 2nd data byte stored how many bytes are skipped every time
+ 	 to get to the SUA (System Usage Area).  */
+-      data->susp_skip = entry->data[2];
++      data->susp_skip = entry->u.data[1 + 2];
+       entry = (struct grub_iso9660_susp_entry *) ((char *) entry + entry->len);
+ 
+       /* Iterate over the entries in the SUA area to detect
+@@ -552,9 +564,9 @@ susp_iterate_dir (struct grub_iso9660_susp_entry *entry,
+       /* The flags are stored at the data position 0, here the
+ 	 filename type is stored.  */
+       /* FIXME: Fix this slightly improper cast.  */
+-      if (entry->data[0] & GRUB_ISO9660_RR_DOT)
++      if (entry->u.data[1 + 0] & GRUB_ISO9660_RR_DOT)
+ 	ctx->filename = (char *) ".";
+-      else if (entry->data[0] & GRUB_ISO9660_RR_DOTDOT)
++      else if (entry->u.data[1 + 0] & GRUB_ISO9660_RR_DOTDOT)
+ 	ctx->filename = (char *) "..";
+       else if (entry->len >= 5)
+ 	{
+@@ -578,7 +590,7 @@ susp_iterate_dir (struct grub_iso9660_susp_entry *entry,
+ 	      return grub_errno;
+ 	    }
+ 	  ctx->filename_alloc = 1;
+-	  grub_memcpy (ctx->filename + off, (char *) &entry->data[1], csize);
++	  grub_memcpy (ctx->filename + off, (char *) &entry->u.data[1 + 1], csize);
+ 	  ctx->filename[off + csize] = '\0';
+ 	}
+     }
+@@ -587,7 +599,7 @@ susp_iterate_dir (struct grub_iso9660_susp_entry *entry,
+     {
+       /* At position 0 of the PX record the st_mode information is
+ 	 stored (little-endian).  */
+-      grub_uint32_t mode = ((entry->data[0] + (entry->data[1] << 8))
++      grub_uint32_t mode = ((entry->u.data[1 + 0] + (entry->u.data[1 + 1] << 8))
+ 			    & GRUB_ISO9660_FSTYPE_MASK);
+ 
+       switch (mode)
+@@ -613,7 +625,7 @@ susp_iterate_dir (struct grub_iso9660_susp_entry *entry,
+       while (pos + sizeof (*entry) < entry->len)
+ 	{
+ 	  /* The current position is the `Component Flag'.  */
+-	  switch (entry->data[pos] & 30)
++	  switch (entry->u.data[1 + pos] & 30)
+ 	    {
+ 	    case 0:
+ 	      {
+@@ -622,9 +634,9 @@ susp_iterate_dir (struct grub_iso9660_susp_entry *entry,
+ 		   Record'.  */
+ 		if (ctx->symlink && !ctx->was_continue)
+ 		  add_part (ctx, "/", 1);
+-		add_part (ctx, (char *) &entry->data[pos + 2],
+-			  entry->data[pos + 1]);
+-		ctx->was_continue = (entry->data[pos] & 1);
++		add_part (ctx, (char *) &entry->u.data[1 + pos + 2],
++			  entry->u.data[1 + pos + 1]);
++		ctx->was_continue = (entry->u.data[1 + pos] & 1);
+ 		break;
+ 	      }
+ 
+@@ -642,7 +654,7 @@ susp_iterate_dir (struct grub_iso9660_susp_entry *entry,
+ 	    }
+ 	  /* In pos + 1 the length of the `Component Record' is
+ 	     stored.  */
+-	  pos += entry->data[pos + 1] + 2;
++	  pos += entry->u.data[1 + pos + 1] + 2;
+ 	}
+ 
+       /* Check if `grub_realloc' failed.  */
 diff --git a/grub-core/fs/ntfs.c b/grub-core/fs/ntfs.c
 index d3a91f5..1c9bd59 100644
 --- a/grub-core/fs/ntfs.c
