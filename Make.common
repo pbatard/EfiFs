@@ -3,18 +3,19 @@
 # Common make rules for building with gnu-efi
 #
 
-# Edit the following according to the location where the gnu-efi binaries reside
-EFIINC          = /usr/include/efi
-GNUEFILIB       = /usr/lib
-EFILIB          = /usr/lib
-EFICRT0         = /usr/lib
+TOP            := $(dir $(lastword $(MAKEFILE_LIST)))
+
+EFIINC          = ${TOP}/gnu-efi/inc
+GNUEFILIB       = ${TOP}/gnu-efi/gnuefi
+EFILIB          = ${TOP}/gnu-efi/lib
+EFICRT0         = ${TOP}/gnu-efi/gnuefi
 
 # You shouldn't have to edit anything below this
 HOSTARCH        = $(shell uname -m | sed s,i[3456789]86,ia32,)
 ARCH           := $(HOSTARCH)
 OS              = $(shell uname -s)
-CPPFLAGS        = -I$(EFIINC) -I$(EFIINC)/$(ARCH) -I$(EFIINC)/protocol -I$(SRCDIR) -DCONFIG_$(ARCH) -D__MAKEWITH_GNUEFI \
-                  -DGNU_EFI_USE_MS_ABI -DGRUB_MACHINE_EFI -DGRUB_KERNEL -DGRUB_FILE=\"$(subst $(srcdir)/,,$<)\"
+CPPFLAGS        = -I$(EFIINC) -I$(EFIINC)/$(ARCH) -I$(EFIINC)/protocol -I$(TOP)/.gcc -DCONFIG_$(ARCH) -D__MAKEWITH_GNUEFI \
+                  -DGNU_EFI_USE_MS_ABI -DGRUB_FILE=\"$(subst $(srcdir)/,,$<)\"
 
 OPTIMFLAGS      = -Os -fno-strict-aliasing
 DEBUGFLAGS      = -Wall -Wunused -Wno-pointer-sign -Wshadow

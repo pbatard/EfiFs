@@ -6,26 +6,20 @@ This is a GPLv3+ implementation of standalone EFI File System drivers, based on 
 
 For additional info as well as precompiled drivers, see http://efi.akeo.ie
 
-* Requirements:
+* __Requirements__:
   * gcc v4.7 or later
   * Visual Studio 2013 or later
   * QEMU for testing in Visual Studio
 
-* Compilation:
+* __Compilation__:
   * [Common] Fetch the git submodules with `git submodule init` and `git submodule update`.
   * [Visual Studio] Apply the respective patches to the `grub\` and `gnu-efi\` subdirectories.
   * [Visual Studio] Open the solution file and hit `F5` to compile and debug the NTFS driver.
-  * [gcc] Run `make` & `make install` in `gnu-efi\` to install the gnu-efi compiler.
-  * [gcc] Go to the `grub` directory, run `autogen.sh` and then something like:  
-    `./configure --disable-nls --with-platform=efi --target=x86_64`  
-    This is necessary to create the `config.h` required to compile grub files.
-  * [gcc] Edit `Make.common` and set the variables at the top of the file to the location
-    where gnu-efi is installed.
-  * [gcc] Run `make` in the top directory. This creates the grub library we link against.
+  * [gcc] Run `make` in the top directory. This creates the gnu-efi and grub librares.
   * [gcc] Go to the `src` directory and run `make` or `make install`.
 
-* Testing:  
-  The Visual Studio solution automatically sets QEMU up to run and test the driver.
+* __Testing__:
+  The Visual Studio solution automatically sets QEMU up to run and test the drivers.
   For gcc, make sure you have at least one disk with a target partition using the target
   filesystem, and that is not being handled by other EFI filesystem drivers.
   Boot into the EFI shell and run the following:
@@ -35,8 +29,8 @@ For additional info as well as precompiled drivers, see http://efi.akeo.ie
   * For logging output, set the `FS_LOGGING` shell variable to 1 or more
   * To unload use the `drivers` command, then `unload` with the driver ID
 
-* Notes:  
-  This is a __pure__ GPLv3+ implementation of an EFI driver. Great care was taken
+* __Notes__:
+  This is a pure GPLv3+ implementation of an EFI driver. Great care was taken
   not to use non GPLv3 compatible sources, such as rEFInd's `fsw_efi` (GPLv2 only)
   or Intel's FAT driver (requires an extra copyright notice).  
   Also note that the EDK2 files from the include directory use a BSD 2-Clause

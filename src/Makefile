@@ -18,71 +18,71 @@ endif
 all:	$(FILESYSTEMS)
 
 affs:
-	@rm -f grub_driver.o
+	@rm -f this.o
 	+make DRIVERNAME=$@ FSDIR=fs -f Make.gnuefi
 
 bfs:
-	@rm -f grub_driver.o
+	@rm -f this.o
 	+make DRIVERNAME=$@ FSDIR=fs -f Make.gnuefi
 
 btrfs:
-	@rm -f grub_driver.o
+	@rm -f this.o
 	+make DRIVERNAME=$@ FSDIR=fs EXTRAMODULE=gzio EXTRAMODULEDIR=io -f Make.gnuefi
 
 ext2:
-	@rm -f grub_driver.o
+	@rm -f this.o
 	+make DRIVERNAME=$@ FSDIR=fs -f Make.gnuefi
 
 exfat:
-	@rm -f grub_driver.o
+	@rm -f this.o
 	+make DRIVERNAME=$@ FSDIR=fs -f Make.gnuefi
 
 hfs:
-	@rm -f grub_driver.o
+	@rm -f this.o
 	+make DRIVERNAME=$@ FSDIR=fs -f Make.gnuefi
 
 hfsplus:
-	@rm -f grub_driver.o
+	@rm -f this.o
 	+make DRIVERNAME=$@ FSDIR=fs EXTRAMODULE=$@comp EXTRAMODULEDIR=fs EXTRAMODULE2=gzio EXTRAMODULE2DIR=io -f Make.gnuefi
 
 iso9660:
-	@rm -f grub_driver.o
+	@rm -f this.o
 	+make DRIVERNAME=$@ FSDIR=fs -f Make.gnuefi
 
 jfs:
-	@rm -f grub_driver.o
+	@rm -f this.o
 	+make DRIVERNAME=$@ FSDIR=fs -f Make.gnuefi
 
 nilfs2:
-	@rm -f grub_driver.o
+	@rm -f this.o
 	+make DRIVERNAME=$@ FSDIR=fs -f Make.gnuefi
 
 ntfs:
-	@rm -f grub_driver.o
+	@rm -f this.o
 	+make DRIVERNAME=$@ FSDIR=fs EXTRAMODULE=$@comp EXTRAMODULEDIR=fs -f Make.gnuefi
 
 reiserfs:
-	@rm -f grub_driver.o
+	@rm -f this.o
 	+make DRIVERNAME=$@ FSDIR=fs -f Make.gnuefi
 
 sfs:
-	@rm -f grub_driver.o
+	@rm -f this.o
 	+make DRIVERNAME=$@ FSDIR=fs -f Make.gnuefi
 
 udf:
-	@rm -f grub_driver.o
+	@rm -f this.o
 	+make DRIVERNAME=$@ FSDIR=fs -f Make.gnuefi
 
 ufs2:
-	@rm -f grub_driver.o
+	@rm -f this.o
 	+make DRIVERNAME=$@ FSDIR=fs -f Make.gnuefi
 
 xfs:
-	@rm -f grub_driver.o
+	@rm -f this.o
 	+make DRIVERNAME=$@ FSDIR=fs -f Make.gnuefi
 
 zfs:
-	@rm -f grub_driver.o
+	@rm -f this.o
 	+make DRIVERNAME=$@ FSDIR=fs/zfs EXTRAMODULE=gzio EXTRAMODULEDIR=io EXTRAOBJS="zfs_fletcher.o zfs_lz4.o zfs_lzjb.o zfs_sha256.o" -f Make.gnuefi
 
 install: all
