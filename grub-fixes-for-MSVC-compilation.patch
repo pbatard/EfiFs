@@ -1,18 +1,53 @@
-From 820da5e4525b84273294abf757c14f1b5a46547e Mon Sep 17 00:00:00 2001
+From 9b9a55fbaf25c78077f1735ab449c1a2cb57a256 Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Fri, 12 Dec 2014 01:11:53 +0000
+Date: Sat, 13 Dec 2014 03:27:41 +0000
 Subject: [PATCH] fixes for MSVC compilation
 
 ---
+ grub-core/fs/bfs.c          |  6 +++---
  grub-core/fs/fat.c          |  8 ++++++--
  grub-core/fs/iso9660.c      | 36 ++++++++++++++++++++++++------------
  grub-core/fs/ntfs.c         |  6 ++++--
+ grub-core/fs/reiserfs.c     | 11 ++---------
+ grub-core/fs/zfs/zfs.c      |  6 +++---
  grub-core/kern/misc.c       | 16 ++++++++--------
+ include/grub/misc.h         |  6 +++---
  include/grub/ntfs.h         |  2 ++
- include/grub/types.h        | 22 ++++++++++++++++++++++
+ include/grub/types.h        | 42 +++++++++++++++++++++++++++++++-----------
  include/grub/x86_64/types.h |  2 +-
- 7 files changed, 67 insertions(+), 25 deletions(-)
+ 11 files changed, 87 insertions(+), 54 deletions(-)
 
+diff --git a/grub-core/fs/bfs.c b/grub-core/fs/bfs.c
+index 145e771..86557b1 100644
+--- a/grub-core/fs/bfs.c
++++ b/grub-core/fs/bfs.c
+@@ -446,7 +446,7 @@ read_b_node (grub_disk_t disk,
+   total_size = ALIGN_UP (sizeof (node_head) +
+ 			 grub_bfs_to_cpu_treehead
+ 			 (node_head.total_key_len),
+-			 BTREE_ALIGN) +
++			 (grub_uint16_t) BTREE_ALIGN) +
+     grub_bfs_to_cpu_treehead (node_head.count_keys) *
+     sizeof (grub_uint16_t)
+     + grub_bfs_to_cpu_treehead (node_head.count_keys) *
+@@ -468,7 +468,7 @@ read_b_node (grub_disk_t disk,
+   *keylen_idx = (grub_uint16_t *) ret
+     + ALIGN_UP (sizeof (node_head) +
+ 		grub_bfs_to_cpu_treehead (node_head.total_key_len),
+-		BTREE_ALIGN) / 2;
++		(grub_uint16_t) BTREE_ALIGN) / 2;
+   *key_values = (grub_unaligned_uint64_t *)
+     (*keylen_idx +
+      grub_bfs_to_cpu_treehead (node_head.count_keys));
+@@ -507,7 +507,7 @@ iterate_in_b_tree (grub_disk_t disk,
+ 			   + ALIGN_UP (sizeof (node) +
+ 				       grub_bfs_to_cpu_treehead (node.
+ 								 total_key_len),
+-				       BTREE_ALIGN) +
++				       (grub_uint16_t) BTREE_ALIGN) +
+ 			   grub_bfs_to_cpu_treehead (node.count_keys) *
+ 			   sizeof (grub_uint16_t), &key_value,
+ 			   sizeof (grub_uint64_t), 0, 0);
 diff --git a/grub-core/fs/fat.c b/grub-core/fs/fat.c
 index 79fe864..eef80fa 100644
 --- a/grub-core/fs/fat.c
@@ -210,6 +245,59 @@ index d3a91f5..1c9bd59 100644
    grub_free (node);
    return ctx->hook (filename, &info, ctx->hook_data);
  }
+diff --git a/grub-core/fs/reiserfs.c b/grub-core/fs/reiserfs.c
+index ac65054..b4e8255 100644
+--- a/grub-core/fs/reiserfs.c
++++ b/grub-core/fs/reiserfs.c
+@@ -42,15 +42,8 @@
+ 
+ GRUB_MOD_LICENSE ("GPLv3+");
+ 
+-#define MIN(a, b) \
+-  ({ typeof (a) _a = (a); \
+-     typeof (b) _b = (b); \
+-     _a < _b ? _a : _b; })
+-
+-#define MAX(a, b) \
+-  ({ typeof (a) _a = (a); \
+-     typeof (b) _b = (b); \
+-     _a > _b ? _a : _b; })
++#define MIN(a, b) ((a)<(b)?(a):(b))
++#define MAX(a, b) ((a)>(b)?(a):(b))
+ 
+ #define REISERFS_SUPER_BLOCK_OFFSET 0x10000
+ #define REISERFS_MAGIC_LEN 12
+diff --git a/grub-core/fs/zfs/zfs.c b/grub-core/fs/zfs/zfs.c
+index cfb25c0..081cb76 100644
+--- a/grub-core/fs/zfs/zfs.c
++++ b/grub-core/fs/zfs/zfs.c
+@@ -1172,7 +1172,7 @@ scan_disk (grub_device_t dev, struct grub_zfs_data *data,
+ 	= label * (sizeof (vdev_label_t) >> SPA_MINBLOCKSHIFT)
+ 	+ ((VDEV_SKIP_SIZE + VDEV_BOOT_HEADER_SIZE) >> SPA_MINBLOCKSHIFT)
+ 	+ (label < VDEV_LABELS / 2 ? 0 : 
+-	   ALIGN_DOWN (grub_disk_get_size (dev->disk), sizeof (vdev_label_t))
++	   ALIGN_DOWN (grub_disk_get_size (dev->disk), (grub_uint64_t) sizeof (vdev_label_t))
+ 	   - VDEV_LABELS * (sizeof (vdev_label_t) >> SPA_MINBLOCKSHIFT));
+ 
+       /* Read in the uberblock ring (128K). */
+@@ -1836,7 +1836,7 @@ zio_read (blkptr_t *bp, grub_zfs_endian_t endian, void **buf,
+   if (comp != ZIO_COMPRESS_OFF)
+     {
+       /* It's not really necessary to align to 16, just for safety.  */
+-      compbuf = grub_malloc (ALIGN_UP (psize, 16));
++      compbuf = grub_malloc (ALIGN_UP (psize, (grub_size_t) 16));
+       if (! compbuf)
+ 	return grub_errno;
+     }
+@@ -1851,7 +1851,7 @@ zio_read (blkptr_t *bp, grub_zfs_endian_t endian, void **buf,
+       *buf = NULL;
+       return err;
+     }
+-  grub_memset (compbuf, 0, ALIGN_UP (psize, 16) - psize);
++  grub_memset (compbuf, 0, ALIGN_UP (psize, (grub_size_t) 16) - psize);
+ 
+   err = zio_checksum_verify (zc, checksum, endian,
+ 			     compbuf, psize);
 diff --git a/grub-core/kern/misc.c b/grub-core/kern/misc.c
 index c5c815d..c178571 100644
 --- a/grub-core/kern/misc.c
@@ -286,6 +374,24 @@ index c5c815d..c178571 100644
  }
  
  int
+diff --git a/include/grub/misc.h b/include/grub/misc.h
+index c6cd456..caefffd 100644
+--- a/include/grub/misc.h
++++ b/include/grub/misc.h
+@@ -28,10 +28,10 @@
+ #include <grub/compiler.h>
+ 
+ #define ALIGN_UP(addr, align) \
+-	((addr + (typeof (addr)) align - 1) & ~((typeof (addr)) align - 1))
+-#define ALIGN_UP_OVERHEAD(addr, align) ((-(addr)) & ((typeof (addr)) (align) - 1))
++	((addr + align - 1) & ~(align - 1))
++#define ALIGN_UP_OVERHEAD(addr, align) ((-(addr)) & ((align) - 1))
+ #define ALIGN_DOWN(addr, align) \
+-	((addr) & ~((typeof (addr)) align - 1))
++	((addr) & ~(align - 1))
+ #define ARRAY_SIZE(array) (sizeof (array) / sizeof (array[0]))
+ #define COMPILE_TIME_ASSERT(cond) switch (0) { case 1: case !(cond): ; }
+ 
 diff --git a/include/grub/ntfs.h b/include/grub/ntfs.h
 index d1a6af6..f43bdef 100644
 --- a/include/grub/ntfs.h
@@ -307,7 +413,7 @@ index d1a6af6..f43bdef 100644
  struct grub_ntfs_attr
  {
 diff --git a/include/grub/types.h b/include/grub/types.h
-index 79f765c..fd4fe0f 100644
+index 79f765c..1c6c510 100644
 --- a/include/grub/types.h
 +++ b/include/grub/types.h
 @@ -26,10 +26,20 @@
@@ -331,7 +437,34 @@ index 79f765c..fd4fe0f 100644
  #ifdef GRUB_BUILD
  # define GRUB_CPU_SIZEOF_VOID_P	BUILD_SIZEOF_VOID_P
  # define GRUB_CPU_SIZEOF_LONG	BUILD_SIZEOF_LONG
-@@ -256,10 +266,12 @@ static inline grub_uint64_t grub_swap_bytes64(grub_uint64_t _x)
+@@ -167,17 +177,15 @@ static inline grub_uint16_t grub_swap_bytes16(grub_uint16_t _x)
+ #define grub_swap_bytes16_compile_time(x) ((((x) & 0xff) << 8) | (((x) & 0xff00) >> 8))
+ #define grub_swap_bytes32_compile_time(x) ((((x) & 0xff) << 24) | (((x) & 0xff00) << 8) | (((x) & 0xff0000) >> 8) | (((x) & 0xff000000UL) >> 24))
+ #define grub_swap_bytes64_compile_time(x)	\
+-({ \
+-   grub_uint64_t _x = (x); \
+-   (grub_uint64_t) ((_x << 56) \
+-                    | ((_x & (grub_uint64_t) 0xFF00ULL) << 40) \
+-                    | ((_x & (grub_uint64_t) 0xFF0000ULL) << 24) \
+-                    | ((_x & (grub_uint64_t) 0xFF000000ULL) << 8) \
+-                    | ((_x & (grub_uint64_t) 0xFF00000000ULL) >> 8) \
+-                    | ((_x & (grub_uint64_t) 0xFF0000000000ULL) >> 24) \
+-                    | ((_x & (grub_uint64_t) 0xFF000000000000ULL) >> 40) \
+-                    | (_x >> 56)); \
+-})
++((grub_uint64_t) ((((grub_uint64_t)x) << 56) \
++                    | ((((grub_uint64_t)x) & (grub_uint64_t) 0xFF00ULL) << 40) \
++                    | ((((grub_uint64_t)x) & (grub_uint64_t) 0xFF0000ULL) << 24) \
++                    | ((((grub_uint64_t)x) & (grub_uint64_t) 0xFF000000ULL) << 8) \
++                    | ((((grub_uint64_t)x) & (grub_uint64_t) 0xFF00000000ULL) >> 8) \
++                    | ((((grub_uint64_t)x) & (grub_uint64_t) 0xFF0000000000ULL) >> 24) \
++                    | ((((grub_uint64_t)x) & (grub_uint64_t) 0xFF000000000000ULL) >> 40) \
++                    | (((grub_uint64_t)x) >> 56)) \
++)
+ 
+ #if defined(__GNUC__) && (__GNUC__ > 3) && (__GNUC__ > 4 || __GNUC_MINOR__ >= 3)
+ static inline grub_uint32_t grub_swap_bytes32(grub_uint32_t x)
+@@ -256,10 +264,12 @@ static inline grub_uint64_t grub_swap_bytes64(grub_uint64_t _x)
  
  static inline grub_uint16_t grub_get_unaligned16 (const void *ptr)
  {
@@ -344,7 +477,7 @@ index 79f765c..fd4fe0f 100644
    const struct grub_unaligned_uint16_t *dd
      = (const struct grub_unaligned_uint16_t *) ptr;
    return dd->d;
-@@ -267,20 +279,24 @@ static inline grub_uint16_t grub_get_unaligned16 (const void *ptr)
+@@ -267,20 +277,24 @@ static inline grub_uint16_t grub_get_unaligned16 (const void *ptr)
  
  static inline void grub_set_unaligned16 (void *ptr, grub_uint16_t val)
  {
@@ -369,7 +502,7 @@ index 79f765c..fd4fe0f 100644
    const struct grub_unaligned_uint32_t *dd
      = (const struct grub_unaligned_uint32_t *) ptr;
    return dd->d;
-@@ -288,18 +304,22 @@ static inline grub_uint32_t grub_get_unaligned32 (const void *ptr)
+@@ -288,18 +302,22 @@ static inline grub_uint32_t grub_get_unaligned32 (const void *ptr)
  
  static inline void grub_set_unaligned32 (void *ptr, grub_uint32_t val)
  {
@@ -392,7 +525,7 @@ index 79f765c..fd4fe0f 100644
  
  typedef struct grub_unaligned_uint64 grub_unaligned_uint64_t;
  
-@@ -312,10 +332,12 @@ static inline grub_uint64_t grub_get_unaligned64 (const void *ptr)
+@@ -312,10 +330,12 @@ static inline grub_uint64_t grub_get_unaligned64 (const void *ptr)
  
  static inline void grub_set_unaligned64 (void *ptr, grub_uint64_t val)
  {
