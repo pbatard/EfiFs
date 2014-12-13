@@ -1,6 +1,8 @@
 *.o
 *.efi
 *.vhd
+*.iso
+*.zip
 *.sdf
 *.suo
 *.opensdf

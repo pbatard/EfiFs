@@ -12,6 +12,7 @@
 // GNU extensions
 #define inline __inline
 #define __attribute__(x)
+#define __attribute(x)
 
 // Silence warnings that are triggered by GNU extensions not being available
 #pragma warning(disable: 4716)	// Some of the grub function calls are set not to return a value

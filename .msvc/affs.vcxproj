@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{78B6BD15-644D-496B-A5B0-1D964696D867}</ProjectGuid>
-    <ProjectName>ext2</ProjectName>
+    <ProjectGuid>{984927FE-DDE3-4BD6-B289-F8E49A1204B8}</ProjectGuid>
+    <ProjectName>affs</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -106,7 +106,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\grub\grub-core\fs\ext2.c" />
+    <ClCompile Include="..\grub\grub-core\fs\affs.c" />
     <ClCompile Include="..\src\this.c" />
   </ItemGroup>
   <ItemGroup>

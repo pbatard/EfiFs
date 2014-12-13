@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{78B6BD15-644D-496B-A5B0-1D964696D867}</ProjectGuid>
-    <ProjectName>ext2</ProjectName>
+    <ProjectGuid>{1596254C-F747-4AEC-AFB7-0D06404A7A60}</ProjectGuid>
+    <ProjectName>hfsplus</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -54,7 +54,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MODE_EXFAT;DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MODE_EXFAT;DRIVERNAME=$(ProjectName);ENABLE_COMPRESSION;EXTRAMODULE=gzio;GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <WarningLevel>Level3</WarningLevel>
@@ -79,7 +79,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MODE_EXFAT;DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MODE_EXFAT;DRIVERNAME=$(ProjectName);ENABLE_COMPRESSION;EXTRAMODULE=gzio;GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
@@ -106,7 +106,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\grub\grub-core\fs\ext2.c" />
+    <ClCompile Include="..\grub\grub-core\fs\hfsplus.c" />
+    <ClCompile Include="..\grub\grub-core\fs\hfspluscomp.c" />
+    <ClCompile Include="..\grub\grub-core\io\gzio.c" />
     <ClCompile Include="..\src\this.c" />
   </ItemGroup>
   <ItemGroup>
