@@ -1,6 +1,6 @@
-From 9b9a55fbaf25c78077f1735ab449c1a2cb57a256 Mon Sep 17 00:00:00 2001
+From b6230f5babd3df9e534b8628acddac820ce9b720 Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Sat, 13 Dec 2014 03:27:41 +0000
+Date: Sat, 13 Dec 2014 23:07:53 +0000
 Subject: [PATCH] fixes for MSVC compilation
 
 ---
@@ -9,13 +9,14 @@ Subject: [PATCH] fixes for MSVC compilation
  grub-core/fs/iso9660.c      | 36 ++++++++++++++++++++++++------------
  grub-core/fs/ntfs.c         |  6 ++++--
  grub-core/fs/reiserfs.c     | 11 ++---------
- grub-core/fs/zfs/zfs.c      |  6 +++---
+ grub-core/fs/zfs/zfs.c      | 10 +++++-----
  grub-core/kern/misc.c       | 16 ++++++++--------
  include/grub/misc.h         |  6 +++---
  include/grub/ntfs.h         |  2 ++
  include/grub/types.h        | 42 +++++++++++++++++++++++++++++++-----------
  include/grub/x86_64/types.h |  2 +-
- 11 files changed, 87 insertions(+), 54 deletions(-)
+ include/grub/zfs/zap_leaf.h | 10 +++++++---
+ 12 files changed, 96 insertions(+), 59 deletions(-)
 
 diff --git a/grub-core/fs/bfs.c b/grub-core/fs/bfs.c
 index 145e771..86557b1 100644
@@ -268,9 +269,18 @@ index ac65054..b4e8255 100644
  #define REISERFS_SUPER_BLOCK_OFFSET 0x10000
  #define REISERFS_MAGIC_LEN 12
 diff --git a/grub-core/fs/zfs/zfs.c b/grub-core/fs/zfs/zfs.c
-index cfb25c0..081cb76 100644
+index cfb25c0..a9e3cf6 100644
 --- a/grub-core/fs/zfs/zfs.c
 +++ b/grub-core/fs/zfs/zfs.c
+@@ -141,7 +141,7 @@ ZAP_LEAF_NUMCHUNKS (int bs)
+ static inline zap_leaf_chunk_t *
+ ZAP_LEAF_CHUNK (zap_leaf_phys_t *l, int bs, int idx)
+ {
+-  return &((zap_leaf_chunk_t *) (l->l_entries 
++  return &((zap_leaf_chunk_t *) (l->u.l_entries 
+ 				 + (ZAP_LEAF_HASH_NUMENTRIES(bs) * 2)
+ 				 / sizeof (grub_properly_aligned_t)))[idx];
+ }
 @@ -1172,7 +1172,7 @@ scan_disk (grub_device_t dev, struct grub_zfs_data *data,
  	= label * (sizeof (vdev_label_t) >> SPA_MINBLOCKSHIFT)
  	+ ((VDEV_SKIP_SIZE + VDEV_BOOT_HEADER_SIZE) >> SPA_MINBLOCKSHIFT)
@@ -298,6 +308,15 @@ index cfb25c0..081cb76 100644
  
    err = zio_checksum_verify (zc, checksum, endian,
  			     compbuf, psize);
+@@ -2195,7 +2195,7 @@ zap_leaf_lookup (zap_leaf_phys_t * l, grub_zfs_endian_t endian,
+   if (grub_zfs_to_cpu32 (l->l_hdr.lh_magic, endian) != ZAP_LEAF_MAGIC)
+     return grub_error (GRUB_ERR_BAD_FS, "invalid leaf magic");
+ 
+-  for (chunk = grub_zfs_to_cpu16 (l->l_hash[LEAF_HASH (blksft, h, l)], endian);
++  for (chunk = grub_zfs_to_cpu16 (l->u.l_hash[LEAF_HASH (blksft, h, l)], endian);
+        chunk != CHAIN_END; chunk = grub_zfs_to_cpu16 (le->le_next, endian))
+     {
+ 
 diff --git a/grub-core/kern/misc.c b/grub-core/kern/misc.c
 index c5c815d..c178571 100644
 --- a/grub-core/kern/misc.c
@@ -551,6 +570,39 @@ index fec9109..5be8ffa 100644
  #define GRUB_TARGET_SIZEOF_LONG		4
  #else
  #define GRUB_TARGET_SIZEOF_LONG		8
+diff --git a/include/grub/zfs/zap_leaf.h b/include/grub/zfs/zap_leaf.h
+index 95c67dc..1bca110 100644
+--- a/include/grub/zfs/zap_leaf.h
++++ b/include/grub/zfs/zap_leaf.h
+@@ -68,9 +68,11 @@ typedef struct zap_leaf_phys {
+ 	 * zap_leaf_chunk structures.  These structures are accessed
+ 	 * with the ZAP_LEAF_CHUNK() macro.
+ 	 */
+-
+-	grub_uint16_t l_hash[0];
+-        grub_properly_aligned_t l_entries[0];
++	/* Use an union to work around MSVC limitations */
++	union {
++		grub_uint16_t l_hash[0];
++		grub_properly_aligned_t l_entries[0];
++	} u;
+ } zap_leaf_phys_t;
+ 
+ typedef union zap_leaf_chunk {
+@@ -87,11 +89,13 @@ typedef union zap_leaf_chunk {
+ 	} l_entry;
+ 	struct zap_leaf_array {
+ 		grub_uint8_t la_type;		/* always ZAP_CHUNK_ARRAY */
++		PRAGMA_BEGIN_PACKED
+ 		union
+ 		{
+ 			grub_uint8_t la_array[ZAP_LEAF_ARRAY_BYTES];
+ 			grub_uint64_t la_array64;
+ 		} GRUB_PACKED;
++		PRAGMA_END_PACKED
+ 		grub_uint16_t la_next;		/* next blk or CHAIN_END */
+ 	} l_array;
+ 	struct zap_leaf_free {
 -- 
 1.9.4.msysgit.2
 
