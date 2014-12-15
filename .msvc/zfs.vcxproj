@@ -54,7 +54,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MODE_EXFAT;DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <WarningLevel>Level3</WarningLevel>
@@ -79,7 +79,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MODE_EXFAT;DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
@@ -118,6 +118,23 @@
     <None Include="debug.vbs" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\grub\include\grub\zfs\dmu.h" />
+    <ClInclude Include="..\grub\include\grub\zfs\dmu_objset.h" />
+    <ClInclude Include="..\grub\include\grub\zfs\dnode.h" />
+    <ClInclude Include="..\grub\include\grub\zfs\dsl_dataset.h" />
+    <ClInclude Include="..\grub\include\grub\zfs\dsl_dir.h" />
+    <ClInclude Include="..\grub\include\grub\zfs\sa_impl.h" />
+    <ClInclude Include="..\grub\include\grub\zfs\spa.h" />
+    <ClInclude Include="..\grub\include\grub\zfs\uberblock_impl.h" />
+    <ClInclude Include="..\grub\include\grub\zfs\vdev_impl.h" />
+    <ClInclude Include="..\grub\include\grub\zfs\zap_impl.h" />
+    <ClInclude Include="..\grub\include\grub\zfs\zap_leaf.h" />
+    <ClInclude Include="..\grub\include\grub\zfs\zfs.h" />
+    <ClInclude Include="..\grub\include\grub\zfs\zfs_acl.h" />
+    <ClInclude Include="..\grub\include\grub\zfs\zfs_znode.h" />
+    <ClInclude Include="..\grub\include\grub\zfs\zil.h" />
+    <ClInclude Include="..\grub\include\grub\zfs\zio.h" />
+    <ClInclude Include="..\grub\include\grub\zfs\zio_checksum.h" />
     <ClInclude Include="..\src\driver.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

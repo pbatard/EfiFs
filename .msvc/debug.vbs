@@ -15,15 +15,22 @@ FTP_SERVER = "ftp.heanet.ie"
 FTP_FILE   = "pub/download.sourceforge.net/pub/sourceforge/e/ed/edk2/OVMF/" & OVMF_ZIP
 FTP_URL    = "ftp://" & FTP_SERVER & "/" & FTP_FILE
 FS         = WScript.Arguments(0)
-IMG_EXT    = ".vhd"
+IMG_EXT    = ".img"
 If ((FS = "iso9660") Or (FS = "udf")) Then
   IMG_EXT  = ".iso"
+ElseIf ((FS = "ntfs") Or (FS = "exfat")) Then
+  IMG_EXT  = ".vhd"
 End If
 IMG        = FS & IMG_EXT
 IMG_ZIP    = FS & ".zip"
 IMG_URL    = "http://efi.akeo.ie/test/" & IMG_ZIP
 DRV        = FS & "_x64.efi"
 DRV_URL    = "http://efi.akeo.ie/downloads/efifs-0.6.1/x64/" & DRV
+MNT        = "fs1:"
+If ((FS = "bfs") Or (FS = "hfs") Or (FS = "xfs")) Then
+  MNT      = "fs3:"
+End If
+
 
 ' Globals
 Set fso = CreateObject("Scripting.FileSystemObject") 
@@ -114,7 +121,7 @@ Set file = fso.CreateTextFile("image\efi\boot\startup.nsh", True)
 Call file.Write("set FS_LOGGING " & WScript.Arguments(2) & vbCrLf &_
   "load fs0:/" & DRV & vbCrLf &_
   "map -r" & vbCrLf &_
-  "fs1:/EFI/Boot/bootx64.efi" & vbCrLf)
+  MNT & "/EFI/Boot/bootx64.efi" & vbCrLf)
 Call file.Close()
 ' Add something like "-S -gdb tcp:127.0.0.1:1234" if you want to use gdb to debug
 Call shell.Run("""" & QEMU_PATH & QEMU_EXE & """ -L . -bios OVMF.fd -net none -hda fat:image -hdb " & IMG, 1, True)

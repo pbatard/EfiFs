@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{3C59992B-38EA-43B4-B015-AC8CFA2E2494}</ProjectGuid>
-    <ProjectName>hfs</ProjectName>
+    <ProjectGuid>{9CD88C50-8673-473B-879A-8B7FDCBCE5C9}</ProjectGuid>
+    <ProjectName>ufs1</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -106,14 +106,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\grub\grub-core\fs\hfs.c" />
+    <ClCompile Include="..\grub\grub-core\fs\ufs.c" />
     <ClCompile Include="..\src\this.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="debug.vbs" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\grub\include\grub\hfs.h" />
     <ClInclude Include="..\src\driver.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -30,5 +30,8 @@
     <ClInclude Include="..\src\driver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\grub\include\grub\udf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
-</Project>
+</Project>

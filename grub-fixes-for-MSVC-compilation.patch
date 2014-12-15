@@ -1,28 +1,78 @@
-From b6230f5babd3df9e534b8628acddac820ce9b720 Mon Sep 17 00:00:00 2001
+From dd76e8ca2e1f4f97c9f3ae6ac6d3aba810a51743 Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Sat, 13 Dec 2014 23:07:53 +0000
+Date: Mon, 15 Dec 2014 21:29:14 +0000
 Subject: [PATCH] fixes for MSVC compilation
 
 ---
- grub-core/fs/bfs.c          |  6 +++---
+ grub-core/fs/affs.c         |  2 ++
+ grub-core/fs/bfs.c          |  8 +++++---
+ grub-core/fs/btrfs.c        |  6 ++++++
  grub-core/fs/fat.c          |  8 ++++++--
+ grub-core/fs/hfs.c          |  6 ++++++
+ grub-core/fs/hfsplus.c      |  2 ++
+ grub-core/fs/hfspluscomp.c  |  5 +++++
  grub-core/fs/iso9660.c      | 36 ++++++++++++++++++++++++------------
+ grub-core/fs/jfs.c          |  2 ++
+ grub-core/fs/nilfs2.c       |  2 ++
  grub-core/fs/ntfs.c         |  6 ++++--
- grub-core/fs/reiserfs.c     | 11 ++---------
+ grub-core/fs/reiserfs.c     | 13 ++++---------
+ grub-core/fs/sfs.c          |  3 ++-
+ grub-core/fs/udf.c          |  2 ++
+ grub-core/fs/ufs.c          |  2 ++
+ grub-core/fs/xfs.c          |  3 ++-
  grub-core/fs/zfs/zfs.c      | 10 +++++-----
  grub-core/kern/misc.c       | 16 ++++++++--------
+ include/grub/btrfs.h        |  4 +++-
+ include/grub/hfs.h          |  2 ++
+ include/grub/hfsplus.h      |  6 ++++++
  include/grub/misc.h         |  6 +++---
  include/grub/ntfs.h         |  2 ++
  include/grub/types.h        | 42 +++++++++++++++++++++++++++++++-----------
  include/grub/x86_64/types.h |  2 +-
- include/grub/zfs/zap_leaf.h | 10 +++++++---
- 12 files changed, 96 insertions(+), 59 deletions(-)
+ include/grub/zfs/zap_leaf.h | 17 ++++++++++++++---
+ 26 files changed, 151 insertions(+), 62 deletions(-)
 
+diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
+index f673897..84247ca 100644
+--- a/grub-core/fs/affs.c
++++ b/grub-core/fs/affs.c
+@@ -30,6 +30,7 @@
+ GRUB_MOD_LICENSE ("GPLv3+");
+ 
+ /* The affs bootblock.  */
++PRAGMA_BEGIN_PACKED
+ struct grub_affs_bblock
+ {
+   grub_uint8_t type[3];
+@@ -77,6 +78,7 @@ struct grub_affs_file
+   grub_uint32_t extension;
+   grub_uint32_t type;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ /* The location of `struct grub_affs_file' relative to the end of a
+    file header block.  */
 diff --git a/grub-core/fs/bfs.c b/grub-core/fs/bfs.c
-index 145e771..86557b1 100644
+index 145e771..897c8c1 100644
 --- a/grub-core/fs/bfs.c
 +++ b/grub-core/fs/bfs.c
-@@ -446,7 +446,7 @@ read_b_node (grub_disk_t disk,
+@@ -68,6 +68,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
+ #define DOUBLE_INDIRECT_SHIFT 2
+ 
+ #define LOG_EXTENT_SIZE 3
++PRAGMA_BEGIN_PACKED
+ struct grub_bfs_extent
+ {
+   grub_uint32_t ag;
+@@ -166,6 +167,7 @@ struct grub_bfs_btree_node
+   grub_uint16_t total_key_len;
+ #endif
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ struct grub_bfs_data
+ {
+@@ -446,7 +448,7 @@ read_b_node (grub_disk_t disk,
    total_size = ALIGN_UP (sizeof (node_head) +
  			 grub_bfs_to_cpu_treehead
  			 (node_head.total_key_len),
@@ -31,7 +81,7 @@ index 145e771..86557b1 100644
      grub_bfs_to_cpu_treehead (node_head.count_keys) *
      sizeof (grub_uint16_t)
      + grub_bfs_to_cpu_treehead (node_head.count_keys) *
-@@ -468,7 +468,7 @@ read_b_node (grub_disk_t disk,
+@@ -468,7 +470,7 @@ read_b_node (grub_disk_t disk,
    *keylen_idx = (grub_uint16_t *) ret
      + ALIGN_UP (sizeof (node_head) +
  		grub_bfs_to_cpu_treehead (node_head.total_key_len),
@@ -40,7 +90,7 @@ index 145e771..86557b1 100644
    *key_values = (grub_unaligned_uint64_t *)
      (*keylen_idx +
       grub_bfs_to_cpu_treehead (node_head.count_keys));
-@@ -507,7 +507,7 @@ iterate_in_b_tree (grub_disk_t disk,
+@@ -507,7 +509,7 @@ iterate_in_b_tree (grub_disk_t disk,
  			   + ALIGN_UP (sizeof (node) +
  				       grub_bfs_to_cpu_treehead (node.
  								 total_key_len),
@@ -49,6 +99,58 @@ index 145e771..86557b1 100644
  			   grub_bfs_to_cpu_treehead (node.count_keys) *
  			   sizeof (grub_uint16_t), &key_value,
  			   sizeof (grub_uint64_t), 0, 0);
+diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
+index f7b6c15..a6d4ed4 100644
+--- a/grub-core/fs/btrfs.c
++++ b/grub-core/fs/btrfs.c
+@@ -48,6 +48,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
+ typedef grub_uint8_t grub_btrfs_checksum_t[0x20];
+ typedef grub_uint16_t grub_btrfs_uuid_t[8];
+ 
++PRAGMA_BEGIN_PACKED
+ struct grub_btrfs_device
+ {
+   grub_uint64_t device_id;
+@@ -81,6 +82,7 @@ struct btrfs_header
+   grub_uint32_t nitems;
+   grub_uint8_t level;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ struct grub_btrfs_device_desc
+ {
+@@ -107,6 +109,7 @@ struct grub_btrfs_data
+   struct grub_btrfs_extent_data *extent;
+ };
+ 
++PRAGMA_BEGIN_PACKED
+ struct grub_btrfs_chunk_item
+ {
+   grub_uint64_t size;
+@@ -157,6 +160,7 @@ struct grub_btrfs_dir_item
+   grub_uint8_t type;
+   char name[0];
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ struct grub_btrfs_leaf_descriptor
+ {
+@@ -177,6 +181,7 @@ struct grub_btrfs_time
+   grub_uint32_t nanosec;
+ } __attribute__ ((aligned (4)));
+ 
++PRAGMA_BEGIN_PACKED
+ struct grub_btrfs_inode
+ {
+   grub_uint8_t dummy1[0x10];
+@@ -205,6 +210,7 @@ struct grub_btrfs_extent_data
+     };
+   };
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ #define GRUB_BTRFS_EXTENT_INLINE 0
+ #define GRUB_BTRFS_EXTENT_REGULAR 1
 diff --git a/grub-core/fs/fat.c b/grub-core/fs/fat.c
 index 79fe864..eef80fa 100644
 --- a/grub-core/fs/fat.c
@@ -103,6 +205,117 @@ index 79fe864..eef80fa 100644
  }
  
  #endif
+diff --git a/grub-core/fs/hfs.c b/grub-core/fs/hfs.c
+index 1e59305..95d9f3e 100644
+--- a/grub-core/fs/hfs.c
++++ b/grub-core/fs/hfs.c
+@@ -57,6 +57,7 @@ enum grub_hfs_cnid_type
+   };
+ 
+ /* A node descriptor.  This is the header of every node.  */
++PRAGMA_BEGIN_PACKED
+ struct grub_hfs_node
+ {
+   grub_uint32_t next;
+@@ -82,6 +83,7 @@ struct grub_hfs_treeheader
+   grub_uint32_t free_nodes;
+   grub_uint8_t unused[76];
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ /* The state of a mounted HFS filesystem.  */
+ struct grub_hfs_data
+@@ -102,6 +104,7 @@ struct grub_hfs_data
+ 
+ /* The key as used on disk in a catalog tree.  This is used to lookup
+    file/directory nodes by parent directory ID and filename.  */
++PRAGMA_BEGIN_PACKED
+ struct grub_hfs_catalog_key
+ {
+   grub_uint8_t unused;
+@@ -155,6 +158,7 @@ struct grub_hfs_filerec
+      in the extent overflow file.  */
+   grub_hfs_datarecord_t extents;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ /* A record descriptor, both key and data, used to pass to call back
+    functions.  */
+@@ -708,11 +712,13 @@ grub_hfs_iterate_records (struct grub_hfs_data *data, int type, int idx,
+       for (i = 0; i < grub_be_to_cpu16 (node->node.reccnt); i++)
+ 	{
+ 	  int pos = (nodesize >> 1) - 1 - i;
++	  PRAGMA_BEGIN_PACKED
+  	  struct pointer
+ 	  {
+ 	    grub_uint8_t keylen;
+ 	    grub_uint8_t key;
+ 	  } GRUB_PACKED *pnt;
++	  PRAGMA_END_PACKED
+ 	  pnt = (struct pointer *) (grub_be_to_cpu16 (node->offsets[pos])
+ 				    + node->rawnode);
+ 
+diff --git a/grub-core/fs/hfsplus.c b/grub-core/fs/hfsplus.c
+index 950d8a1..5d15d68 100644
+--- a/grub-core/fs/hfsplus.c
++++ b/grub-core/fs/hfsplus.c
+@@ -44,6 +44,7 @@ enum grub_hfsplus_btnode_type
+   };
+ 
+ /* The header of a HFS+ B+ Tree.  */
++PRAGMA_BEGIN_PACKED
+ struct grub_hfsplus_btheader
+ {
+   grub_uint16_t depth;
+@@ -76,6 +77,7 @@ struct grub_hfsplus_catfile
+   struct grub_hfsplus_forkdata data;
+   struct grub_hfsplus_forkdata resource;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ /* Filetype information as used in inodes.  */
+ #define GRUB_HFSPLUS_FILEMODE_MASK	0170000
+diff --git a/grub-core/fs/hfspluscomp.c b/grub-core/fs/hfspluscomp.c
+index d76f3f1..28c586d 100644
+--- a/grub-core/fs/hfspluscomp.c
++++ b/grub-core/fs/hfspluscomp.c
+@@ -24,10 +24,12 @@
+ #include <grub/mm.h>
+ #include <grub/deflate.h>
+ #include <grub/file.h>
++#include <grub/types.h>
+ 
+ GRUB_MOD_LICENSE ("GPLv3+");
+ 
+ /* big-endian.  */
++PRAGMA_BEGIN_PACKED
+ struct grub_hfsplus_compress_header1
+ {
+   grub_uint32_t header_size;
+@@ -48,6 +50,7 @@ struct grub_hfsplus_compress_header3
+ {
+   grub_uint32_t num_chunks;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ /* little-endian.  */
+ struct grub_hfsplus_compress_block_descriptor
+@@ -56,6 +59,7 @@ struct grub_hfsplus_compress_block_descriptor
+   grub_uint32_t size;
+ };
+ 
++PRAGMA_BEGIN_PACKED
+ struct grub_hfsplus_compress_end_descriptor
+ {
+   grub_uint8_t always_the_same[50];
+@@ -76,6 +80,7 @@ struct grub_hfsplus_compress_attr
+   grub_uint32_t uncompressed_inline_size;
+   grub_uint32_t always_0;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ enum
+   {
 diff --git a/grub-core/fs/iso9660.c b/grub-core/fs/iso9660.c
 index 6a66773..decd8d3 100644
 --- a/grub-core/fs/iso9660.c
@@ -214,6 +427,46 @@ index 6a66773..decd8d3 100644
  	}
  
        /* Check if `grub_realloc' failed.  */
+diff --git a/grub-core/fs/jfs.c b/grub-core/fs/jfs.c
+index aab3e8c..4ec849a 100644
+--- a/grub-core/fs/jfs.c
++++ b/grub-core/fs/jfs.c
+@@ -61,6 +61,7 @@ struct grub_jfs_sblock
+   char volname2[16];
+ };
+ 
++PRAGMA_BEGIN_PACKED
+ struct grub_jfs_extent
+ {
+   /* The length of the extent in filesystem blocks.  */
+@@ -252,6 +253,7 @@ struct grub_jfs_diropen
+   char name[256 * GRUB_MAX_UTF8_PER_UTF16 + 1];
+   grub_uint32_t ino;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ 
+ static grub_dl_t my_mod;
+diff --git a/grub-core/fs/nilfs2.c b/grub-core/fs/nilfs2.c
+index 388ee18..52ba994 100644
+--- a/grub-core/fs/nilfs2.c
++++ b/grub-core/fs/nilfs2.c
+@@ -132,6 +132,7 @@ struct grub_nilfs2_super_block
+   grub_uint32_t s_reserved[192];
+ };
+ 
++PRAGMA_BEGIN_PACKED
+ struct grub_nilfs2_dir_entry
+ {
+   grub_uint64_t inode;
+@@ -144,6 +145,7 @@ struct grub_nilfs2_dir_entry
+   char pad;
+ #endif
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ enum
+ {
 diff --git a/grub-core/fs/ntfs.c b/grub-core/fs/ntfs.c
 index d3a91f5..1c9bd59 100644
 --- a/grub-core/fs/ntfs.c
@@ -247,7 +500,7 @@ index d3a91f5..1c9bd59 100644
    return ctx->hook (filename, &info, ctx->hook_data);
  }
 diff --git a/grub-core/fs/reiserfs.c b/grub-core/fs/reiserfs.c
-index ac65054..b4e8255 100644
+index ac65054..e95c976 100644
 --- a/grub-core/fs/reiserfs.c
 +++ b/grub-core/fs/reiserfs.c
 @@ -42,15 +42,8 @@
@@ -268,6 +521,104 @@ index ac65054..b4e8255 100644
  
  #define REISERFS_SUPER_BLOCK_OFFSET 0x10000
  #define REISERFS_MAGIC_LEN 12
+@@ -82,6 +75,7 @@ enum grub_reiserfs_item_type
+     GRUB_REISERFS_UNKNOWN
+   };
+ 
++PRAGMA_BEGIN_PACKED
+ struct grub_reiserfs_superblock
+ {
+   grub_uint32_t block_count;
+@@ -217,6 +211,7 @@ struct grub_reiserfs_directory_header
+   grub_uint16_t location;
+   grub_uint16_t state;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ struct grub_fshelp_node
+ {
+diff --git a/grub-core/fs/sfs.c b/grub-core/fs/sfs.c
+index 6c82150..bf596c7 100644
+--- a/grub-core/fs/sfs.c
++++ b/grub-core/fs/sfs.c
+@@ -30,6 +30,7 @@
+ GRUB_MOD_LICENSE ("GPLv3+");
+ 
+ /* The common header for a block.  */
++PRAGMA_BEGIN_PACKED
+ struct grub_sfs_bheader
+ {
+   grub_uint8_t magic[4];
+@@ -121,7 +122,7 @@ struct grub_sfs_btree
+      supported.  */
+   struct grub_sfs_btree_node node[1];
+ } GRUB_PACKED;
+-
++PRAGMA_END_PACKED
+ 
+ 
+ struct cache_entry
+diff --git a/grub-core/fs/udf.c b/grub-core/fs/udf.c
+index fd41283..eadb0c8 100644
+--- a/grub-core/fs/udf.c
++++ b/grub-core/fs/udf.c
+@@ -113,6 +113,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
+ #define GRUB_UDF_PARTMAP_TYPE_1		1
+ #define GRUB_UDF_PARTMAP_TYPE_2		2
+ 
++PRAGMA_BEGIN_PACKED
+ struct grub_udf_lb_addr
+ {
+   grub_uint32_t block_num;
+@@ -344,6 +345,7 @@ struct grub_udf_aed
+   grub_uint32_t prev_ae;
+   grub_uint32_t ae_len;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ struct grub_udf_data
+ {
+diff --git a/grub-core/fs/ufs.c b/grub-core/fs/ufs.c
+index 4a2161c..963a8a0 100644
+--- a/grub-core/fs/ufs.c
++++ b/grub-core/fs/ufs.c
+@@ -152,6 +152,7 @@ struct grub_ufs_sblock
+   grub_uint32_t magic;
+ };
+ 
++PRAGMA_BEGIN_PACKED
+ #ifdef MODE_UFS2
+ /* UFS inode.  */
+ struct grub_ufs_inode
+@@ -235,6 +236,7 @@ struct grub_ufs_dirent
+     };
+   };
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ /* Information about a "mounted" ufs filesystem.  */
+ struct grub_ufs_data
+diff --git a/grub-core/fs/xfs.c b/grub-core/fs/xfs.c
+index 16ffd3f..151d671 100644
+--- a/grub-core/fs/xfs.c
++++ b/grub-core/fs/xfs.c
+@@ -34,7 +34,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
+ #define XFS_INODE_FORMAT_EXT	2
+ #define XFS_INODE_FORMAT_BTREE	3
+ 
+-
++PRAGMA_BEGIN_PACKED
+ struct grub_xfs_sblock
+ {
+   grub_uint8_t magic[4];
+@@ -141,6 +141,7 @@ struct grub_xfs_dirblock_tail
+   grub_uint32_t leaf_count;
+   grub_uint32_t leaf_stale;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ struct grub_fshelp_node
+ {
 diff --git a/grub-core/fs/zfs/zfs.c b/grub-core/fs/zfs/zfs.c
 index cfb25c0..a9e3cf6 100644
 --- a/grub-core/fs/zfs/zfs.c
@@ -393,6 +744,105 @@ index c5c815d..c178571 100644
  }
  
  int
+diff --git a/include/grub/btrfs.h b/include/grub/btrfs.h
+index 9d93fb6..54e5618 100644
+--- a/include/grub/btrfs.h
++++ b/include/grub/btrfs.h
+@@ -16,6 +16,7 @@
+  *  You should have received a copy of the GNU General Public License
+  *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
+  */
++#include <grub/types.h>
+ 
+ #ifndef GRUB_BTRFS_H
+ #define GRUB_BTRFS_H	1
+@@ -45,13 +46,14 @@ struct grub_btrfs_root_item
+   grub_uint64_t inode;
+ };
+ 
++PRAGMA_BEGIN_PACKED
+ struct grub_btrfs_key
+ {
+   grub_uint64_t object_id;
+   grub_uint8_t type;
+   grub_uint64_t offset;
+ } GRUB_PACKED;
+-
++PRAGMA_END_PACKED
+ 
+ struct grub_btrfs_root_backref
+ {
+diff --git a/include/grub/hfs.h b/include/grub/hfs.h
+index d935f50..beeca5d 100644
+--- a/include/grub/hfs.h
++++ b/include/grub/hfs.h
+@@ -36,6 +36,7 @@ typedef struct grub_hfs_extent grub_hfs_datarecord_t[3];
+ 
+ /* The HFS superblock (The official name is `Master Directory
+    Block').  */
++PRAGMA_BEGIN_PACKED
+ struct grub_hfs_sblock
+ {
+   grub_uint16_t magic;
+@@ -68,5 +69,6 @@ struct grub_hfs_sblock
+   grub_uint32_t catalog_size;
+   grub_hfs_datarecord_t catalog_recs;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ #endif /* ! GRUB_HFS_HEADER */
+diff --git a/include/grub/hfsplus.h b/include/grub/hfsplus.h
+index 8ba8f32..36c632f 100644
+--- a/include/grub/hfsplus.h
++++ b/include/grub/hfsplus.h
+@@ -24,6 +24,7 @@
+ #define GRUB_HFSPLUS_SBLOCK 2
+ 
+ /* A HFS+ extent.  */
++PRAGMA_BEGIN_PACKED
+ struct grub_hfsplus_extent
+ {
+   /* The first block of a file on disk.  */
+@@ -68,6 +69,7 @@ struct grub_hfsplus_volheader
+   struct grub_hfsplus_forkdata attr_file;
+   struct grub_hfsplus_forkdata startup_file;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ struct grub_hfsplus_compress_index
+ {
+@@ -138,6 +140,7 @@ struct grub_hfsplus_extkey_internal
+   grub_uint8_t type;
+ };
+ 
++PRAGMA_BEGIN_PACKED
+ struct grub_hfsplus_attrkey
+ {
+   grub_uint16_t keylen;
+@@ -147,6 +150,7 @@ struct grub_hfsplus_attrkey
+   grub_uint16_t namelen;
+   grub_uint16_t name[0];
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ struct grub_hfsplus_attrkey_internal
+ {
+@@ -166,6 +170,7 @@ struct grub_hfsplus_key_internal
+ };
+ 
+ /* The on disk layout of a catalog key.  */
++PRAGMA_BEGIN_PACKED
+ struct grub_hfsplus_catkey
+ {
+   grub_uint16_t keylen;
+@@ -204,6 +209,7 @@ struct grub_hfsplus_btnode
+   grub_uint16_t count;
+   grub_uint16_t unused;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ /* Return the offset of the record with the index INDEX, in the node
+    NODE which is part of the B+ tree BTREE.  */
 diff --git a/include/grub/misc.h b/include/grub/misc.h
 index c6cd456..caefffd 100644
 --- a/include/grub/misc.h
@@ -571,17 +1021,24 @@ index fec9109..5be8ffa 100644
  #else
  #define GRUB_TARGET_SIZEOF_LONG		8
 diff --git a/include/grub/zfs/zap_leaf.h b/include/grub/zfs/zap_leaf.h
-index 95c67dc..1bca110 100644
+index 95c67dc..1227aab 100644
 --- a/include/grub/zfs/zap_leaf.h
 +++ b/include/grub/zfs/zap_leaf.h
-@@ -68,9 +68,11 @@ typedef struct zap_leaf_phys {
+@@ -68,9 +68,18 @@ typedef struct zap_leaf_phys {
  	 * zap_leaf_chunk structures.  These structures are accessed
  	 * with the ZAP_LEAF_CHUNK() macro.
  	 */
 -
 -	grub_uint16_t l_hash[0];
 -        grub_properly_aligned_t l_entries[0];
-+	/* Use an union to work around MSVC limitations */
++	/* Use an union to work around MSVC limitations. This only works
++	 * here because this structure is not being included in another,
++	 * as you must be mindful that, in the MSVC world, a union of
++	 * zero sized arrays has a size of _1_, whereas in the gcc world,
++	 * it has a size of _0_ => if you were to including this structure
++	 * into another one, you would have to compute the offsets in a
++	 * different manner for MSVC and gcc.
++	 */
 +	union {
 +		grub_uint16_t l_hash[0];
 +		grub_properly_aligned_t l_entries[0];
@@ -589,7 +1046,7 @@ index 95c67dc..1bca110 100644
  } zap_leaf_phys_t;
  
  typedef union zap_leaf_chunk {
-@@ -87,11 +89,13 @@ typedef union zap_leaf_chunk {
+@@ -87,11 +96,13 @@ typedef union zap_leaf_chunk {
  	} l_entry;
  	struct zap_leaf_array {
  		grub_uint8_t la_type;		/* always ZAP_CHUNK_ARRAY */

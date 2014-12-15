@@ -33,5 +33,8 @@
     <ClInclude Include="..\src\driver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\grub\include\grub\btrfs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
