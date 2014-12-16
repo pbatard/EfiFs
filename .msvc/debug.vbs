@@ -14,7 +14,13 @@ OVMF_BIOS  = "OVMF.fd"
 FTP_SERVER = "ftp.heanet.ie"
 FTP_FILE   = "pub/download.sourceforge.net/pub/sourceforge/e/ed/edk2/OVMF/" & OVMF_ZIP
 FTP_URL    = "ftp://" & FTP_SERVER & "/" & FTP_FILE
-FS         = WScript.Arguments(0)
+CONF       = WScript.Arguments(0)
+FS         = WScript.Arguments(1)
+BIN        = WScript.Arguments(2)
+LOG_LEVEL  = 0
+If (CONF = "Debug") Then
+  LOG_LEVEL = 4
+End If
 IMG_EXT    = ".img"
 If ((FS = "iso9660") Or (FS = "udf")) Then
   IMG_EXT  = ".iso"
@@ -27,8 +33,11 @@ IMG_URL    = "http://efi.akeo.ie/test/" & IMG_ZIP
 DRV        = FS & "_x64.efi"
 DRV_URL    = "http://efi.akeo.ie/downloads/efifs-0.6.1/x64/" & DRV
 MNT        = "fs1:"
-If ((FS = "bfs") Or (FS = "hfs") Or (FS = "xfs")) Then
+If ((FS = "bfs") Or (FS = "btrfs") Or (FS = "hfs") Or (FS = "jfs") Or (FS = "xfs")) Then
   MNT      = "fs3:"
+ElseIf (FS = "zfs") Then
+  ' No idea why we get an '@' directory on ZFS, but it's "working" if we proceed from there
+  MNT      =  MNT & "/@"
 End If
 
 
@@ -115,10 +124,10 @@ End If
 
 ' Copy the files where required, and start QEMU
 Call shell.Run("%COMSPEC% /c mkdir ""image\efi\boot""", 0, True)
-Call fso.CopyFile(WScript.Arguments(1), "image\" & DRV, True)
+Call fso.CopyFile(BIN, "image\" & DRV, True)
 ' Create a startup.nsh that: sets logging, loads the driver and executes an "Hello World" app from the disk
 Set file = fso.CreateTextFile("image\efi\boot\startup.nsh", True)
-Call file.Write("set FS_LOGGING " & WScript.Arguments(2) & vbCrLf &_
+Call file.Write("set FS_LOGGING " & LOG_LEVEL & vbCrLf &_
   "load fs0:/" & DRV & vbCrLf &_
   "map -r" & vbCrLf &_
   MNT & "/EFI/Boot/bootx64.efi" & vbCrLf)

@@ -1,6 +1,6 @@
-From dd76e8ca2e1f4f97c9f3ae6ac6d3aba810a51743 Mon Sep 17 00:00:00 2001
+From 1f16fea3dc2fc438a5a6f75fc590f3411768bb7f Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Mon, 15 Dec 2014 21:29:14 +0000
+Date: Tue, 16 Dec 2014 19:57:09 +0000
 Subject: [PATCH] fixes for MSVC compilation
 
 ---
@@ -30,7 +30,8 @@ Subject: [PATCH] fixes for MSVC compilation
  include/grub/types.h        | 42 +++++++++++++++++++++++++++++++-----------
  include/grub/x86_64/types.h |  2 +-
  include/grub/zfs/zap_leaf.h | 17 ++++++++++++++---
- 26 files changed, 151 insertions(+), 62 deletions(-)
+ include/grub/zfs/zio.h      |  2 ++
+ 27 files changed, 153 insertions(+), 62 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
 index f673897..84247ca 100644
@@ -1060,6 +1061,23 @@ index 95c67dc..1227aab 100644
  		grub_uint16_t la_next;		/* next blk or CHAIN_END */
  	} l_array;
  	struct zap_leaf_free {
+diff --git a/include/grub/zfs/zio.h b/include/grub/zfs/zio.h
+index 19ce136..11ee51b 100644
+--- a/include/grub/zfs/zio.h
++++ b/include/grub/zfs/zio.h
+@@ -27,10 +27,12 @@
+ 
+ #define	ZEC_MAGIC	0x210da7ab10c7a11ULL	/* zio data bloc tail */
+ 
++PRAGMA_BEGIN_PACKED
+ typedef struct zio_eck {
+ 	grub_uint64_t	zec_magic;	/* for validation, endianness	*/
+ 	zio_cksum_t	zec_cksum;	/* 256-bit checksum		*/
+ } GRUB_PACKED zio_eck_t;
++PRAGMA_END_PACKED
+ 
+ /*
+  * Gang block headers are self-checksumming and contain an array
 -- 
 1.9.4.msysgit.2
 
