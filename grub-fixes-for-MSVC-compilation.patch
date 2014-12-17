@@ -1,6 +1,6 @@
-From 1f16fea3dc2fc438a5a6f75fc590f3411768bb7f Mon Sep 17 00:00:00 2001
+From b61e397ab61825e927b72ded49009240f5f914ba Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Tue, 16 Dec 2014 19:57:09 +0000
+Date: Wed, 17 Dec 2014 21:22:23 +0000
 Subject: [PATCH] fixes for MSVC compilation
 
 ---
@@ -101,7 +101,7 @@ index 145e771..897c8c1 100644
  			   sizeof (grub_uint16_t), &key_value,
  			   sizeof (grub_uint64_t), 0, 0);
 diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
-index f7b6c15..a6d4ed4 100644
+index 95a8fa6..06cd75e 100644
 --- a/grub-core/fs/btrfs.c
 +++ b/grub-core/fs/btrfs.c
 @@ -48,6 +48,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
@@ -207,7 +207,7 @@ index 79fe864..eef80fa 100644
  
  #endif
 diff --git a/grub-core/fs/hfs.c b/grub-core/fs/hfs.c
-index 1e59305..95d9f3e 100644
+index d1dc015..af5a8ce 100644
 --- a/grub-core/fs/hfs.c
 +++ b/grub-core/fs/hfs.c
 @@ -57,6 +57,7 @@ enum grub_hfs_cnid_type
@@ -501,7 +501,7 @@ index d3a91f5..1c9bd59 100644
    return ctx->hook (filename, &info, ctx->hook_data);
  }
 diff --git a/grub-core/fs/reiserfs.c b/grub-core/fs/reiserfs.c
-index ac65054..e95c976 100644
+index de3d4fa..adfc715 100644
 --- a/grub-core/fs/reiserfs.c
 +++ b/grub-core/fs/reiserfs.c
 @@ -42,15 +42,8 @@
@@ -1009,15 +1009,15 @@ index 79f765c..1c6c510 100644
    dd->d = val;
  }
 diff --git a/include/grub/x86_64/types.h b/include/grub/x86_64/types.h
-index fec9109..5be8ffa 100644
+index 0bbdc6d..eefa808 100644
 --- a/include/grub/x86_64/types.h
 +++ b/include/grub/x86_64/types.h
-@@ -23,7 +23,7 @@
- #define GRUB_TARGET_SIZEOF_VOID_P	8
+@@ -27,7 +27,7 @@
+ #endif
  
  /* The size of long.  */
--#ifdef __MINGW32__
-+#if defined(__MINGW32__) || defined(_MSC_VER)
+-#if defined(__MINGW32__) || defined(__ILP32__)
++#if defined(__MINGW32__) || defined(__ILP32__) || defined(_MSC_VER)
  #define GRUB_TARGET_SIZEOF_LONG		4
  #else
  #define GRUB_TARGET_SIZEOF_LONG		8
