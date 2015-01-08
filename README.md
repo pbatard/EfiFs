@@ -13,7 +13,7 @@ For additional info as well as precompiled drivers, see http://efi.akeo.ie
 
 * __Compilation__:
   * [_Common_] Fetch the git submodules with `git submodule init` and `git submodule update`.
-  * [_Visual Studio_] Apply the respective patches to the `grub\` and `gnu-efi\` subdirectories.
+  * [_Visual Studio_] Apply the included patch to the `grub\` subdirectory.
   * [_Visual Studio_] Open the solution file and hit `F5` to compile and debug the NTFS driver.
   * [_gcc_] Run `make` in the top directory. This creates the gnu-efi and grub libraries.
   * [_gcc_] Go to the `src` directory and run `make` or `make install`.
