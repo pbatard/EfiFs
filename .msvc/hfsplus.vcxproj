@@ -41,15 +41,15 @@
     <TargetExt>.efi</TargetExt>
     <GenerateManifest>false</GenerateManifest>
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)$(PROCESSOR_ARCHITECTURE)_$(PlatformArchitecture)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)$(PROCESSOR_ARCHITECTURE)_$(PlatformArchitecture)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetExt>.efi</TargetExt>
     <GenerateManifest>false</GenerateManifest>
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)$(PROCESSOR_ARCHITECTURE)_$(PlatformArchitecture)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)$(PROCESSOR_ARCHITECTURE)_$(PlatformArchitecture)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -73,7 +73,8 @@
       <DataExecutionPrevention>false</DataExecutionPrevention>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
       <SubSystem>EFI Runtime</SubSystem>
-      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\gnu-efi;$(SolutionDir)$(Platform)\$(Configuration)\grub;$(SolutionDir)$(Platform)\$(Configuration)\efifs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(PROCESSOR_ARCHITECTURE)_$(PlatformArchitecture)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -100,9 +101,10 @@
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
       <SubSystem>EFI Runtime</SubSystem>
       <AdditionalDependencies>gnu-efi.lib;grub.lib;efifs.lib;libcmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\gnu-efi;$(SolutionDir)$(Platform)\$(Configuration)\grub;$(SolutionDir)$(Platform)\$(Configuration)\efifs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(PROCESSOR_ARCHITECTURE)_$(PlatformArchitecture)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <LinkStatus>false</LinkStatus>
       <AdditionalOptions>/IGNORE:4210 %(AdditionalOptions)</AdditionalOptions>
+      <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
