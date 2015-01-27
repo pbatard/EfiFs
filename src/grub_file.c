@@ -152,7 +152,7 @@ grub_disk_read(grub_disk_t disk, grub_disk_addr_t sector,
 	 * but GRUB uses the fixed GRUB_DISK_SECTOR_SIZE, so we follow suit
 	 */
 	Status = FileSystem->DiskIo->ReadDisk(FileSystem->DiskIo, FileSystem->BlockIo->Media->MediaId,
-			sector * GRUB_DISK_SECTOR_SIZE + offset, size, buf);
+			sector * GRUB_DISK_SECTOR_SIZE + offset, (UINTN)size, buf);
 
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"Could not read block at address %08x", sector);
@@ -357,7 +357,7 @@ GrubRead(EFI_GRUB_FILE *File, VOID *Data, UINTN *Len)
 	UINTN Remaining;
 
 	/* GRUB may return an error if we request more data than available */
-	Remaining = (f->size > f->offset)? f->size - f->offset : 0;
+	Remaining = (UINTN)((f->size > f->offset)? f->size - f->offset : 0);
 
 	if (*Len > Remaining)
 		*Len = Remaining;
@@ -371,7 +371,7 @@ GrubRead(EFI_GRUB_FILE *File, VOID *Data, UINTN *Len)
 
 	/* You'd think that GRUB read() would increase the offset... */
 	f->offset += len; 
-	*Len = len;
+	*Len = (UINTN)len;
 
 	return EFI_SUCCESS;
 }

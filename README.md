@@ -14,16 +14,17 @@ For additional info as well as precompiled drivers, see http://efi.akeo.ie
 * __Compilation__:
   * [_Common_] Fetch the git submodules with `git submodule init` and `git submodule update`.
   * [_Visual Studio_] Apply the included patch to the `grub\` subdirectory.
-  * [_Visual Studio_] Open the solution file and hit `F5` to compile and debug the NTFS driver.
+  * [_Visual Studio_] Open the solution file and hit `F5` to compile and debug the default driver.
   * [_gcc_] Run `make` in the top directory. This creates the gnu-efi and grub libraries.
   * [_gcc_] Go to the `src` directory and run `make` or `make install`.
 
 * __Testing__:  
-  The Visual Studio solution automatically sets QEMU up to run and test the drivers.
-  For gcc, make sure you have at least one disk with a target partition using the target
-  filesystem, and that is not being handled by other EFI filesystem drivers.
-  Boot into the EFI shell and run the following:
-  * `load fs0:\<fs_name>_x64.efi` or wherever your driver was copied
+  The Visual Studio solution automatically sets QEMU up to run and will test the drivers
+  (by also downloading a sample image for each target file system).
+  For testing with gcc, make sure you have at least one disk with a target partition using
+  the target filesystem, that is not being handled by other EFI filesystem drivers.
+  Then boot into the EFI shell and run the following:
+  * `load fs0:\<fs_name>_<arch>.efi` or wherever your driver was copied
   * `map -r` this should make a new `fs#` available, eg `fs2:`
   * You should now be able to navigate and access content (in read-only mode)
   * For logging output, set the `FS_LOGGING` shell variable to 1 or more

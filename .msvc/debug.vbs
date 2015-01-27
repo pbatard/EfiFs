@@ -9,14 +9,34 @@
 ' Modify these variables as needed
 QEMU_PATH  = "C:\Program Files\qemu\"
 QEMU_EXE   = "qemu-system-x86_64w.exe"
-OVMF_ZIP   = "OVMF-X64-r15214.zip"
-OVMF_BIOS  = "OVMF.fd"
 FTP_SERVER = "ftp.heanet.ie"
-FTP_FILE   = "pub/download.sourceforge.net/pub/sourceforge/e/ed/edk2/OVMF/" & OVMF_ZIP
-FTP_URL    = "ftp://" & FTP_SERVER & "/" & FTP_FILE
+FTP_DIR    = "pub/download.sourceforge.net/pub/sourceforge/e/ed/edk2/OVMF/"
+
+' You shouldn't have to mofify anything below this
 CONF       = WScript.Arguments(0)
 FS         = WScript.Arguments(1)
 BIN        = WScript.Arguments(2)
+TARGET     = WScript.Arguments(3)
+
+If (TARGET = "x86") Then
+  OVMF_ZIP  = "OVMF-IA32-r15214.zip"
+  OVMF_BIOS = "OVMF_x86_32.fd"
+  BOOT_NAME = "bootia32.efi"
+  DRV_EXT   = "ia32"
+  PRE_CMD   = "dir "
+ElseIf (TARGET = "x64") Then
+  OVMF_ZIP  = "OVMF-X64-r15214.zip"
+  OVMF_BIOS = "OVMF_x86_64.fd"
+  BOOT_NAME = "bootx64.efi"
+  DRV_EXT   = "x64"
+  PRE_CMD   = ""
+Else
+  MsgBox("Unknown target: " & TARGET)
+  Call WScript.Quit(1)
+End If
+FTP_FILE   = "pub/download.sourceforge.net/pub/sourceforge/e/ed/edk2/OVMF/" & OVMF_ZIP
+FTP_URL    = "ftp://" & FTP_SERVER & "/" & FTP_FILE
+
 LOG_LEVEL  = 0
 If (CONF = "Debug") Then
   LOG_LEVEL = 4
@@ -30,8 +50,7 @@ End If
 IMG        = FS & IMG_EXT
 IMG_ZIP    = FS & ".zip"
 IMG_URL    = "http://efi.akeo.ie/test/" & IMG_ZIP
-DRV        = FS & "_x64.efi"
-DRV_URL    = "http://efi.akeo.ie/downloads/efifs-0.6.1/x64/" & DRV
+DRV        = FS & "_" & DRV_EXT & ".efi"
 MNT        = "fs1:"
 If ((FS = "bfs") Or (FS = "btrfs") Or (FS = "hfs") Or (FS = "jfs") Or (FS = "xfs")) Then
   MNT      = "fs3:"
@@ -103,7 +122,8 @@ If Not fso.FileExists(OVMF_BIOS) Then
    "will be downloaded from: " & FTP_URL & vbCrLf & vbCrLf &_
    "Note: Unless you delete the file, this should only happen once.")
   Call DownloadFtp(FTP_SERVER, FTP_FILE)
-  Call Unzip(OVMF_ZIP, OVMF_BIOS)
+  Call Unzip(OVMF_ZIP, "OVMF.fd")
+  Call fso.MoveFile("OVMF.fd", OVMF_BIOS)
   Call fso.DeleteFile(OVMF_ZIP)
 End If
 If Not fso.FileExists(OVMF_BIOS) Then
@@ -130,7 +150,7 @@ Set file = fso.CreateTextFile("image\efi\boot\startup.nsh", True)
 Call file.Write("set FS_LOGGING " & LOG_LEVEL & vbCrLf &_
   "load fs0:/" & DRV & vbCrLf &_
   "map -r" & vbCrLf &_
-  MNT & "/EFI/Boot/bootx64.efi" & vbCrLf)
+  PRE_CMD & MNT & "/EFI/Boot/bootx64.efi" & vbCrLf)
 Call file.Close()
 ' Add something like "-S -gdb tcp:127.0.0.1:1234" if you want to use gdb to debug
-Call shell.Run("""" & QEMU_PATH & QEMU_EXE & """ -L . -bios OVMF.fd -net none -hda fat:image -hdb " & IMG, 1, True)
+Call shell.Run("""" & QEMU_PATH & QEMU_EXE & """ -L . -bios " & OVMF_BIOS & " -net none -hda fat:image -hdb " & IMG, 1, True)

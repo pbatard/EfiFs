@@ -92,7 +92,7 @@ grub_malloc(grub_size_t size)
 {
 	grub_size_t *ptr;
 
-	ptr = (grub_size_t *) AllocatePool(size + sizeof(grub_size_t));
+	ptr = (grub_size_t *) AllocatePool((UINTN)(size + sizeof(grub_size_t)));
 
 	if (ptr != NULL)
 		*ptr++ = size;
@@ -105,7 +105,7 @@ grub_zalloc(grub_size_t size)
 {
 	grub_size_t *ptr;
 
-	ptr = (grub_size_t *) AllocateZeroPool(size + sizeof(grub_size_t));
+	ptr = (grub_size_t *) AllocateZeroPool((UINTN)(size + sizeof(grub_size_t)));
 
 	if (ptr != NULL)
 		*ptr++ = size;
@@ -131,7 +131,7 @@ grub_realloc(void *p, grub_size_t new_size)
 
 	if (ptr != NULL) {
 		ptr = &ptr[-1];
-		ptr = ReallocatePool(ptr, *ptr, new_size + sizeof(grub_size_t));
+		ptr = ReallocatePool(ptr, (UINTN)*ptr, (UINTN)(new_size + sizeof(grub_size_t)));
 		if (ptr != NULL)
 			*ptr++ = new_size;
 	}

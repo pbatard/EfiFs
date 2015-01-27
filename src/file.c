@@ -277,7 +277,7 @@ DirHook(const CHAR8 *name, const GRUB_DIRHOOK_INFO *DirInfo, VOID *Data)
 
 	strcpya(filename, name);
 
-	Status = Utf8ToUtf16NoAlloc(filename, Info->FileName, Info->Size - sizeof(EFI_FILE_INFO));
+	Status = Utf8ToUtf16NoAlloc(filename, Info->FileName, (INTN)(Info->Size - sizeof(EFI_FILE_INFO)));
 	if (EFI_ERROR(Status)) {
 		if (Status != EFI_BUFFER_TOO_SMALL)
 			PrintStatusError(Status, L"Could not convert directory entry to UTF-8");
@@ -539,7 +539,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 		}
 
 		Status = Utf8ToUtf16NoAlloc(File->basename, Info->FileName,
-				Info->Size - sizeof(EFI_FILE_INFO));
+				(INTN)(Info->Size - sizeof(EFI_FILE_INFO)));
 		if (EFI_ERROR(Status)) {
 			if (Status != EFI_BUFFER_TOO_SMALL)
 				PrintStatusError(Status, L"Could not convert basename to UTF-8");
@@ -579,7 +579,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 			PrintStatusError(Status, L"Could not read disk label");
 		} else {
 			Status = Utf8ToUtf16NoAlloc(label, FSInfo->VolumeLabel,
-					FSInfo->Size - sizeof(EFI_FILE_SYSTEM_INFO));
+					(INTN)(FSInfo->Size - sizeof(EFI_FILE_SYSTEM_INFO)));
 			if (EFI_ERROR(Status)) {
 				if (Status != EFI_BUFFER_TOO_SMALL)
 					PrintStatusError(Status, L"Could not convert label to UTF-8");
