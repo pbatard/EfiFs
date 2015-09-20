@@ -8,7 +8,7 @@ For additional info as well as precompiled drivers, see http://efi.akeo.ie
 
 * __Requirements__:
   * gcc v4.7 or later
-  * [Visual Studio 2013](http://www.visualstudio.com/products/visual-studio-community-vs) or later
+  * [Visual Studio 2015](http://www.visualstudio.com/products/visual-studio-community-vs) or later
   * [QEMU](http://www.qemu.org) for testing in Visual Studio
 
 * __Compilation__:

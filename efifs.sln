@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ntfs", ".msvc\ntfs.vcxproj", "{DFA0BA98-D0BA-4176-9A34-B5BA6355B1DE}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -49,6 +49,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "affs", ".msvc\affs.vcxproj"
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bfs", ".msvc\bfs.vcxproj", "{D085632B-FEE9-4126-A6ED-030E88F4B8A3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{628E3F58-0AA9-40BB-8E49-D8CC513AAD63} = {628E3F58-0AA9-40BB-8E49-D8CC513AAD63}
+		{3135D563-9596-4584-9ED6-616ADEC52974} = {3135D563-9596-4584-9ED6-616ADEC52974}
+		{E65DAD8F-B2D7-4CF7-9151-FBFCEF766968} = {E65DAD8F-B2D7-4CF7-9151-FBFCEF766968}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "btrfs", ".msvc\btrfs.vcxproj", "{90A6AF01-88EF-4A77-956D-5391B6D097A3}"
 	ProjectSection(ProjectDependencies) = postProject
