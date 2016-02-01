@@ -9,8 +9,10 @@
 ' Modify these variables as needed
 QEMU_PATH  = "C:\Program Files\qemu\"
 QEMU_EXE   = "qemu-system-x86_64w.exe"
-FTP_SERVER = "ftp.heanet.ie"
-FTP_DIR    = "pub/download.sourceforge.net/pub/sourceforge/e/ed/edk2/OVMF/"
+OVMF_DIR   = "http://efi.akeo.ie/OVMF/"
+OVMF_REV   = "r15214"
+' Set to True if you need to download a file that might be cached locally
+NO_CACHE   = False
 
 ' You shouldn't have to mofify anything below this
 CONF       = WScript.Arguments(0)
@@ -19,13 +21,13 @@ BIN        = WScript.Arguments(2)
 TARGET     = WScript.Arguments(3)
 
 If (TARGET = "x86") Then
-  OVMF_ZIP  = "OVMF-IA32-r15214.zip"
+  OVMF_ZIP  = "OVMF-IA32-" & OVMF_REV & ".zip"
   OVMF_BIOS = "OVMF_x86_32.fd"
   BOOT_NAME = "bootia32.efi"
   DRV_EXT   = "ia32"
   PRE_CMD   = "dir "
 ElseIf (TARGET = "x64") Then
-  OVMF_ZIP  = "OVMF-X64-r15214.zip"
+  OVMF_ZIP  = "OVMF-X64-" & OVMF_REV & ".zip"
   OVMF_BIOS = "OVMF_x86_64.fd"
   BOOT_NAME = "bootx64.efi"
   DRV_EXT   = "x64"
@@ -34,8 +36,7 @@ Else
   MsgBox("Unknown target: " & TARGET)
   Call WScript.Quit(1)
 End If
-FTP_FILE   = "pub/download.sourceforge.net/pub/sourceforge/e/ed/edk2/OVMF/" & OVMF_ZIP
-FTP_URL    = "ftp://" & FTP_SERVER & "/" & FTP_FILE
+OVMF_URL   = OVMF_DIR & OVMF_ZIP
 
 LOG_LEVEL  = 0
 If (CONF = "Debug") Then
@@ -61,7 +62,7 @@ End If
 
 
 ' Globals
-Set fso = CreateObject("Scripting.FileSystemObject") 
+Set fso = CreateObject("Scripting.FileSystemObject")
 Set shell = CreateObject("WScript.Shell")
 
 ' Download a file from FTP
@@ -82,6 +83,11 @@ Sub DownloadHttp(Url, File)
   Set xHttp = createobject("Microsoft.XMLHTTP")
   Set bStrm = createobject("Adodb.Stream")
   Call xHttp.Open("GET", Url, False)
+    If NO_CACHE = True Then
+    Call xHttp.SetRequestHeader("If-None-Match", "some-random-string")
+    Call xHttp.SetRequestHeader("Cache-Control", "no-cache,max-age=0")
+    Call xHttp.SetRequestHeader("Pragma", "no-cache")
+  End If
   Call xHttp.Send()
   With bStrm
     .type = BINARY
@@ -119,15 +125,21 @@ End If
 ' Fetch the Tianocore UEFI BIOS and unzip it
 If Not fso.FileExists(OVMF_BIOS) Then
   Call WScript.Echo("The latest OVMF BIOS file, needed for QEMU/EFI, " &_
-   "will be downloaded from: " & FTP_URL & vbCrLf & vbCrLf &_
-   "Note: Unless you delete the file, this should only happen once.")
-  Call DownloadFtp(FTP_SERVER, FTP_FILE)
+    "will be downloaded from: " & OVMF_URL & vbCrLf & vbCrLf &_
+    "Note: Unless you delete the file, this should only happen once.")
+  Call DownloadHttp(OVMF_URL, OVMF_ZIP)
+End If
+If Not fso.FileExists(OVMF_ZIP) And Not fso.FileExists(OVMF_BIOS) Then
+  Call WScript.Echo("There was a problem downloading the OVMF BIOS file.")
+  Call WScript.Quit(1)
+End If
+If fso.FileExists(OVMF_ZIP) Then
   Call Unzip(OVMF_ZIP, "OVMF.fd")
   Call fso.MoveFile("OVMF.fd", OVMF_BIOS)
   Call fso.DeleteFile(OVMF_ZIP)
 End If
 If Not fso.FileExists(OVMF_BIOS) Then
-  Call WScript.Echo("There was a problem downloading or unzipping the OVMF BIOS file.")
+  Call WScript.Echo("There was a problem unzipping the OVMF BIOS file.")
   Call WScript.Quit(1)
 End If
 

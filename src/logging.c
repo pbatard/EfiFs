@@ -61,7 +61,8 @@ PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...)
 	va_start(ap, Format);
 	VPrint((CHAR16 *)Format, ap);
 	va_end(ap);
-	Print(L": [%d] %s\n", Status, StatusString); 
+	// Make sure the Status is unsigned 32 bits
+	Print(L": [%d] %s\n", (Status & 0x7FFFFFFF), StatusString);
 }
 
 /* You can control the verbosity of the driver output by setting the shell environment
