@@ -19,12 +19,14 @@ For additional info as well as precompiled drivers, see http://efi.akeo.ie
   * [_gcc_] Go to the `src` directory and run `make` or `make install`.
 
 * __Testing__:  
-  The Visual Studio solution automatically sets QEMU up to run and test the drivers (by
-  also downloading a sample image for each target file system). Note however that VS
-  debugging expects a 64-bit version of QEMU to be installed in "C:\Program Files\qemu\".
-  If that is not the case, please edit .msvc\debug.vbs accordingly.
+  The Visual Studio solution automatically sets QEMU up to run and test the drivers
+  (by also downloading a sample image for each target file system).  
+  Note however that VS debugging expects a 64-bit version of QEMU to be installed in
+  `C:\Program Files\qemu\`.  
+  If that is not the case, please edit `.msvc\debug.vbs` accordingly.
+
   For testing with gcc, make sure you have at least one disk with a target partition using
-  the target filesystem, that is not being handled by other EFI filesystem drivers.
+  the target filesystem, that is not being handled by other EFI filesystem drivers.  
   Then boot into the EFI shell and run the following:
   * `load fs0:\<fs_name>_<arch>.efi` or wherever your driver was copied
   * `map -r` this should make a new `fs#` available, eg `fs2:`
