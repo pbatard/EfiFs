@@ -1,6 +1,12 @@
 For detailed information about the changes below, please see the git log or
 visit: https://github.com/pbatard/efifs
 
+v0.8 (2016.02.01)
+* Add x86_32 (ia32) 32-bit drivers
+* Switch to Visual Studio 2015
+* Update OVMF download
+* Update GRUB and gnu-efi to latest
+
 v0.7 (2014.12.17)
 * Add Visual Studio 2013 build support
 * Switch to using Visual Studio 2013 to build binaries - the drivers are now much smaller!
