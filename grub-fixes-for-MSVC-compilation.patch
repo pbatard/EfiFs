@@ -1,6 +1,6 @@
-From 9bf710b3c795b2a35764cc4f0ed95915f5bbdcbc Mon Sep 17 00:00:00 2001
+From c27dc375a01634704d483e49451aa488becbaaf6 Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Thu, 29 Jan 2015 01:01:01 +0000
+Date: Mon, 1 Feb 2016 00:56:51 +0000
 Subject: [PATCH] fixes for MSVC compilation
 
 ---
@@ -19,8 +19,8 @@ Subject: [PATCH] fixes for MSVC compilation
  grub-core/fs/sfs.c          |  3 ++-
  grub-core/fs/udf.c          |  2 ++
  grub-core/fs/ufs.c          |  2 ++
- grub-core/fs/xfs.c          |  3 ++-
- grub-core/fs/zfs/zfs.c      | 10 +++++-----
+ grub-core/fs/xfs.c          |  3 +++
+ grub-core/fs/zfs/zfs.c      |  6 +++---
  grub-core/fs/zfs/zfs_lz4.c  |  1 -
  grub-core/kern/misc.c       | 16 ++++++++--------
  include/grub/btrfs.h        |  4 +++-
@@ -33,7 +33,7 @@ Subject: [PATCH] fixes for MSVC compilation
  include/grub/x86_64/types.h |  2 +-
  include/grub/zfs/zap_leaf.h | 17 ++++++++++++++---
  include/grub/zfs/zio.h      |  2 ++
- 29 files changed, 159 insertions(+), 69 deletions(-)
+ 29 files changed, 158 insertions(+), 66 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
 index f673897..84247ca 100644
@@ -56,10 +56,10 @@ index f673897..84247ca 100644
  /* The location of `struct grub_affs_file' relative to the end of a
     file header block.  */
 diff --git a/grub-core/fs/bfs.c b/grub-core/fs/bfs.c
-index 145e771..897c8c1 100644
+index d2b490b..8855a95 100644
 --- a/grub-core/fs/bfs.c
 +++ b/grub-core/fs/bfs.c
-@@ -68,6 +68,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
+@@ -69,6 +69,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
  #define DOUBLE_INDIRECT_SHIFT 2
  
  #define LOG_EXTENT_SIZE 3
@@ -67,7 +67,7 @@ index 145e771..897c8c1 100644
  struct grub_bfs_extent
  {
    grub_uint32_t ag;
-@@ -166,6 +167,7 @@ struct grub_bfs_btree_node
+@@ -167,6 +168,7 @@ struct grub_bfs_btree_node
    grub_uint16_t total_key_len;
  #endif
  } GRUB_PACKED;
@@ -75,7 +75,7 @@ index 145e771..897c8c1 100644
  
  struct grub_bfs_data
  {
-@@ -446,7 +448,7 @@ read_b_node (grub_disk_t disk,
+@@ -447,7 +449,7 @@ read_b_node (grub_disk_t disk,
    total_size = ALIGN_UP (sizeof (node_head) +
  			 grub_bfs_to_cpu_treehead
  			 (node_head.total_key_len),
@@ -84,7 +84,7 @@ index 145e771..897c8c1 100644
      grub_bfs_to_cpu_treehead (node_head.count_keys) *
      sizeof (grub_uint16_t)
      + grub_bfs_to_cpu_treehead (node_head.count_keys) *
-@@ -468,7 +470,7 @@ read_b_node (grub_disk_t disk,
+@@ -469,7 +471,7 @@ read_b_node (grub_disk_t disk,
    *keylen_idx = (grub_uint16_t *) ret
      + ALIGN_UP (sizeof (node_head) +
  		grub_bfs_to_cpu_treehead (node_head.total_key_len),
@@ -93,7 +93,7 @@ index 145e771..897c8c1 100644
    *key_values = (grub_unaligned_uint64_t *)
      (*keylen_idx +
       grub_bfs_to_cpu_treehead (node_head.count_keys));
-@@ -507,7 +509,7 @@ iterate_in_b_tree (grub_disk_t disk,
+@@ -508,7 +510,7 @@ iterate_in_b_tree (grub_disk_t disk,
  			   + ALIGN_UP (sizeof (node) +
  				       grub_bfs_to_cpu_treehead (node.
  								 total_key_len),
@@ -182,10 +182,10 @@ index 9cffa91..c9617a0 100644
  	      stripen *= nsubstripes;
  	      redundancy = nsubstripes;
 diff --git a/grub-core/fs/fat.c b/grub-core/fs/fat.c
-index 71537ff..f132569 100644
+index 635c2c4..8f589f2 100644
 --- a/grub-core/fs/fat.c
 +++ b/grub-core/fs/fat.c
-@@ -74,6 +74,7 @@ enum
+@@ -75,6 +75,7 @@ enum
    {
      FLAG_CONTIGUOUS = 2
    };
@@ -193,7 +193,7 @@ index 71537ff..f132569 100644
  struct grub_fat_dir_entry
  {
    grub_uint8_t entry_type;
-@@ -114,6 +115,7 @@ struct grub_fat_dir_entry
+@@ -115,6 +116,7 @@ struct grub_fat_dir_entry
      }  GRUB_PACKED  volume_label;
    }  GRUB_PACKED type_specific;
  } GRUB_PACKED;
@@ -201,7 +201,7 @@ index 71537ff..f132569 100644
  
  struct grub_fat_dir_node
  {
-@@ -128,6 +130,7 @@ struct grub_fat_dir_node
+@@ -129,6 +131,7 @@ struct grub_fat_dir_node
  typedef struct grub_fat_dir_node grub_fat_dir_node_t;
  
  #else
@@ -209,7 +209,7 @@ index 71537ff..f132569 100644
  struct grub_fat_dir_entry
  {
    grub_uint8_t name[11];
-@@ -155,6 +158,7 @@ struct grub_fat_long_name_entry
+@@ -156,6 +159,7 @@ struct grub_fat_long_name_entry
    grub_uint16_t first_cluster;
    grub_uint16_t name3[2];
  } GRUB_PACKED;
@@ -217,7 +217,7 @@ index 71537ff..f132569 100644
  
  typedef struct grub_fat_dir_entry grub_fat_dir_node_t;
  
-@@ -721,7 +725,7 @@ grub_fat_iterate_dir_next (grub_disk_t disk, struct grub_fat_data *data,
+@@ -722,7 +726,7 @@ grub_fat_iterate_dir_next (grub_fshelp_node_t node,
        grub_dprintf ("exfat", "unknown primary type 0x%02x\n",
  		    dir.entry_type);
      }
@@ -226,7 +226,7 @@ index 71537ff..f132569 100644
  }
  
  #else
-@@ -846,7 +850,7 @@ grub_fat_iterate_dir_next (grub_disk_t disk, struct grub_fat_data *data,
+@@ -849,7 +853,7 @@ grub_fat_iterate_dir_next (grub_fshelp_node_t node,
        return GRUB_ERR_NONE;
      }
  
@@ -236,10 +236,10 @@ index 71537ff..f132569 100644
  
  #endif
 diff --git a/grub-core/fs/hfs.c b/grub-core/fs/hfs.c
-index 06cf0c7..1f16560 100644
+index fc36831..65fe14b 100644
 --- a/grub-core/fs/hfs.c
 +++ b/grub-core/fs/hfs.c
-@@ -57,6 +57,7 @@ enum grub_hfs_cnid_type
+@@ -58,6 +58,7 @@ enum grub_hfs_cnid_type
    };
  
  /* A node descriptor.  This is the header of every node.  */
@@ -247,7 +247,7 @@ index 06cf0c7..1f16560 100644
  struct grub_hfs_node
  {
    grub_uint32_t next;
-@@ -82,6 +83,7 @@ struct grub_hfs_treeheader
+@@ -83,6 +84,7 @@ struct grub_hfs_treeheader
    grub_uint32_t free_nodes;
    grub_uint8_t unused[76];
  } GRUB_PACKED;
@@ -255,7 +255,7 @@ index 06cf0c7..1f16560 100644
  
  /* The state of a mounted HFS filesystem.  */
  struct grub_hfs_data
-@@ -102,6 +104,7 @@ struct grub_hfs_data
+@@ -103,6 +105,7 @@ struct grub_hfs_data
  
  /* The key as used on disk in a catalog tree.  This is used to lookup
     file/directory nodes by parent directory ID and filename.  */
@@ -263,7 +263,7 @@ index 06cf0c7..1f16560 100644
  struct grub_hfs_catalog_key
  {
    grub_uint8_t unused;
-@@ -155,6 +158,7 @@ struct grub_hfs_filerec
+@@ -156,6 +159,7 @@ struct grub_hfs_filerec
       in the extent overflow file.  */
    grub_hfs_datarecord_t extents;
  } GRUB_PACKED;
@@ -271,7 +271,7 @@ index 06cf0c7..1f16560 100644
  
  /* A record descriptor, both key and data, used to pass to call back
     functions.  */
-@@ -719,11 +723,13 @@ grub_hfs_iterate_records (struct grub_hfs_data *data, int type, int idx,
+@@ -720,11 +724,13 @@ grub_hfs_iterate_records (struct grub_hfs_data *data, int type, int idx,
        for (i = 0; i < reccnt; i++)
  	{
  	  int pos = (nodesize >> 1) - 1 - i;
@@ -286,7 +286,7 @@ index 06cf0c7..1f16560 100644
  	  if (off > nodesize - sizeof(*pnt))
  	    continue;
 diff --git a/grub-core/fs/hfsplus.c b/grub-core/fs/hfsplus.c
-index 8f07f85..0b5cc5e 100644
+index 21159e8..bd8d709 100644
 --- a/grub-core/fs/hfsplus.c
 +++ b/grub-core/fs/hfsplus.c
 @@ -44,6 +44,7 @@ enum grub_hfsplus_btnode_type
@@ -530,7 +530,7 @@ index 6f84688..143b521 100644
    return ctx->hook (filename, &info, ctx->hook_data);
  }
 diff --git a/grub-core/fs/reiserfs.c b/grub-core/fs/reiserfs.c
-index b781665..ab3c4b7 100644
+index 39736f6..61d7c53 100644
 --- a/grub-core/fs/reiserfs.c
 +++ b/grub-core/fs/reiserfs.c
 @@ -42,15 +42,8 @@
@@ -609,7 +609,7 @@ index 839bff8..ab3d0d5 100644
  struct grub_udf_data
  {
 diff --git a/grub-core/fs/ufs.c b/grub-core/fs/ufs.c
-index 0619d6e..c35251e 100644
+index 293f027..3babbce 100644
 --- a/grub-core/fs/ufs.c
 +++ b/grub-core/fs/ufs.c
 @@ -152,6 +152,7 @@ struct grub_ufs_sblock
@@ -629,19 +629,26 @@ index 0619d6e..c35251e 100644
  /* Information about a "mounted" ufs filesystem.  */
  struct grub_ufs_data
 diff --git a/grub-core/fs/xfs.c b/grub-core/fs/xfs.c
-index 16ffd3f..151d671 100644
+index ca9c0c3..fa4a44a 100644
 --- a/grub-core/fs/xfs.c
 +++ b/grub-core/fs/xfs.c
-@@ -34,7 +34,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
- #define XFS_INODE_FORMAT_EXT	2
- #define XFS_INODE_FORMAT_BTREE	3
+@@ -59,6 +59,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
+ 	 XFS_SB_VERSION_DIRV2BIT | \
+ 	 XFS_SB_VERSION_MOREBITSBIT)
  
--
++PRAGMA_BEGIN_PACKED
+ /* Recognized xfs format versions */
+ #define XFS_SB_VERSION_4		4	/* Good old XFS filesystem */
+ #define XFS_SB_VERSION_5		5	/* CRC enabled filesystem */
+@@ -79,6 +80,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
+ #define XFS_SB_FEAT_INCOMPAT_SUPPORTED \
+ 	(XFS_SB_FEAT_INCOMPAT_FTYPE)
+ 
 +PRAGMA_BEGIN_PACKED
  struct grub_xfs_sblock
  {
    grub_uint8_t magic[4];
-@@ -141,6 +141,7 @@ struct grub_xfs_dirblock_tail
+@@ -195,6 +197,7 @@ struct grub_xfs_dirblock_tail
    grub_uint32_t leaf_count;
    grub_uint32_t leaf_stale;
  } GRUB_PACKED;
@@ -650,7 +657,7 @@ index 16ffd3f..151d671 100644
  struct grub_fshelp_node
  {
 diff --git a/grub-core/fs/zfs/zfs.c b/grub-core/fs/zfs/zfs.c
-index 057b471..0eadb6b 100644
+index c4ead29..bb315b9 100644
 --- a/grub-core/fs/zfs/zfs.c
 +++ b/grub-core/fs/zfs/zfs.c
 @@ -141,7 +141,7 @@ ZAP_LEAF_NUMCHUNKS (int bs)
@@ -662,7 +669,7 @@ index 057b471..0eadb6b 100644
  				 + (ZAP_LEAF_HASH_NUMENTRIES(bs) * 2)
  				 / sizeof (grub_properly_aligned_t)))[idx];
  }
-@@ -1172,7 +1172,7 @@ scan_disk (grub_device_t dev, struct grub_zfs_data *data,
+@@ -1177,7 +1177,7 @@ scan_disk (grub_device_t dev, struct grub_zfs_data *data,
  	= label * (sizeof (vdev_label_t) >> SPA_MINBLOCKSHIFT)
  	+ ((VDEV_SKIP_SIZE + VDEV_BOOT_HEADER_SIZE) >> SPA_MINBLOCKSHIFT)
  	+ (label < VDEV_LABELS / 2 ? 0 : 
@@ -671,25 +678,7 @@ index 057b471..0eadb6b 100644
  	   - VDEV_LABELS * (sizeof (vdev_label_t) >> SPA_MINBLOCKSHIFT));
  
        /* Read in the uberblock ring (128K). */
-@@ -1839,7 +1839,7 @@ zio_read (blkptr_t *bp, grub_zfs_endian_t endian, void **buf,
-   if (comp != ZIO_COMPRESS_OFF)
-     {
-       /* It's not really necessary to align to 16, just for safety.  */
--      compbuf = grub_malloc (ALIGN_UP (psize, 16));
-+      compbuf = grub_malloc (ALIGN_UP (psize, (grub_size_t) 16));
-       if (! compbuf)
- 	return grub_errno;
-     }
-@@ -1854,7 +1854,7 @@ zio_read (blkptr_t *bp, grub_zfs_endian_t endian, void **buf,
-       *buf = NULL;
-       return err;
-     }
--  grub_memset (compbuf, 0, ALIGN_UP (psize, 16) - psize);
-+  grub_memset (compbuf, 0, ALIGN_UP (psize, (grub_size_t) 16) - psize);
- 
-   err = zio_checksum_verify (zc, checksum, endian,
- 			     compbuf, psize);
-@@ -2198,7 +2198,7 @@ zap_leaf_lookup (zap_leaf_phys_t * l, grub_zfs_endian_t endian,
+@@ -2260,7 +2260,7 @@ zap_leaf_lookup (zap_leaf_phys_t * l, grub_zfs_endian_t endian,
    if (grub_zfs_to_cpu32 (l->l_hdr.lh_magic, endian) != ZAP_LEAF_MAGIC)
      return grub_error (GRUB_ERR_BAD_FS, "invalid leaf magic");
  
@@ -711,10 +700,10 @@ index 1212a89..21f21e6 100644
  typedef struct _U16_S {
  	U16 v;
 diff --git a/grub-core/kern/misc.c b/grub-core/kern/misc.c
-index c5c815d..c178571 100644
+index 906d2c2..3458139 100644
 --- a/grub-core/kern/misc.c
 +++ b/grub-core/kern/misc.c
-@@ -157,7 +157,7 @@ grub_puts_ (const char *s)
+@@ -138,7 +138,7 @@ grub_puts_ (const char *s)
    return grub_puts (_(s));
  }
  
@@ -723,7 +712,7 @@ index c5c815d..c178571 100644
  int
  grub_err_printf (const char *fmt, ...)
  {
-@@ -172,7 +172,7 @@ grub_err_printf (const char *fmt, ...)
+@@ -153,7 +153,7 @@ grub_err_printf (const char *fmt, ...)
  }
  #endif
  
@@ -732,7 +721,7 @@ index c5c815d..c178571 100644
  int grub_err_printf (const char *fmt, ...)
  __attribute__ ((alias("grub_printf")));
  #endif
-@@ -233,7 +233,7 @@ grub_vprintf (const char *fmt, va_list ap)
+@@ -214,7 +214,7 @@ grub_vprintf (const char *fmt, va_list ap)
    if (curbuf != buf)
      grub_free (curbuf);
  
@@ -741,7 +730,7 @@ index c5c815d..c178571 100644
  }
  
  int
-@@ -787,7 +787,7 @@ grub_lltoa (char *str, int c, unsigned long long n)
+@@ -612,7 +612,7 @@ grub_lltoa (char *str, int c, unsigned long long n)
  	grub_uint64_t m;
  
  	n = grub_divmod64 (n, 10, &m);
@@ -750,7 +739,7 @@ index c5c815d..c178571 100644
        }
      while (n);
  
-@@ -1094,7 +1094,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
+@@ -919,7 +919,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
  
  	case 'C':
  	  {
@@ -759,7 +748,7 @@ index c5c815d..c178571 100644
  	    int shift;
  	    unsigned mask;
  
-@@ -1136,7 +1136,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
+@@ -961,7 +961,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
  	  {
  	    grub_size_t len = 0;
  	    grub_size_t fill;
@@ -768,7 +757,7 @@ index c5c815d..c178571 100644
  	    grub_size_t i;
  
  	    while (len < format2 && p[len])
-@@ -1168,7 +1168,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
+@@ -993,7 +993,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
      str[count] = '\0';
    else
      str[max_len] = '\0';
@@ -777,7 +766,7 @@ index c5c815d..c178571 100644
  }
  
  int
-@@ -1188,7 +1188,7 @@ grub_vsnprintf (char *str, grub_size_t n, const char *fmt, va_list ap)
+@@ -1013,7 +1013,7 @@ grub_vsnprintf (char *str, grub_size_t n, const char *fmt, va_list ap)
  
    free_printf_args (&args);
  
@@ -834,7 +823,7 @@ index d935f50..beeca5d 100644
  
  #endif /* ! GRUB_HFS_HEADER */
 diff --git a/include/grub/hfsplus.h b/include/grub/hfsplus.h
-index 8ba8f32..36c632f 100644
+index 117740a..5a8caf5 100644
 --- a/include/grub/hfsplus.h
 +++ b/include/grub/hfsplus.h
 @@ -24,6 +24,7 @@
@@ -886,7 +875,7 @@ index 8ba8f32..36c632f 100644
  /* Return the offset of the record with the index INDEX, in the node
     NODE which is part of the B+ tree BTREE.  */
 diff --git a/include/grub/misc.h b/include/grub/misc.h
-index 4b6ee06..c643277 100644
+index 2a9f87c..1e70e76 100644
 --- a/include/grub/misc.h
 +++ b/include/grub/misc.h
 @@ -28,10 +28,10 @@
@@ -943,7 +932,7 @@ index 5ffb38f..cc6d92a 100644
  
  static inline struct grub_term_coordinate
 diff --git a/include/grub/types.h b/include/grub/types.h
-index 79f765c..b634938 100644
+index e732efb..bfa0ddc 100644
 --- a/include/grub/types.h
 +++ b/include/grub/types.h
 @@ -26,10 +26,20 @@
@@ -992,7 +981,7 @@ index 79f765c..b634938 100644
 +                    | (((grub_uint64_t)x) >> 56)) \
 +)
  
- #if defined(__GNUC__) && (__GNUC__ > 3) && (__GNUC__ > 4 || __GNUC_MINOR__ >= 3)
+ #if (defined(__GNUC__) && (__GNUC__ > 3) && (__GNUC__ > 4 || __GNUC_MINOR__ >= 3)) || defined(__clang__)
  static inline grub_uint32_t grub_swap_bytes32(grub_uint32_t x)
 @@ -256,10 +264,12 @@ static inline grub_uint64_t grub_swap_bytes64(grub_uint64_t _x)
  
@@ -1139,5 +1128,5 @@ index 19ce136..11ee51b 100644
  /*
   * Gang block headers are self-checksumming and contain an array
 -- 
-1.9.4.msysgit.2
+1.9.5.msysgit.1
 
