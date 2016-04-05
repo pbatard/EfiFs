@@ -19,11 +19,14 @@
 #include <efi.h>
 #include <efilib.h>
 #include <efistdarg.h>
-#include <edk2/ShellVariableGuid.h>
 
 #include "driver.h"
 
 /* Not defined in gnu-efi yet */
+#define SHELL_VARIABLE_GUID { \
+	0x158def5a, 0xf656, 0x419c, { 0xb0, 0x27, 0x7a, 0x31, 0x92, 0xc0, 0x79, 0xd2 } \
+}
+extern EFI_GUID gShellVariableGuid;
 EFI_GUID ShellVariable = SHELL_VARIABLE_GUID;
 
 static UINTN PrintNone(IN CHAR16 *fmt, ... ) { return 0; }

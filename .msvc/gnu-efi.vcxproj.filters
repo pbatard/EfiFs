@@ -9,6 +9,12 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
+    <Filter Include="Source Files\x86_64">
+      <UniqueIdentifier>{70897b8f-ef20-415f-a6d1-5cbd549a305c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ia32">
+      <UniqueIdentifier>{856e55b7-af6f-4af6-a0ef-e7aaefb04500}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\gnu-efi\lib\console.c">
@@ -83,19 +89,20 @@
     <ClCompile Include="..\gnu-efi\lib\x86_64\callwrap.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\gnu-efi\lib\x86_64\initplat.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\gnu-efi\lib\error.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\gnu-efi\lib\x86_64\math.c">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\x86_64</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\gnu-efi\lib\x86_64\efi_stub.S">
-      <Filter>Source Files</Filter>
-    </None>
+    <ClCompile Include="..\gnu-efi\lib\x86_64\initplat.c">
+      <Filter>Source Files\x86_64</Filter>
+    </ClCompile>
+    <ClCompile Include="..\gnu-efi\lib\ia32\initplat.c">
+      <Filter>Source Files\ia32</Filter>
+    </ClCompile>
+    <ClCompile Include="..\gnu-efi\lib\ia32\math.c">
+      <Filter>Source Files\ia32</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

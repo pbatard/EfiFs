@@ -1,6 +1,6 @@
-From c27dc375a01634704d483e49451aa488becbaaf6 Mon Sep 17 00:00:00 2001
+From adf6f3b8544df2085eb427c3c1ead011ba6dcb3d Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Mon, 1 Feb 2016 00:56:51 +0000
+Date: Tue, 5 Apr 2016 15:11:20 +0200
 Subject: [PATCH] fixes for MSVC compilation
 
 ---
@@ -29,11 +29,11 @@ Subject: [PATCH] fixes for MSVC compilation
  include/grub/misc.h         |  6 +++---
  include/grub/ntfs.h         |  2 ++
  include/grub/term.h         |  4 ++--
- include/grub/types.h        | 42 +++++++++++++++++++++++++++++++-----------
+ include/grub/types.h        | 44 +++++++++++++++++++++++++++-----------------
  include/grub/x86_64/types.h |  2 +-
  include/grub/zfs/zap_leaf.h | 17 ++++++++++++++---
  include/grub/zfs/zio.h      |  2 ++
- 29 files changed, 158 insertions(+), 66 deletions(-)
+ 29 files changed, 154 insertions(+), 72 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
 index f673897..84247ca 100644
@@ -347,7 +347,7 @@ index d76f3f1..28c586d 100644
  enum
    {
 diff --git a/grub-core/fs/iso9660.c b/grub-core/fs/iso9660.c
-index 67a67cf..dfd5457 100644
+index c9c8374..7d1fe43 100644
 --- a/grub-core/fs/iso9660.c
 +++ b/grub-core/fs/iso9660.c
 @@ -49,6 +49,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
@@ -657,7 +657,7 @@ index ca9c0c3..fa4a44a 100644
  struct grub_fshelp_node
  {
 diff --git a/grub-core/fs/zfs/zfs.c b/grub-core/fs/zfs/zfs.c
-index c4ead29..bb315b9 100644
+index 6e1fff9..fd03c3e 100644
 --- a/grub-core/fs/zfs/zfs.c
 +++ b/grub-core/fs/zfs/zfs.c
 @@ -141,7 +141,7 @@ ZAP_LEAF_NUMCHUNKS (int bs)
@@ -688,7 +688,7 @@ index c4ead29..bb315b9 100644
      {
  
 diff --git a/grub-core/fs/zfs/zfs_lz4.c b/grub-core/fs/zfs/zfs_lz4.c
-index 1212a89..21f21e6 100644
+index 2f73449..df2ec43 100644
 --- a/grub-core/fs/zfs/zfs_lz4.c
 +++ b/grub-core/fs/zfs/zfs_lz4.c
 @@ -73,7 +73,6 @@ static int LZ4_uncompress_unknownOutputSize(const char *source, char *dest,
@@ -700,7 +700,7 @@ index 1212a89..21f21e6 100644
  typedef struct _U16_S {
  	U16 v;
 diff --git a/grub-core/kern/misc.c b/grub-core/kern/misc.c
-index 906d2c2..3458139 100644
+index d1a54df..dbf909d 100644
 --- a/grub-core/kern/misc.c
 +++ b/grub-core/kern/misc.c
 @@ -138,7 +138,7 @@ grub_puts_ (const char *s)
@@ -739,7 +739,7 @@ index 906d2c2..3458139 100644
        }
      while (n);
  
-@@ -919,7 +919,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
+@@ -926,7 +926,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
  
  	case 'C':
  	  {
@@ -748,7 +748,7 @@ index 906d2c2..3458139 100644
  	    int shift;
  	    unsigned mask;
  
-@@ -961,7 +961,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
+@@ -968,7 +968,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
  	  {
  	    grub_size_t len = 0;
  	    grub_size_t fill;
@@ -757,7 +757,7 @@ index 906d2c2..3458139 100644
  	    grub_size_t i;
  
  	    while (len < format2 && p[len])
-@@ -993,7 +993,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
+@@ -1000,7 +1000,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
      str[count] = '\0';
    else
      str[max_len] = '\0';
@@ -766,7 +766,7 @@ index 906d2c2..3458139 100644
  }
  
  int
-@@ -1013,7 +1013,7 @@ grub_vsnprintf (char *str, grub_size_t n, const char *fmt, va_list ap)
+@@ -1020,7 +1020,7 @@ grub_vsnprintf (char *str, grub_size_t n, const char *fmt, va_list ap)
  
    free_printf_args (&args);
  
@@ -932,7 +932,7 @@ index 5ffb38f..cc6d92a 100644
  
  static inline struct grub_term_coordinate
 diff --git a/include/grub/types.h b/include/grub/types.h
-index e732efb..bfa0ddc 100644
+index b93e482..4cc8895 100644
 --- a/include/grub/types.h
 +++ b/include/grub/types.h
 @@ -26,10 +26,20 @@
@@ -940,7 +940,7 @@ index e732efb..bfa0ddc 100644
  #ifdef __MINGW32__
  #define GRUB_PACKED __attribute__ ((packed,gcc_struct))
 +#elif defined(_MSC_VER)
-+#define GRUB_PACKED 
++#define GRUB_PACKED
  #else
  #define GRUB_PACKED __attribute__ ((packed))
  #endif
@@ -983,58 +983,22 @@ index e732efb..bfa0ddc 100644
  
  #if (defined(__GNUC__) && (__GNUC__ > 3) && (__GNUC__ > 4 || __GNUC_MINOR__ >= 3)) || defined(__clang__)
  static inline grub_uint32_t grub_swap_bytes32(grub_uint32_t x)
-@@ -256,10 +264,12 @@ static inline grub_uint64_t grub_swap_bytes64(grub_uint64_t _x)
+@@ -254,18 +262,24 @@ static inline grub_uint64_t grub_swap_bytes64(grub_uint64_t _x)
  
- static inline grub_uint16_t grub_get_unaligned16 (const void *ptr)
- {
+ #endif /* ! WORDS_BIGENDIAN */
+ 
 +PRAGMA_BEGIN_PACKED
-   struct grub_unaligned_uint16_t
-   {
-     grub_uint16_t d;
-   } GRUB_PACKED;
-+PRAGMA_END_PACKED
-   const struct grub_unaligned_uint16_t *dd
-     = (const struct grub_unaligned_uint16_t *) ptr;
-   return dd->d;
-@@ -267,20 +277,24 @@ static inline grub_uint16_t grub_get_unaligned16 (const void *ptr)
- 
- static inline void grub_set_unaligned16 (void *ptr, grub_uint16_t val)
+ struct grub_unaligned_uint16
  {
-+PRAGMA_BEGIN_PACKED
-   struct grub_unaligned_uint16_t
-   {
-     grub_uint16_t d;
-   } GRUB_PACKED;
+   grub_uint16_t val;
+ } GRUB_PACKED;
 +PRAGMA_END_PACKED
-   struct grub_unaligned_uint16_t *dd = (struct grub_unaligned_uint16_t *) ptr;
-   dd->d = val;
- }
- 
- static inline grub_uint32_t grub_get_unaligned32 (const void *ptr)
++PRAGMA_BEGIN_PACKED
+ struct grub_unaligned_uint32
  {
-+PRAGMA_BEGIN_PACKED
-   struct grub_unaligned_uint32_t
-   {
-     grub_uint32_t d;
-   } GRUB_PACKED;
+   grub_uint32_t val;
+ } GRUB_PACKED;
 +PRAGMA_END_PACKED
-   const struct grub_unaligned_uint32_t *dd
-     = (const struct grub_unaligned_uint32_t *) ptr;
-   return dd->d;
-@@ -288,18 +302,22 @@ static inline grub_uint32_t grub_get_unaligned32 (const void *ptr)
- 
- static inline void grub_set_unaligned32 (void *ptr, grub_uint32_t val)
- {
-+PRAGMA_BEGIN_PACKED
-   struct grub_unaligned_uint32_t
-   {
-     grub_uint32_t d;
-   } GRUB_PACKED;
-+PRAGMA_END_PACKED
-   struct grub_unaligned_uint32_t *dd = (struct grub_unaligned_uint32_t *) ptr;
-   dd->d = val;
- }
- 
 +PRAGMA_BEGIN_PACKED
  struct grub_unaligned_uint64
  {
@@ -1042,21 +1006,23 @@ index e732efb..bfa0ddc 100644
  } GRUB_PACKED;
 +PRAGMA_END_PACKED
  
- typedef struct grub_unaligned_uint64 grub_unaligned_uint64_t;
- 
-@@ -312,10 +330,12 @@ static inline grub_uint64_t grub_get_unaligned64 (const void *ptr)
+ typedef struct grub_unaligned_uint16 grub_unaligned_uint16_t;
+ typedef struct grub_unaligned_uint32 grub_unaligned_uint32_t;
+@@ -306,12 +320,8 @@ static inline grub_uint64_t grub_get_unaligned64 (const void *ptr)
  
  static inline void grub_set_unaligned64 (void *ptr, grub_uint64_t val)
  {
-+PRAGMA_BEGIN_PACKED
-   struct grub_unaligned_uint64_t
-   {
-     grub_uint64_t d;
-   } GRUB_PACKED;
-+PRAGMA_END_PACKED
-   struct grub_unaligned_uint64_t *dd = (struct grub_unaligned_uint64_t *) ptr;
-   dd->d = val;
+-  struct grub_unaligned_uint64_t
+-  {
+-    grub_uint64_t d;
+-  } GRUB_PACKED;
+-  struct grub_unaligned_uint64_t *dd = (struct grub_unaligned_uint64_t *) ptr;
+-  dd->d = val;
++  struct grub_unaligned_uint64 *dd = (struct grub_unaligned_uint64 *) ptr;
++  dd->val = val;
  }
+ 
+ #define GRUB_CHAR_BIT 8
 diff --git a/include/grub/x86_64/types.h b/include/grub/x86_64/types.h
 index 0bbdc6d..eefa808 100644
 --- a/include/grub/x86_64/types.h

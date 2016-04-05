@@ -20,16 +20,8 @@
 
 #include <efi.h>
 #include <efilib.h>
-#include <edk2/DriverBinding.h>
-#include <edk2/ComponentName.h>
-#include <edk2/ComponentName2.h>
 
 #include "driver.h"
-
-/* These ones are not defined in gnu-efi yet */
-EFI_GUID DriverBindingProtocol = EFI_DRIVER_BINDING_PROTOCOL_GUID;
-EFI_GUID ComponentNameProtocol = EFI_COMPONENT_NAME_PROTOCOL_GUID;
-EFI_GUID ComponentName2Protocol = EFI_COMPONENT_NAME2_PROTOCOL_GUID;
 
 /* We'll try to instantiate a custom protocol as a mutex, so we need a GUID */
 EFI_GUID *MutexGUID = NULL;
@@ -49,7 +41,7 @@ static EFI_MUTEX_PROTOCOL MutexProtocol = { 0 };
 
 /* Return the driver name */
 static EFI_STATUS EFIAPI
-FSGetDriverName(EFI_COMPONENT_NAME_PROTOCOL *This,
+FSGetDriverName(EFI_COMPONENT_NAME *This,
 		CHAR8 *Language, CHAR16 **DriverName)
 {
 	*DriverName = FullDriverName;
@@ -57,7 +49,7 @@ FSGetDriverName(EFI_COMPONENT_NAME_PROTOCOL *This,
 }
 
 static EFI_STATUS EFIAPI
-FSGetDriverName2(EFI_COMPONENT_NAME2_PROTOCOL *This,
+FSGetDriverName2(EFI_COMPONENT_NAME2 *This,
 		CHAR8 *Language, CHAR16 **DriverName)
 {
 	*DriverName = FullDriverName;
@@ -66,7 +58,7 @@ FSGetDriverName2(EFI_COMPONENT_NAME2_PROTOCOL *This,
 
 /* Return the controller name (unsupported for a filesystem) */
 static EFI_STATUS EFIAPI
-FSGetControllerName(EFI_COMPONENT_NAME_PROTOCOL *This,
+FSGetControllerName(EFI_COMPONENT_NAME *This,
 		EFI_HANDLE ControllerHandle, EFI_HANDLE ChildHandle,
 		CHAR8 *Language, CHAR16 **ControllerName)
 {
@@ -74,7 +66,7 @@ FSGetControllerName(EFI_COMPONENT_NAME_PROTOCOL *This,
 }
 
 static EFI_STATUS EFIAPI
-FSGetControllerName2(EFI_COMPONENT_NAME2_PROTOCOL *This,
+FSGetControllerName2(EFI_COMPONENT_NAME2 *This,
 		EFI_HANDLE ControllerHandle, EFI_HANDLE ChildHandle,
 		CHAR8 *Language, CHAR16 **ControllerName)
 {
@@ -95,9 +87,9 @@ FreeFsInstance(EFI_FS *Instance) {
  * to consume in exclusive access (here EFI_DISK_IO).
  */
 static EFI_STATUS EFIAPI
-FSBindingSupported(EFI_DRIVER_BINDING_PROTOCOL *This,
+FSBindingSupported(EFI_DRIVER_BINDING *This,
 		EFI_HANDLE ControllerHandle,
-		EFI_DEVICE_PATH_PROTOCOL *RemainingDevicePath)
+		EFI_DEVICE_PATH *RemainingDevicePath)
 {
 	EFI_STATUS Status;
 	EFI_DISK_IO *DiskIo;
@@ -123,9 +115,9 @@ FSBindingSupported(EFI_DRIVER_BINDING_PROTOCOL *This,
 }
 
 static EFI_STATUS EFIAPI
-FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
+FSBindingStart(EFI_DRIVER_BINDING *This,
 		EFI_HANDLE ControllerHandle,
-		EFI_DEVICE_PATH_PROTOCOL *RemainingDevicePath)
+		EFI_DEVICE_PATH *RemainingDevicePath)
 {
 	EFI_STATUS Status;
 	EFI_FS *Instance;
@@ -207,7 +199,7 @@ error:
 }
 
 static EFI_STATUS EFIAPI
-FSBindingStop(EFI_DRIVER_BINDING_PROTOCOL *This,
+FSBindingStop(EFI_DRIVER_BINDING *This,
 		EFI_HANDLE ControllerHandle, UINTN NumberOfChildren,
 		EFI_HANDLE *ChildHandleBuffer)
 {
@@ -248,33 +240,33 @@ FSBindingStop(EFI_DRIVER_BINDING_PROTOCOL *This,
  * Name Protocol or the current Component Name2 Protocol, or both.
  * Because of this, it is strongly recommended that you implement both
  * protocols in your driver.
- * 
+ *
  * NB: From what I could see, the only difference between Name and Name2
  * is that Name uses ISO-639-2 ("eng") whereas Name2 uses RFC 4646 ("en")
  * See: http://www.loc.gov/standards/iso639-2/faq.html#6
  */
-static EFI_COMPONENT_NAME_PROTOCOL FSComponentName = {
+static EFI_COMPONENT_NAME FSComponentName = {
 	.GetDriverName = FSGetDriverName,
 	.GetControllerName = FSGetControllerName,
 	.SupportedLanguages = (CHAR8 *) "eng"
 };
 
-static EFI_COMPONENT_NAME2_PROTOCOL FSComponentName2 = {
+static EFI_COMPONENT_NAME2 FSComponentName2 = {
 	.GetDriverName = FSGetDriverName2,
 	.GetControllerName = FSGetControllerName2,
 	.SupportedLanguages = (CHAR8 *) "en"
 };
 
-static EFI_DRIVER_BINDING_PROTOCOL FSDriverBinding = {
+static EFI_DRIVER_BINDING FSDriverBinding = {
 	.Supported = FSBindingSupported,
 	.Start = FSBindingStart,
 	.Stop = FSBindingStop,
 	/* This field is used by the EFI boot service ConnectController() to determine the order
 	 * that driver's Supported() service will be used when a controller needs to be started.
 	 * EFI Driver Binding Protocol instances with higher Version values will be used before
-	 * ones with lower Version values. The Version values of 0x0-0x0f and 
+	 * ones with lower Version values. The Version values of 0x0-0x0f and
 	 * 0xfffffff0-0xffffffff are reserved for platform/OEM specific drivers. The Version
-	 * values of 0x10-0xffffffef are reserved for IHV-developed drivers. 
+	 * values of 0x10-0xffffffef are reserved for IHV-developed drivers.
 	 */
 	.Version = 0x10,
 	.ImageHandle = NULL,
@@ -440,7 +432,7 @@ FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	/* Initialize the relevant GRUB fs module(s) */
 	// TODO: Eventually, we could try to turn each GRUB module into their
 	// own EFI driver, have them register their interface and consume that.
-	for (i = 0; GrubModuleInit[i] != NULL; i++) 
+	for (i = 0; GrubModuleInit[i] != NULL; i++)
 		GrubModuleInit[i]();
 
 	InitializeListHead(&FsListHead);
