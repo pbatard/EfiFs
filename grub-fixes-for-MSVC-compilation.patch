@@ -1,11 +1,11 @@
-From adf6f3b8544df2085eb427c3c1ead011ba6dcb3d Mon Sep 17 00:00:00 2001
+From 426a3d3957cc0ad0c0af385ddacf5e68a1b80ead Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Tue, 5 Apr 2016 15:11:20 +0200
+Date: Wed, 6 Apr 2016 14:35:22 +0200
 Subject: [PATCH] fixes for MSVC compilation
 
 ---
  grub-core/fs/affs.c         |  2 ++
- grub-core/fs/bfs.c          |  8 +++++---
+ grub-core/fs/bfs.c          | 19 +++++++++++--------
  grub-core/fs/btrfs.c        | 14 ++++++++++----
  grub-core/fs/fat.c          |  8 ++++++--
  grub-core/fs/hfs.c          |  6 ++++++
@@ -33,7 +33,7 @@ Subject: [PATCH] fixes for MSVC compilation
  include/grub/x86_64/types.h |  2 +-
  include/grub/zfs/zap_leaf.h | 17 ++++++++++++++---
  include/grub/zfs/zio.h      |  2 ++
- 29 files changed, 154 insertions(+), 72 deletions(-)
+ 29 files changed, 160 insertions(+), 77 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
 index f673897..84247ca 100644
@@ -56,7 +56,7 @@ index f673897..84247ca 100644
  /* The location of `struct grub_affs_file' relative to the end of a
     file header block.  */
 diff --git a/grub-core/fs/bfs.c b/grub-core/fs/bfs.c
-index d2b490b..8855a95 100644
+index d2b490b..3f7ef85 100644
 --- a/grub-core/fs/bfs.c
 +++ b/grub-core/fs/bfs.c
 @@ -69,6 +69,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
@@ -102,6 +102,24 @@ index d2b490b..8855a95 100644
  			   grub_bfs_to_cpu_treehead (node.count_keys) *
  			   sizeof (grub_uint16_t), &key_value,
  			   sizeof (grub_uint64_t), 0, 0);
+@@ -802,11 +804,12 @@ find_file (const char *path, grub_disk_t disk,
+ 	   enum grub_fshelp_filetype exptype)
+ {
+   grub_err_t err;
+-  struct grub_fshelp_node root = {
+-    .disk = disk,
+-    .sb = sb,
+-  };
+-  struct grub_fshelp_node *found;
++  struct grub_fshelp_node root, *found;
++
++  /* Break down initialization to avoid implicit memset/memcpy */
++  grub_memset(&root, 0, sizeof(root));
++  grub_memcpy(&root.disk, &disk, sizeof(disk));
++  grub_memcpy(&root.sb, &sb, sizeof(sb));
+ 
+   err = read_extent (disk, sb, &sb->root_dir, 0, 0, &root.ino,
+ 		     sizeof (root.ino));
 diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
 index 9cffa91..c9617a0 100644
 --- a/grub-core/fs/btrfs.c
