@@ -15,6 +15,9 @@
     <Filter Include="Source Files\ia32">
       <UniqueIdentifier>{856e55b7-af6f-4af6-a0ef-e7aaefb04500}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\arm">
+      <UniqueIdentifier>{c07e2cd0-6942-4e5f-a7c9-7b42b2203824}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\gnu-efi\lib\console.c">
@@ -86,9 +89,6 @@
     <ClCompile Include="..\gnu-efi\lib\runtime\rtdata.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\gnu-efi\lib\x86_64\callwrap.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\gnu-efi\lib\error.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -103,6 +103,12 @@
     </ClCompile>
     <ClCompile Include="..\gnu-efi\lib\ia32\math.c">
       <Filter>Source Files\ia32</Filter>
+    </ClCompile>
+    <ClCompile Include="..\gnu-efi\lib\arm\initplat.c">
+      <Filter>Source Files\arm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\gnu-efi\lib\arm\math.c">
+      <Filter>Source Files\arm</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
