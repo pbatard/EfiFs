@@ -6,37 +6,51 @@ This is a GPLv3+ implementation of standalone EFI File System drivers, based on 
 
 For additional info as well as precompiled drivers, see http://efi.akeo.ie
 
-* __Requirements__:
-  * gcc v4.7 or later
-  * [Visual Studio 2015](http://www.visualstudio.com/products/visual-studio-community-vs) or later
-  * [QEMU](http://www.qemu.org) for testing in Visual Studio
+## Requirements
 
-* __Compilation__:
-  * [_Common_] Fetch the git submodules with `git submodule init` and `git submodule update`.
-  * [_Visual Studio_] Apply the included patch to the `grub\` subdirectory.
-  * [_Visual Studio_] Open the solution file and hit `F5` to compile and debug the default driver.
-  * [_gcc_] Run `make` in the top directory. This creates the gnu-efi and grub libraries.
-  * [_gcc_] Go to the `src` directory and run `make` or `make install`.
+* gcc v4.7 or later
+* a git client able to initialize/update submodules
+* [Visual Studio 2015](http://www.visualstudio.com/products/visual-studio-community-vs) or later
+* [QEMU](http://www.qemu.org) for testing in Visual Studio
 
-* __Testing__:  
-  The Visual Studio solution automatically sets QEMU up to run and test the drivers
-  (by also downloading a sample image for each target file system).  
-  Note however that VS debugging expects a 64-bit version of QEMU to be installed in
-  `C:\Program Files\qemu\`.  
-  If that is not the case, please edit `.msvc\debug.vbs` accordingly.
+## Compilation
 
-  For testing with gcc, make sure you have at least one disk with a target partition using
-  the target filesystem, that is not being handled by other EFI filesystem drivers.  
-  Then boot into the EFI shell and run the following:
-  * `load fs0:\<fs_name>_<arch>.efi` or wherever your driver was copied
-  * `map -r` this should make a new `fs#` available, eg `fs2:`
-  * You should now be able to navigate and access content (in read-only mode)
-  * For logging output, set the `FS_LOGGING` shell variable to 1 or more
-  * To unload use the `drivers` command, then `unload` with the driver ID
+* [_Common_] Fetch the git submodules with `git submodule init` and `git submodule update`.
+* [_Visual Studio_] Apply the included patch to the `grub\` subdirectory.
+* [_Visual Studio_] Open the solution file and hit `F5` to compile and debug the default driver.
+* [_gcc_] Run `make` in the top directory. This creates the gnu-efi and grub libraries.
+* [_gcc_] Go to the `src` directory and run `make` or `make install`.
 
-* __Notes__:  
-  This is a pure GPLv3+ implementation of an EFI driver. Great care was taken
-  not to use non GPLv3 compatible sources, such as rEFInd's `fsw_efi` (GPLv2 only)
-  or Intel's FAT driver (requires an extra copyright notice).  
-  Also note that the EDK2 files from the include directory use a BSD 2-Clause
-  license, which is compatible with the GPL.
+## Testing
+
+For x86_32 and x86_64 (but __NOT__ ARM), The Visual Studio solution automatically sets QEMU
+up to run and test the drivers (by also downloading a sample image for each target file system).  
+Note however that VS debugging expects a 64-bit version of QEMU to be installed in
+`C:\Program Files\qemu\`.  
+If that is not the case, you should edit `.msvc\debug.vbs` accordingly.
+
+For testing with gcc, make sure you have at least one disk with a target partition using
+the target filesystem, that is not being handled by other EFI filesystem drivers.  
+Then boot into the EFI shell and run the following:
+* `load fs0:\<fs_name>_<arch>.efi` or wherever your driver was copied
+* `map -r` this should make a new `fs#` available, eg `fs2:`
+* You should now be able to navigate and access content (in read-only mode)
+* For logging output, set the `FS_LOGGING` shell variable to 1 or more
+* To unload use the `drivers` command, then `unload` with the driver ID
+
+## Visual Studio and ARM support
+
+To enable ARM compilation in Visual Studio 2015, you must perform the following:
+* Make sure Visual Studio is fully closed.
+* Navigate to `C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Platforms\ARM` and
+  remove the read-only attribute on `Platform.Common.props`.
+* With a text editor __running with Administrative privileges__ open:  
+  `C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Platforms\ARM\Platform.Common.props`.
+* Under the `<PropertyGroup>` section add the following:  
+  `<WindowsSDKDesktopARMSupport>true</WindowsSDKDesktopARMSupport>`
+
+##Notes
+
+This is a pure GPLv3+ implementation of an EFI driver. Great care was taken
+not to use non GPLv3 compatible sources, such as rEFInd's `fsw_efi` (GPLv2 only)
+or Intel's FAT driver (requires an extra copyright notice).

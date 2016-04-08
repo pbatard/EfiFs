@@ -1,20 +1,20 @@
-From 4f89d99831aeda653c6aa05b1e585be1a872e1e6 Mon Sep 17 00:00:00 2001
+From 64a30760e5773b618a0e259a4914439236c81bfd Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
 Date: Thu, 7 Apr 2016 23:01:33 +0200
 Subject: [PATCH 2/2] fixes for MSVC/ARM support
 
 ---
  grub-core/fs/affs.c    | 21 +++++++++++--------
- grub-core/fs/bfs.c     |  2 +-
+ grub-core/fs/bfs.c     | 19 +++++++++--------
  grub-core/fs/btrfs.c   |  8 ++++----
  grub-core/fs/hfs.c     | 31 ++++++++++++++--------------
  grub-core/fs/hfsplus.c | 10 +++++----
- grub-core/fs/iso9660.c | 15 ++++++++------
+ grub-core/fs/iso9660.c | 19 +++++++++--------
  grub-core/fs/udf.c     |  2 +-
  grub-core/fs/zfs/zfs.c | 56 +++++++++++++++++++++++++-------------------------
  grub-core/io/gzio.c    |  7 ++++---
  include/grub/misc.h    |  2 +-
- 10 files changed, 82 insertions(+), 72 deletions(-)
+ 10 files changed, 93 insertions(+), 82 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
 index 84247ca..fc359f1 100644
@@ -98,10 +98,43 @@ index 84247ca..fc359f1 100644
    {
      .name = "affs",
 diff --git a/grub-core/fs/bfs.c b/grub-core/fs/bfs.c
-index 3f7ef85..a08779c 100644
+index 3f7ef85..520144d 100644
 --- a/grub-core/fs/bfs.c
 +++ b/grub-core/fs/bfs.c
-@@ -933,7 +933,7 @@ grub_bfs_open (struct grub_file *file, const char *name)
+@@ -807,9 +807,9 @@ find_file (const char *path, grub_disk_t disk,
+   struct grub_fshelp_node root, *found;
+ 
+   /* Break down initialization to avoid implicit memset/memcpy */
+-  grub_memset(&root, 0, sizeof(root));
+-  grub_memcpy(&root.disk, &disk, sizeof(disk));
+-  grub_memcpy(&root.sb, &sb, sizeof(sb));
++  grub_memset (&root, 0, sizeof (root));
++  root.disk = disk;
++  root.sb = sb;
+ 
+   err = read_extent (disk, sb, &sb->root_dir, 0, 0, &root.ino,
+ 		     sizeof (root.ino));
+@@ -890,13 +890,14 @@ static grub_err_t
+ grub_bfs_dir (grub_device_t device, const char *path,
+ 	      grub_fs_dir_hook_t hook, void *hook_data)
+ {
+-  struct grub_bfs_dir_ctx ctx = {
+-    .device = device,
+-    .hook = hook,
+-    .hook_data = hook_data
+-  };
++  struct grub_bfs_dir_ctx ctx;
+   grub_err_t err;
+ 
++  grub_memset (&ctx, 0, sizeof (ctx));
++  ctx.device = device;
++  ctx.hook = hook;
++  ctx.hook_data = hook_data;
++
+   err = mount (device->disk, &ctx.sb);
+   if (err)
+     return err;
+@@ -933,7 +934,7 @@ grub_bfs_open (struct grub_file *file, const char *name)
      data = grub_zalloc (sizeof (struct grub_bfs_data));
      if (!data)
        return grub_errno;
@@ -272,7 +305,7 @@ index bd8d709..ee01a8a 100644
    {
      .name = "hfsplus",
 diff --git a/grub-core/fs/iso9660.c b/grub-core/fs/iso9660.c
-index 7d1fe43..7c6b94a 100644
+index 7d1fe43..ff68e23 100644
 --- a/grub-core/fs/iso9660.c
 +++ b/grub-core/fs/iso9660.c
 @@ -186,7 +186,8 @@ enum
@@ -322,6 +355,24 @@ index 7d1fe43..7c6b94a 100644
  /* Context for grub_iso9660_dir.  */
  struct grub_iso9660_dir_ctx
  {
+@@ -893,7 +895,7 @@ grub_iso9660_dir (grub_device_t device, const char *path,
+   rootnode.alloc_dirents = 0;
+   rootnode.have_dirents = 1;
+   rootnode.have_symlink = 0;
+-  rootnode.dirents[0] = data->voldesc.rootdir;
++  grub_memcpy (&rootnode.dirents[0], &data->voldesc.rootdir, sizeof (data->voldesc.rootdir));
+ 
+   /* Use the fshelp function to traverse the path.  */
+   if (grub_fshelp_find_file (path, &rootnode,
+@@ -936,7 +938,7 @@ grub_iso9660_open (struct grub_file *file, const char *name)
+   rootnode.alloc_dirents = 0;
+   rootnode.have_dirents = 1;
+   rootnode.have_symlink = 0;
+-  rootnode.dirents[0] = data->voldesc.rootdir;
++  grub_memcpy (&rootnode.dirents[0], &data->voldesc.rootdir, sizeof (data->voldesc.rootdir));
+ 
+   /* Use the fshelp function to traverse the path.  */
+   if (grub_fshelp_find_file (name, &rootnode,
 @@ -1106,7 +1108,8 @@ grub_iso9660_mtime (grub_device_t device, grub_int32_t *timebuf)
  }
  
