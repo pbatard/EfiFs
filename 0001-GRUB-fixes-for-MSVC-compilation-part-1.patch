@@ -1,11 +1,12 @@
-From 426a3d3957cc0ad0c0af385ddacf5e68a1b80ead Mon Sep 17 00:00:00 2001
+From 40ed271a7c88bfb659daf10809153671b329921b Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Wed, 6 Apr 2016 14:35:22 +0200
-Subject: [PATCH 1/2] fixes for MSVC compilation
+Date: Fri, 8 Apr 2016 15:23:13 +0200
+Subject: [PATCH 1/2] GRUB fixes for MSVC compilation, part 1
 
+* General MS compatibility fixes, for packed structs, initialization, etc.
 ---
  grub-core/fs/affs.c         |  2 ++
- grub-core/fs/bfs.c          | 19 +++++++++++--------
+ grub-core/fs/bfs.c          |  8 +++++---
  grub-core/fs/btrfs.c        | 14 ++++++++++----
  grub-core/fs/fat.c          |  8 ++++++--
  grub-core/fs/hfs.c          |  6 ++++++
@@ -16,14 +17,14 @@ Subject: [PATCH 1/2] fixes for MSVC compilation
  grub-core/fs/nilfs2.c       |  2 ++
  grub-core/fs/ntfs.c         |  6 ++++--
  grub-core/fs/reiserfs.c     | 13 ++++---------
- grub-core/fs/sfs.c          |  3 ++-
+ grub-core/fs/sfs.c          |  4 +++-
  grub-core/fs/udf.c          |  2 ++
  grub-core/fs/ufs.c          |  2 ++
  grub-core/fs/xfs.c          |  3 +++
  grub-core/fs/zfs/zfs.c      |  6 +++---
  grub-core/fs/zfs/zfs_lz4.c  |  1 -
  grub-core/kern/misc.c       | 16 ++++++++--------
- include/grub/btrfs.h        |  4 +++-
+ include/grub/btrfs.h        |  3 +++
  include/grub/hfs.h          |  2 ++
  include/grub/hfsplus.h      |  6 ++++++
  include/grub/misc.h         |  6 +++---
@@ -33,7 +34,7 @@ Subject: [PATCH 1/2] fixes for MSVC compilation
  include/grub/x86_64/types.h |  2 +-
  include/grub/zfs/zap_leaf.h | 17 ++++++++++++++---
  include/grub/zfs/zio.h      |  2 ++
- 29 files changed, 160 insertions(+), 77 deletions(-)
+ 29 files changed, 155 insertions(+), 71 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
 index f673897..84247ca 100644
@@ -56,7 +57,7 @@ index f673897..84247ca 100644
  /* The location of `struct grub_affs_file' relative to the end of a
     file header block.  */
 diff --git a/grub-core/fs/bfs.c b/grub-core/fs/bfs.c
-index d2b490b..3f7ef85 100644
+index d2b490b..8855a95 100644
 --- a/grub-core/fs/bfs.c
 +++ b/grub-core/fs/bfs.c
 @@ -69,6 +69,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
@@ -102,24 +103,6 @@ index d2b490b..3f7ef85 100644
  			   grub_bfs_to_cpu_treehead (node.count_keys) *
  			   sizeof (grub_uint16_t), &key_value,
  			   sizeof (grub_uint64_t), 0, 0);
-@@ -802,11 +804,12 @@ find_file (const char *path, grub_disk_t disk,
- 	   enum grub_fshelp_filetype exptype)
- {
-   grub_err_t err;
--  struct grub_fshelp_node root = {
--    .disk = disk,
--    .sb = sb,
--  };
--  struct grub_fshelp_node *found;
-+  struct grub_fshelp_node root, *found;
-+
-+  /* Break down initialization to avoid implicit memset/memcpy */
-+  grub_memset(&root, 0, sizeof(root));
-+  grub_memcpy(&root.disk, &disk, sizeof(disk));
-+  grub_memcpy(&root.sb, &sb, sizeof(sb));
- 
-   err = read_extent (disk, sb, &sb->root_dir, 0, 0, &root.ino,
- 		     sizeof (root.ino));
 diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
 index 9cffa91..c9617a0 100644
 --- a/grub-core/fs/btrfs.c
@@ -586,7 +569,7 @@ index 39736f6..61d7c53 100644
  struct grub_fshelp_node
  {
 diff --git a/grub-core/fs/sfs.c b/grub-core/fs/sfs.c
-index 57b8d8d..d06017f 100644
+index 57b8d8d..a69eae6 100644
 --- a/grub-core/fs/sfs.c
 +++ b/grub-core/fs/sfs.c
 @@ -30,6 +30,7 @@
@@ -597,7 +580,7 @@ index 57b8d8d..d06017f 100644
  struct grub_sfs_bheader
  {
    grub_uint8_t magic[4];
-@@ -121,7 +122,7 @@ struct grub_sfs_btree
+@@ -121,9 +122,10 @@ struct grub_sfs_btree
       supported.  */
    struct grub_sfs_btree_node node[1];
  } GRUB_PACKED;
@@ -605,7 +588,10 @@ index 57b8d8d..d06017f 100644
 +PRAGMA_END_PACKED
  
  
++
  struct cache_entry
+ {
+   grub_uint32_t off;
 diff --git a/grub-core/fs/udf.c b/grub-core/fs/udf.c
 index 839bff8..ab3d0d5 100644
 --- a/grub-core/fs/udf.c
@@ -794,7 +780,7 @@ index d1a54df..dbf909d 100644
  
  int
 diff --git a/include/grub/btrfs.h b/include/grub/btrfs.h
-index 9d93fb6..54e5618 100644
+index 9d93fb6..f62312c 100644
 --- a/include/grub/btrfs.h
 +++ b/include/grub/btrfs.h
 @@ -16,6 +16,7 @@
@@ -805,7 +791,7 @@ index 9d93fb6..54e5618 100644
  
  #ifndef GRUB_BTRFS_H
  #define GRUB_BTRFS_H	1
-@@ -45,13 +46,14 @@ struct grub_btrfs_root_item
+@@ -45,12 +46,14 @@ struct grub_btrfs_root_item
    grub_uint64_t inode;
  };
  
@@ -816,11 +802,10 @@ index 9d93fb6..54e5618 100644
    grub_uint8_t type;
    grub_uint64_t offset;
  } GRUB_PACKED;
--
 +PRAGMA_END_PACKED
  
+ 
  struct grub_btrfs_root_backref
- {
 diff --git a/include/grub/hfs.h b/include/grub/hfs.h
 index d935f50..beeca5d 100644
 --- a/include/grub/hfs.h
@@ -1055,7 +1040,7 @@ index 0bbdc6d..eefa808 100644
  #else
  #define GRUB_TARGET_SIZEOF_LONG		8
 diff --git a/include/grub/zfs/zap_leaf.h b/include/grub/zfs/zap_leaf.h
-index 95c67dc..1227aab 100644
+index 95c67dc..ac65e30 100644
 --- a/include/grub/zfs/zap_leaf.h
 +++ b/include/grub/zfs/zap_leaf.h
 @@ -68,9 +68,18 @@ typedef struct zap_leaf_phys {
@@ -1069,7 +1054,7 @@ index 95c67dc..1227aab 100644
 +	 * here because this structure is not being included in another,
 +	 * as you must be mindful that, in the MSVC world, a union of
 +	 * zero sized arrays has a size of _1_, whereas in the gcc world,
-+	 * it has a size of _0_ => if you were to including this structure
++	 * it has a size of _0_ => if you were to include this structure
 +	 * into another one, you would have to compute the offsets in a
 +	 * different manner for MSVC and gcc.
 +	 */
