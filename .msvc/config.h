@@ -1,10 +1,21 @@
 /*
  * minimal GRUB config.h for Visual Studio compilation
  */
+
+#if defined(_M_X64) || defined(__x86_64__)
+#define GRUB_TARGET_CPU "x86_64"
+#elif defined(_M_IX86) || defined(__i386__)
+#define GRUB_TARGET_CPU "i386"
+#elif defined (_M_ARM) || defined(__arm__)
+#define GRUB_TARGET_CPU "arm"
+#else
+#error Usupported architecture
+#endif
+
 #define _LARGEFILE_SOURCE
 #define _FILE_OFFSET_BITS 64
 #define PACKAGE_STRING "GRUB 2.02~beta2"
-#define GRUB_TARGET_CPU "x86_64"
+
 #define GRUB_PLATFORM "efi"
 #define GRUB_MACHINE_EFI
 #define GRUB_KERNEL
