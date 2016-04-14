@@ -75,7 +75,7 @@ grub_env_get(const char *var)
 	if (EFI_ERROR(Status))
 		return NULL;
 
-	Status = Utf16ToUtf8NoAlloc(Val, val, sizeof(val));
+	Status = Utf16ToUtf8NoAlloc(Val, (CHAR8 *) val, sizeof(val));
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"Could not convert value '%s' to UTF-8", Val);
 		return NULL;
@@ -113,7 +113,7 @@ grub_zalloc(grub_size_t size)
 	return (void *) ptr;
 }
 
-void 
+void
 grub_free(void *p)
 {
 	grub_size_t *ptr = (grub_size_t *) p;
@@ -139,7 +139,7 @@ grub_realloc(void *p, grub_size_t new_size)
 }
 
 /* Convert a grub_err_t to EFI_STATUS */
-EFI_STATUS 
+EFI_STATUS
 GrubErrToEFIStatus(grub_err_t err)
 {
 	// The following are defined in EFI but unused here:

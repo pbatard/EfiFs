@@ -1,0 +1,71 @@
+#
+# Build control file for the EFI drivers, as built with GNU-EFI
+#
+SUBSYSTEM = 12  # 12 = EFI runtime driver
+
+ifeq ($(TARGET),x64)
+	ARCH          = x86_64
+	CROSS_COMPILE = x86_64-w64-mingw32-
+	EP_PREFIX     =
+	CFLAGS        = -m64 -mno-red-zone
+	LDFLAGS	      = -Wl,-dll -Wl,--subsystem,$(SUBSYSTEM) -nostdlib
+else ifeq ($(TARGET),ia32)
+	ARCH          = ia32
+	CROSS_COMPILE = i686-w64-mingw32-
+	EP_PREFIX     = _
+	CFLAGS        = -m32 -mno-red-zone
+	LDFLAGS	      = -Wl,-dll -Wl,--subsystem,$(SUBSYSTEM)
+endif
+
+# MinGW doesn't need a prefix
+ifneq ($(SYSTEMROOT),)
+  CROSS_COMPILE =
+endif
+
+GNUEFI_DIR      = $(CURDIR)/../gnu-efi
+GRUB_DIR        = $(CURDIR)/../grub
+GNUEFI_INC      = $(GNUEFI_DIR)/inc
+GNUEFI_LIBDIR   = $(GNUEFI_DIR)/$(ARCH)/lib
+
+CC             := $(CROSS_COMPILE)gcc
+OBJS            = utf8.o path.o missing.o logging.o grub_file.o this.o file.o driver.o \
+                  $(GRUB_DIR)/grub-core/fs/fshelp.o $(GRUB_DIR)/grub-core/$(FSDIR)/$(DRIVERNAME).o
+DRIVER          = $(DRIVERNAME)_$(TARGET).efi
+
+ifdef EXTRAOBJS
+OBJS           += $(addprefix $(GRUB_DIR)/grub-core/$(FSDIR)/,$(EXTRAOBJS))
+endif
+ifdef EXTRAMODULE
+CFLAGS         += -DEXTRAMODULE=$(EXTRAMODULE)
+OBJS           += $(GRUB_DIR)/grub-core/$(EXTRAMODULEDIR)/$(EXTRAMODULE).o
+endif
+ifdef EXTRAMODULE2
+CFLAGS         += -DEXTRAMODULE2=$(EXTRAMODULE2)
+OBJS           += $(GRUB_DIR)/grub-core/$(EXTRAMODULE2DIR)/$(EXTRAMODULE2).o
+endif
+
+CFLAGS         += -fno-stack-protector -Wshadow -Wall -Wunused -Werror-implicit-function-declaration -Wno-pointer-sign
+CFLAGS         += -DDRIVERNAME=$(DRIVERNAME)
+CFLAGS         += -I$(SRCDIR)/../include -I$(GRUB_DIR) -I$(GRUB_DIR)/include -I$(GRUB_DIR)/grub-core/lib/minilzo
+CFLAGS         += -I$(GNUEFI_INC) -I$(GNUEFI_INC)/$(ARCH) -I$(GNUEFI_INC)/protocol -I$(TOP)/.gcc -DCONFIG_$(ARCH) -D__MAKEWITH_GNUEFI
+CFLAGS         += -DGNU_EFI_USE_MS_ABI -DGRUB_FILE=\"$(subst $(srcdir)/,,$<)\"
+LDFLAGS        += -shared -L$(GNUEFI_LIBDIR) -L$(CURDIR) -e $(EP_PREFIX)InitializeDriver
+LIBS           += -lgrub -lefi
+
+all: $(DRIVER)
+
+-include $(OBJS:.o=.d)
+
+%.o: %.c
+	@echo  [CC]  $(notdir $@)
+	@$(CC) $(CFLAGS) -ffreestanding -c $< -o $@
+	@$(CC) -MM $(CFLAGS) $*.c > $*.d
+
+$(DRIVER): $(OBJS)
+	@echo  [LD]  $(notdir $@)
+	@$(CC) $(LDFLAGS) $(OBJS) -o $@ $(LIBS)
+	@chmod a-x $(DRIVER)
+
+clean:
+	rm -f $(GRUB_DIR)/grub-core/fs/*.o $(GRUB_DIR)/grub-core/fs/*.d $(GRUB_DIR)/grub-core/io/*.o $(GRUB_DIR)/grub-core/io/*.d \
+	$(GRUB_DIR)/grub-core/fs/zfs/*.o $(GRUB_DIR)/grub-core/fs/zfs/*.d *.o *.d *.so *.efi

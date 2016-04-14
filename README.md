@@ -8,10 +8,9 @@ For additional info as well as precompiled drivers, see http://efi.akeo.ie
 
 ## Requirements
 
-* gcc v4.7 or later
-* a git client able to initialize/update submodules
-* [Visual Studio 2015](http://www.visualstudio.com/products/visual-studio-community-vs) or later
-* [QEMU](http://www.qemu.org) for testing in Visual Studio
+* [Visual Studio 2015](http://www.visualstudio.com/products/visual-studio-community-vs) or MinGW/gcc
+* A git client able to initialize/update submodules
+* [QEMU](http://www.qemu.org) if debugging with Visual Studio
 
 ## Compilation
 

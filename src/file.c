@@ -84,7 +84,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	INTN i, len;
 	BOOLEAN AbsolutePath = (*Name == L'\\');
 
-	PrintInfo(L"Open(%llx%s, \"%s\")\n", (UINT64) This,
+	PrintInfo(L"Open(%llx%s, \"%s\")\n", (UINTN) This,
 			IS_ROOT(File)?L" <ROOT>":L"", Name);
 
 	/* Fail unless opening read-only */
@@ -104,7 +104,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 		PrintInfo(L"  Reopening %s\n", IS_ROOT(File)?L"<ROOT>":FileName(File));
 		File->RefCount++;
 		*New = This;
-		PrintInfo(L"  RET: %llx\n", (UINT64) *New);
+		PrintInfo(L"  RET: %llx\n", (UINTN) *New);
 		return EFI_SUCCESS;
 	}
 
@@ -141,7 +141,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 		*New = &File->FileSystem->RootFile->EfiFile;
 		/* Must make sure that DirIndex is reset too (NB: no concurrent access!) */
 		File->FileSystem->RootFile->DirIndex = 0;
-		PrintInfo(L"  RET: %llx\n", (UINT64) *New);
+		PrintInfo(L"  RET: %llx\n", (UINTN) *New);
 		return EFI_SUCCESS;
 	}
 
@@ -197,7 +197,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	NewFile->RefCount++;
 	*New = &NewFile->EfiFile;
 
-	PrintInfo(L"  RET: %llx\n", (UINT64) *New);
+	PrintInfo(L"  RET: %llx\n", (UINTN) *New);
 	return EFI_SUCCESS;
 }
 
@@ -212,7 +212,7 @@ FileClose(EFI_FILE_HANDLE This)
 {
 	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 
-	PrintInfo(L"Close(%llx|'%s') %s\n", (UINT64) This, FileName(File),
+	PrintInfo(L"Close(%llx|'%s') %s\n", (UINTN) This, FileName(File),
 		IS_ROOT(File)?L"<ROOT>":L"");
 
 	/* Nothing to do it this is the root */
@@ -264,7 +264,7 @@ DirHook(const CHAR8 *name, const GRUB_DIRHOOK_INFO *DirInfo, VOID *Data)
 	EFI_STATUS Status;
 	EFI_FILE_INFO *Info = (EFI_FILE_INFO *) Data;
 	INT64 *Index = (INT64 *) &Info->FileSize;
-	CHAR8 *filename = (CHAR8 *) Info->PhysicalSize;
+	CHAR8 *filename = (CHAR8 *) (UINTN) Info->PhysicalSize;
 	EFI_TIME Time = { 1970, 01, 01, 00, 00, 00, 0, 0, 0, 0, 0};
 
 	// Eliminate '.' or '..'
@@ -440,7 +440,7 @@ FileSetPosition(EFI_FILE_HANDLE This, UINT64 Position)
 	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 	UINT64 FileSize;
 
-	PrintInfo(L"SetPosition(%llx|'%s', %lld) %s\n", (UINT64) This,
+	PrintInfo(L"SetPosition(%llx|'%s', %lld) %s\n", (UINTN) This,
 		FileName(File), Position, (File->IsDir)?L"<DIR>":L"");
 
 	/* If this is a directory, reset the Index to the start */
@@ -510,7 +510,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 	EFI_TIME Time;
 	CHAR8* label;
 
-	PrintInfo(L"GetInfo(%llx|'%s', %d) %s\n", (UINT64) This,
+	PrintInfo(L"GetInfo(%llx|'%s', %d) %s\n", (UINTN) This,
 		FileName(File), *Len, File->IsDir?L"<DIR>":L"");
 
 	/* Determine information to return */
@@ -547,7 +547,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 		}
 
 		/* The Info struct size already accounts for the extra NUL */
-		Info->Size = sizeof(EFI_FILE_INFO) + 
+		Info->Size = sizeof(EFI_FILE_INFO) +
 				StrLen(Info->FileName) * sizeof(CHAR16);
 		return EFI_SUCCESS;
 
@@ -635,7 +635,7 @@ FileFlush(EFI_FILE_HANDLE This)
 {
 	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 
-	PrintInfo(L"Flush(%llx|'%s')\n", (UINT64)This, FileName(File));
+	PrintInfo(L"Flush(%llx|'%s')\n", (UINTN)This, FileName(File));
 	return EFI_SUCCESS;
 }
 
