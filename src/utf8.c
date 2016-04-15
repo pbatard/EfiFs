@@ -37,7 +37,7 @@
  * 0001 0000-001F FFFF   11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
  * 0020 0000-03FF FFFF   111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
  * 0400 0000-7FFF FFFF   1111110x 10xxxxxx ... 10xxxxxx
- */  
+ */
 
 /*
  * From http://www.imc.org/draft-hoffman-utf16
@@ -110,7 +110,7 @@ ConvertUcs4Utf8(BOOLEAN toUnicode, UINT8 *inBuf, UINTN inBufLen,
 		for( i = 0; i < inBufLen; ) {
 			if( (inBuf[i] & 0x80) == 0x00 ) {
 				/* 0000 0000-0000 007F <- 0xxxxxx */
-				/* 0abcdefg -> 
+				/* 0abcdefg ->
 				   00000000 00000000 00000000 0abcdefg */
 
 				outBuf[len+L_0] = 0x00;
@@ -155,7 +155,7 @@ ConvertUcs4Utf8(BOOLEAN toUnicode, UINT8 *inBuf, UINTN inBufLen,
 				if( (inBuf[i+3] & 0xC0) != 0x80 ) return FALSE;
 
 				/* 0001 0000-001F FFFF <- 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx */
-				/* 11110abc 10defghi 10jklmno 10pqrstu -> 
+				/* 11110abc 10defghi 10jklmno 10pqrstu ->
 				   00000000 000abcde fghijklm nopqrstu */
 
 				outBuf[len+L_0] = 0x00;
@@ -172,7 +172,7 @@ ConvertUcs4Utf8(BOOLEAN toUnicode, UINT8 *inBuf, UINTN inBufLen,
 				if( (inBuf[i+4] & 0xC0) != 0x80 ) return FALSE;
 
 				/* 0020 0000-03FF FFFF <- 111110xx 10xxxxxx ... 10xxxxxx */
-				/* 111110ab 10cdefgh 10ijklmn 10opqrst 10uvwxyz -> 
+				/* 111110ab 10cdefgh 10ijklmn 10opqrst 10uvwxyz ->
 				   000000ab cdefghij klmnopqr stuvwxyz */
 
 				outBuf[len+L_0] = inBuf[i+0] & 0x03;
@@ -190,7 +190,7 @@ ConvertUcs4Utf8(BOOLEAN toUnicode, UINT8 *inBuf, UINTN inBufLen,
 				if( (inBuf[i+5] & 0xC0) != 0x80 ) return FALSE;
 
 				/* 0400 0000-7FFF FFFF <- 1111110x 10xxxxxx ... 10xxxxxx */
-				/* 1111110a 10bcdefg 10hijklm 10nopqrs 10tuvwxy 10zABCDE -> 
+				/* 1111110a 10bcdefg 10hijklm 10nopqrs 10tuvwxy 10zABCDE ->
 				   0abcdefg hijklmno pqrstuvw xyzABCDE */
 
 				outBuf[len+L_0] = ((inBuf[i+0] & 0x01) << 6) | ((inBuf[i+1] & 0x3F) >> 0);
@@ -344,11 +344,11 @@ ConvertUcs2Utf8(BOOLEAN toUnicode, UINT8 *inBuf, UINTN inBufLen,
 				i += 3;
 				len += 2;
 #ifdef UTF16
-			} else if( (inBuf[i] & 0xF8) == 0xF0 ) { 
+			} else if( (inBuf[i] & 0xF8) == 0xF0 ) {
 				i += 4;
 				len += 4;
 
-				if( (inBuf[i] & 0x04) && 
+				if( (inBuf[i] & 0x04) &&
 					((inBuf[i] & 0x03) || (inBuf[i+1] & 0x30)) ) {
 						/* Not representable as UTF16 */
 						return FALSE;
@@ -401,7 +401,7 @@ ConvertUcs2Utf8(BOOLEAN toUnicode, UINT8 *inBuf, UINTN inBufLen,
 				i += 3;
 				len += 2;
 #ifdef UTF16
-			} else if( (inBuf[i] & 0xF8) == 0xF0 ) { 
+			} else if( (inBuf[i] & 0xF8) == 0xF0 ) {
 				int abcde, BCDE;
 
 				if( (inBuf[i+1] & 0xC0) != 0x80 ) return FALSE;
@@ -411,7 +411,7 @@ ConvertUcs2Utf8(BOOLEAN toUnicode, UINT8 *inBuf, UINTN inBufLen,
 				/* 0001 0000-001F FFFF <- 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx */
 				/* 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx -> [D800-DBFF] [DC00-DFFF] */
 
-				/* 11110abc 10defghi 10jklmno 10pqrstu -> 
+				/* 11110abc 10defghi 10jklmno 10pqrstu ->
 				   { Let 0BCDE = abcde - 1 }
 				   110110BC DEfghijk 110111lm nopqrstu */
 
@@ -421,7 +421,7 @@ ConvertUcs2Utf8(BOOLEAN toUnicode, UINT8 *inBuf, UINTN inBufLen,
 				ASSERT(BCDE < 0x10); /* should have been caught above */
 
 				outBuf[len+0+H_0] = 0xD8 | ((BCDE & 0x0C) >> 2);
-				outBuf[len+0+H_1] = ((BCDE & 0x03) << 6) 
+				outBuf[len+0+H_1] = ((BCDE & 0x03) << 6)
 					| ((inBuf[i+1] & 0x0F) << 2)
 					| ((inBuf[i+2] & 0x30) >> 4);
 				outBuf[len+2+H_0] = 0xDC | ((inBuf[i+2] & 0x0C) >> 2);
@@ -478,7 +478,7 @@ ConvertUcs2Utf8(BOOLEAN toUnicode, UINT8 *inBuf, UINTN inBufLen,
 				/* 0080-07FF -> 110xxxxx 10xxxxxx */
 				/* 00000abc defghijk -> 110abcde 10fghijk */
 
-				outBuf[len+0] = 0xC0 | ((inBuf[i+H_0] & 0x07) << 2) 
+				outBuf[len+0] = 0xC0 | ((inBuf[i+H_0] & 0x07) << 2)
 					| ((inBuf[i+H_1] & 0xC0) >> 6);
 				outBuf[len+1] = 0x80 | ((inBuf[i+H_1] & 0x3F) >> 0);
 
@@ -498,7 +498,7 @@ ConvertUcs2Utf8(BOOLEAN toUnicode, UINT8 *inBuf, UINTN inBufLen,
 				abcde = BCDE + 1;
 
 				outBuf[len+0] = 0xF0 | ((abcde & 0x1C) >> 2);
-				outBuf[len+1] = 0x80 | ((abcde & 0x03) << 4) 
+				outBuf[len+1] = 0x80 | ((abcde & 0x03) << 4)
 					| ((inBuf[i+0+H_1] & 0x3C) >> 2);
 				outBuf[len+2] = 0x80 | ((inBuf[i+0+H_1] & 0x03) << 4)
 					| ((inBuf[i+2+H_0] & 0x03) << 2)
@@ -513,7 +513,7 @@ ConvertUcs2Utf8(BOOLEAN toUnicode, UINT8 *inBuf, UINTN inBufLen,
 				/* abcdefgh ijklmnop -> 1110abcd 10efghij 10klmnop */
 
 				outBuf[len+0] = 0xE0 | ((inBuf[i+H_0] & 0xF0) >> 4);
-				outBuf[len+1] = 0x80 | ((inBuf[i+H_0] & 0x0F) << 2) 
+				outBuf[len+1] = 0x80 | ((inBuf[i+H_0] & 0x0F) << 2)
 					| ((inBuf[i+H_1] & 0xC0) >> 6);
 				outBuf[len+2] = 0x80 | ((inBuf[i+H_1] & 0x3F) >> 0);
 
@@ -606,7 +606,7 @@ CHAR16
 	Dst = (CHAR16 *) AllocatePool(DstLen);
 	if (Dst == NULL)
 		goto error;
-	
+
 	if (!ConvertUcs2Utf8(TRUE, (UINT8 *) src, srcLen, (UINT8 *) Dst, DstLen, &DstLen))
 		goto error;
 
@@ -671,7 +671,7 @@ CHAR8
 	dst = (CHAR8 *) AllocatePool(dstLen);
 	if (dst == NULL)
 		goto error;
-	
+
 	if (!ConvertUcs2Utf8(FALSE, (UINT8 *) Src, SrcLen * sizeof(CHAR16), (UINT8 *) dst, dstLen, &dstLen))
 		goto error;
 

@@ -174,7 +174,7 @@ grub_disk_get_size (grub_disk_t disk)
 			FileSystem->BlockIo->Media->BlockSize;
 }
 
-grub_device_t 
+grub_device_t
 grub_device_open(const char *name)
 {
 	CHAR16 *Name = Utf8ToUtf16Alloc((CHAR8 *) name);
@@ -190,7 +190,7 @@ grub_device_open(const char *name)
 	}
 	for (FileSystem = (EFI_FS *) FsListHead.Flink; FileSystem != (EFI_FS *) &FsListHead;
 			FileSystem = (EFI_FS *) FileSystem->Flink) {
-		if (StrCmp(FileSystem->DevicePathString, Name) == 0) 
+		if (StrCmp(FileSystem->DevicePathString, Name) == 0)
 			break;
 	}
 	FreePool(Name);
@@ -370,7 +370,7 @@ GrubRead(EFI_GRUB_FILE *File, VOID *Data, UINTN *Len)
 	}
 
 	/* You'd think that GRUB read() would increase the offset... */
-	f->offset += len; 
+	f->offset += len;
 	*Len = (UINTN)len;
 
 	return EFI_SUCCESS;
@@ -382,7 +382,7 @@ GrubLabel(EFI_GRUB_FILE *File, CHAR8 **label)
 	grub_fs_t p = grub_fs_list;
 	grub_file_t f = (grub_file_t) File->GrubFile;
 	grub_err_t rc;
-	
+
 	grub_errno = 0;
 	rc = p->label(f->device, (char **) label);
 	return GrubErrToEFIStatus(rc);
@@ -397,14 +397,14 @@ probe_dummy_iter (const char *filename __attribute__ ((unused)),
 	return 1;
 }
 
-BOOLEAN 
+BOOLEAN
 GrubFSProbe(EFI_FS *FileSystem)
 {
 	grub_fs_t p = grub_fs_list;
 	grub_device_t device = (grub_device_t) FileSystem->GrubDevice;
 
 	if ((p == NULL) || (device->disk == NULL)) {
-		PrintError(L"GrubFSProbe: uninitialized variables\n"); 
+		PrintError(L"GrubFSProbe: uninitialized variables\n");
 		return FALSE;
 	}
 

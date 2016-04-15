@@ -147,11 +147,6 @@
       <SubSystem>EFI Application</SubSystem>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
     </Lib>
-    <PreBuildEvent>
-      <Command>cd "$(SolutionDir)grub\include\grub\"
-call "$(SolutionDir).msvc\set_grub_cpu.cmd" $(Platform)</Command>
-      <Message>Set GRUB include\grub\cpu</Message>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -172,11 +167,6 @@ call "$(SolutionDir).msvc\set_grub_cpu.cmd" $(Platform)</Command>
       <SubSystem>EFI Application</SubSystem>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
     </Lib>
-    <PreBuildEvent>
-      <Command>cd "$(SolutionDir)grub\include\grub\"
-call "$(SolutionDir).msvc\set_grub_cpu.cmd" $(Platform)</Command>
-      <Message>Set GRUB include\grub\cpu</Message>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
@@ -197,11 +187,6 @@ call "$(SolutionDir).msvc\set_grub_cpu.cmd" $(Platform)</Command>
       <SubSystem>EFI Application</SubSystem>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
     </Lib>
-    <PreBuildEvent>
-      <Command>cd "$(SolutionDir)grub\include\grub\"
-call "$(SolutionDir).msvc\set_grub_cpu.cmd" $(Platform)</Command>
-      <Message>Set GRUB include\grub\cpu</Message>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -224,11 +209,6 @@ call "$(SolutionDir).msvc\set_grub_cpu.cmd" $(Platform)</Command>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
       <LinkTimeCodeGeneration>false</LinkTimeCodeGeneration>
     </Lib>
-    <PreBuildEvent>
-      <Command>cd "$(SolutionDir)grub\include\grub\"
-call "$(SolutionDir).msvc\set_grub_cpu.cmd" $(Platform)</Command>
-      <Message>Set GRUB include\grub\cpu</Message>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -251,11 +231,6 @@ call "$(SolutionDir).msvc\set_grub_cpu.cmd" $(Platform)</Command>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
       <LinkTimeCodeGeneration>false</LinkTimeCodeGeneration>
     </Lib>
-    <PreBuildEvent>
-      <Command>cd "$(SolutionDir)grub\include\grub\"
-call "$(SolutionDir).msvc\set_grub_cpu.cmd" $(Platform)</Command>
-      <Message>Set GRUB include\grub\cpu</Message>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <ClCompile>
@@ -278,11 +253,6 @@ call "$(SolutionDir).msvc\set_grub_cpu.cmd" $(Platform)</Command>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
       <LinkTimeCodeGeneration>false</LinkTimeCodeGeneration>
     </Lib>
-    <PreBuildEvent>
-      <Command>cd "$(SolutionDir)grub\include\grub\"
-call "$(SolutionDir).msvc\set_grub_cpu.cmd" $(Platform)</Command>
-      <Message>Set GRUB include\grub\cpu</Message>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
