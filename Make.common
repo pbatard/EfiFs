@@ -1,0 +1,122 @@
+TARGET    = x64
+# You can alter the subsystem according to your EFI binary target:
+# 10 = EFI application
+# 11 = EFI boot service driver
+# 12 = EFI runtime driver
+SUBSYSTEM = 12
+
+ifeq ($(TARGET),x64)
+	ARCH          = x86_64
+	GCC_ARCH      = x86_64
+	CPU_ARCH      = x86_64
+	CROSS_COMPILE = $(GCC_ARCH)-w64-mingw32-
+	EP_PREFIX     =
+	CFLAGS        = -m64 -mno-red-zone -nostdlib
+	LDFLAGS       = -Wl,-dll -Wl,--subsystem,$(SUBSYSTEM) -nostdlib
+else ifeq ($(TARGET),ia32)
+	ARCH          = ia32
+	GCC_ARCH      = i686
+	CPU_ARCH      = i386
+	CROSS_COMPILE = $(GCC_ARCH)-w64-mingw32-
+	EP_PREFIX     = _
+	CFLAGS        = -m32 -mno-red-zone
+	LDFLAGS       = -Wl,-dll -Wl,--subsystem,$(SUBSYSTEM)
+else ifeq ($(TARGET),arm)
+	ARCH          = arm
+	GCC_ARCH      = arm
+	CPU_ARCH      = arm
+	CROSS_COMPILE = $(GCC_ARCH)-linux-gnueabihf-
+	EP_PREFIX     =
+	CFLAGS        = -marm -fpic -fshort-wchar -nostdlib
+	LDFLAGS       = -Wl,--no-wchar-size-warning -Wl,--subsystem,$(SUBSYSTEM) -nostdlib
+endif
+
+TOPDIR         := $(dir $(lastword $(MAKEFILE_LIST)))
+GNUEFI_DIR      = $(TOPDIR)/gnu-efi
+GRUB_DIR        = $(TOPDIR)/grub
+SRC_DIR         = $(TOPDIR)/src
+GNUEFI_INC      = $(GNUEFI_DIR)/inc
+GNUEFI_LIBDIR   = $(GNUEFI_DIR)/$(ARCH)/lib
+GNUEFI_LIB      = $(GNUEFI_LIBDIR)/libefi.a
+
+# MinGW on Windows doesn't need a prefix
+ifneq ($(SYSTEMROOT),)
+  CROSS_COMPILE =
+endif
+CC             := $(CROSS_COMPILE)gcc
+ifeq (, $(shell which $(CC)))
+  $(error The selected compiler ($(CC)) was not found)
+endif
+
+CFLAGS         += -fno-stack-protector -Wshadow -Wall -Wunused -Werror-implicit-function-declaration
+CFLAGS         += -Wno-pointer-sign    # -funsigned-char does not work :(
+CFLAGS         += -I$(GNUEFI_INC) -I$(GNUEFI_INC)/$(ARCH) -I$(GNUEFI_INC)/protocol
+CFLAGS         += -DCONFIG_$(ARCH) -D__MAKEWITH_GNUEFI -DGNU_EFI_USE_MS_ABI
+
+GCCVERSION := $(shell $(CC) -dumpversion | cut -f1 -d.)
+GCCMINOR   := $(shell $(CC) -dumpversion | cut -f2 -d.)
+GCCMACHINE := $(shell $(CC) -dumpmachine)
+GCCNEWENOUGH := $(shell ( [ $(GCCVERSION) -gt "4" ]          \
+                          || ( [ $(GCCVERSION) -eq "4" ]     \
+                              && [ $(GCCMINOR) -ge "7" ] ) ) \
+                        && echo 1)
+ifneq ($(GCCNEWENOUGH),1)
+  $(error You need GCC 4.7 or later)
+endif
+
+ifneq ($(GCC_ARCH),$(findstring $(GCC_ARCH), $(GCCMACHINE)))
+  $(error The selected compiler ($(CC)) is not set for $(TARGET))
+endif
+
+ifdef DRIVERNAME
+	CFLAGS       += -DDRIVERNAME=$(DRIVERNAME)
+	CFLAGS       += -I$(GRUB_DIR) -I$(GRUB_DIR)/include -I$(GRUB_DIR)/grub-core/lib/minilzo
+  CFLAGS       += -DGRUB_FILE=\"$(subst $(srcdir)/,,$<)\"
+  LDFLAGS      += -shared -L$(GNUEFI_LIBDIR) -L$(GRUB_DIR) -e $(EP_PREFIX)InitializeDriver
+  LIBS         += -lgrub -lefi
+
+  OBJS          = utf8.o path.o missing.o logging.o grub_file.o this.o file.o driver.o \
+                  $(GRUB_DIR)/grub-core/fs/fshelp.o $(GRUB_DIR)/grub-core/$(FSDIR)/$(DRIVERNAME).o
+  DRIVER        = $(DRIVERNAME)_$(TARGET).efi  
+endif
+ifdef EXTRAOBJS
+  OBJS         += $(addprefix $(GRUB_DIR)/grub-core/$(FSDIR)/,$(EXTRAOBJS))
+endif
+ifdef EXTRAMODULE
+  CFLAGS       += -DEXTRAMODULE=$(EXTRAMODULE)
+  OBJS         += $(GRUB_DIR)/grub-core/$(EXTRAMODULEDIR)/$(EXTRAMODULE).o
+endif
+ifdef EXTRAMODULE2
+  CFLAGS       += -DEXTRAMODULE2=$(EXTRAMODULE2)
+  OBJS         += $(GRUB_DIR)/grub-core/$(EXTRAMODULE2DIR)/$(EXTRAMODULE2).o
+endif
+ifdef OBJS
+  # http://scottmcpeak.com/autodepend/autodepend.html
+  -include $(OBJS:.o=.d)
+endif
+
+$(GNUEFI_LIB):
+	$(MAKE) -C$(GNUEFI_DIR) CROSS_COMPILE=$(CROSS_COMPILE) ARCH=$(ARCH) lib
+
+.PHONY: driver clean.common clean.driver
+
+driver: $(DRIVER)
+
+$(DRIVER): $(OBJS)
+	@echo  [LD]  $(DRIVER)
+	@$(CC) $(LDFLAGS) $(OBJS) -o $(DRIVER) $(LIBS)
+	@chmod a-x $(DRIVER)
+
+%.o: %.c
+	@echo  [CC]  $(notdir $@)
+	@$(CC) $(CFLAGS) -ffreestanding -c $< -o $@
+	@$(CC) -MM $(CFLAGS) $*.c > $*.d
+
+clean.common:
+	$(MAKE) -C$(GNUEFI_DIR) ARCH=$(ARCH) clean
+	rm -rf $(GNUEFI_DIR)/$(ARCH)
+	$(shell find . | grep "\.d$$" | xargs rm -f 2>/dev/null)
+
+clean.driver:
+	rm -f $(GRUB_DIR)/grub-core/fs/*.o $(GRUB_DIR)/grub-core/fs/*.d $(GRUB_DIR)/grub-core/io/*.o $(GRUB_DIR)/grub-core/io/*.d \
+	$(GRUB_DIR)/grub-core/fs/zfs/*.o $(GRUB_DIR)/grub-core/fs/zfs/*.d $(SRC_DIR)/*.o $(SRC_DIR)/*.d $(SRC_DIR)/*.so $(SRC_DIR)/*.efi
