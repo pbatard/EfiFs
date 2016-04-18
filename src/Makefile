@@ -1,9 +1,7 @@
 DRIVER_MAKEFILE = $(CURDIR)/../Make.common
-INSTALL_DIR     = /boot/efi/EFI/refind/drivers_$(ARCH)
 FILESYSTEMS     = affs bfs btrfs exfat ext2 hfs hfsplus iso9660 jfs nilfs2 ntfs reiserfs sfs udf ufs2 xfs zfs
 
-.PHONY: all install clean
-.DEFAULT_GOAL := all
+.PHONY: all clean
 
 all: $(FILESYSTEMS)
 
@@ -74,10 +72,6 @@ xfs:
 zfs:
 	@rm -f this.o
 	+$(MAKE) DRIVERNAME=$@ FSDIR=fs/zfs EXTRAMODULE=gzio EXTRAMODULEDIR=io EXTRAOBJS="zfs_fletcher.o zfs_lz4.o zfs_lzjb.o zfs_sha256.o" -f $(DRIVER_MAKEFILE) driver
-
-install: all
-	@mkdir -p $(INSTALL_DIR)
-	@cp -v $(FILESYSTEMS:%=%_$(TARGET).efi) $(INSTALL_DIR)
 
 clean:
 	+$(MAKE) -f $(DRIVER_MAKEFILE) clean.driver

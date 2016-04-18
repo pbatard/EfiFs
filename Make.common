@@ -1,34 +1,58 @@
-TARGET    = x64
-# You can alter the subsystem according to your EFI binary target:
-# 10 = EFI application
-# 11 = EFI boot service driver
-# 12 = EFI runtime driver
-SUBSYSTEM = 12
+ARCH            = x64
+SUBSYSTEM       = 12  # 12 = EFI runtime driver
 
-ifeq ($(TARGET),x64)
-	ARCH          = x86_64
-	GCC_ARCH      = x86_64
-	CPU_ARCH      = x86_64
-	CROSS_COMPILE = $(GCC_ARCH)-w64-mingw32-
-	EP_PREFIX     =
-	CFLAGS        = -m64 -mno-red-zone -nostdlib
-	LDFLAGS       = -Wl,-dll -Wl,--subsystem,$(SUBSYSTEM) -nostdlib
-else ifeq ($(TARGET),ia32)
-	ARCH          = ia32
-	GCC_ARCH      = i686
-	CPU_ARCH      = i386
-	CROSS_COMPILE = $(GCC_ARCH)-w64-mingw32-
-	EP_PREFIX     = _
-	CFLAGS        = -m32 -mno-red-zone
-	LDFLAGS       = -Wl,-dll -Wl,--subsystem,$(SUBSYSTEM)
-else ifeq ($(TARGET),arm)
-	ARCH          = arm
-	GCC_ARCH      = arm
-	CPU_ARCH      = arm
-	CROSS_COMPILE = $(GCC_ARCH)-linux-gnueabihf-
-	EP_PREFIX     =
-	CFLAGS        = -marm -fpic -fshort-wchar -nostdlib
-	LDFLAGS       = -Wl,--no-wchar-size-warning -Wl,--subsystem,$(SUBSYSTEM) -nostdlib
+# Try to auto-detect the target ARCH
+ifeq ($(shell uname -o),Msys)
+  IS_MINGW32 = $(findstring MINGW32,$(shell uname -s))
+  IS_MINGW64 = $(findstring MINGW64,$(shell uname -s))
+  ifeq ($(IS_MINGW32),MINGW32)
+    ARCH        = ia32
+  endif
+  ifeq ($(IS_MINGW64),MINGW64)
+    ARCH        = x64
+  endif
+else
+  ifeq ($(shell uname -m),x86_64)
+    ARCH        = x64
+  else ifeq ($(shell uname -m),arm)
+    ARCH        = arm
+    CROSS_COMPILE =
+  else
+    ARCH        = ia32
+  endif
+endif
+
+# Auto-detect the host arch for MinGW
+ifeq ($(shell uname -m),x86_64)
+  MINGW_HOST    = w64
+else
+  MINGW_HOST    = w32
+endif
+
+ifeq ($(ARCH),x64)
+  GNUEFI_ARCH   = x86_64
+  GCC_ARCH      = x86_64
+  CPU_ARCH      = x86_64
+  CROSS_COMPILE = $(GCC_ARCH)-$(MINGW_HOST)-mingw32-
+  EP_PREFIX     =
+  CFLAGS        = -m64 -mno-red-zone
+  LDFLAGS       = -Wl,-dll
+else ifeq ($(ARCH),ia32)
+  GNUEFI_ARCH   = ia32
+  GCC_ARCH      = i686
+  CPU_ARCH      = i386
+  CROSS_COMPILE = $(GCC_ARCH)-$(MINGW_HOST)-mingw32-
+  EP_PREFIX     = _
+  CFLAGS        = -m32 -mno-red-zone
+  LDFLAGS       = -Wl,-dll
+else ifeq ($(ARCH),arm)
+  GNUEFI_ARCH   = arm
+  GCC_ARCH      = arm
+  CPU_ARCH      = arm
+  CROSS_COMPILE = $(GCC_ARCH)-linux-gnueabi-
+  EP_PREFIX     =
+  CFLAGS        = -marm -fpic -fshort-wchar
+  LDFLAGS       = -Wl,--no-wchar-size-warning
 endif
 
 TOPDIR         := $(dir $(lastword $(MAKEFILE_LIST)))
@@ -36,7 +60,7 @@ GNUEFI_DIR      = $(TOPDIR)/gnu-efi
 GRUB_DIR        = $(TOPDIR)/grub
 SRC_DIR         = $(TOPDIR)/src
 GNUEFI_INC      = $(GNUEFI_DIR)/inc
-GNUEFI_LIBDIR   = $(GNUEFI_DIR)/$(ARCH)/lib
+GNUEFI_LIBDIR   = $(GNUEFI_DIR)/$(GNUEFI_ARCH)/lib
 GNUEFI_LIB      = $(GNUEFI_LIBDIR)/libefi.a
 
 # MinGW on Windows doesn't need a prefix
@@ -50,8 +74,9 @@ endif
 
 CFLAGS         += -fno-stack-protector -Wshadow -Wall -Wunused -Werror-implicit-function-declaration
 CFLAGS         += -Wno-pointer-sign    # -funsigned-char does not work :(
-CFLAGS         += -I$(GNUEFI_INC) -I$(GNUEFI_INC)/$(ARCH) -I$(GNUEFI_INC)/protocol
-CFLAGS         += -DCONFIG_$(ARCH) -D__MAKEWITH_GNUEFI -DGNU_EFI_USE_MS_ABI
+CFLAGS         += -I$(GNUEFI_INC) -I$(GNUEFI_INC)/$(GNUEFI_ARCH) -I$(GNUEFI_INC)/protocol
+CFLAGS         += -DCONFIG_$(GNUEFI_ARCH) -D__MAKEWITH_GNUEFI -DGNU_EFI_USE_MS_ABI
+LDFLAGS        += -Wl,--subsystem,$(SUBSYSTEM) -nostdlib
 
 GCCVERSION := $(shell $(CC) -dumpversion | cut -f1 -d.)
 GCCMINOR   := $(shell $(CC) -dumpversion | cut -f2 -d.)
@@ -69,15 +94,15 @@ ifneq ($(GCC_ARCH),$(findstring $(GCC_ARCH), $(GCCMACHINE)))
 endif
 
 ifdef DRIVERNAME
-	CFLAGS       += -DDRIVERNAME=$(DRIVERNAME)
-	CFLAGS       += -I$(GRUB_DIR) -I$(GRUB_DIR)/include -I$(GRUB_DIR)/grub-core/lib/minilzo
+  CFLAGS       += -DDRIVERNAME=$(DRIVERNAME)
+  CFLAGS       += -I$(GRUB_DIR) -I$(GRUB_DIR)/include -I$(GRUB_DIR)/grub-core/lib/minilzo
   CFLAGS       += -DGRUB_FILE=\"$(subst $(srcdir)/,,$<)\"
   LDFLAGS      += -shared -L$(GNUEFI_LIBDIR) -L$(GRUB_DIR) -e $(EP_PREFIX)InitializeDriver
   LIBS         += -lgrub -lefi
 
   OBJS          = utf8.o path.o missing.o logging.o grub_file.o this.o file.o driver.o \
                   $(GRUB_DIR)/grub-core/fs/fshelp.o $(GRUB_DIR)/grub-core/$(FSDIR)/$(DRIVERNAME).o
-  DRIVER        = $(DRIVERNAME)_$(TARGET).efi  
+  DRIVER        = $(DRIVERNAME)_$(ARCH).efi  
 endif
 ifdef EXTRAOBJS
   OBJS         += $(addprefix $(GRUB_DIR)/grub-core/$(FSDIR)/,$(EXTRAOBJS))
@@ -96,7 +121,7 @@ ifdef OBJS
 endif
 
 $(GNUEFI_LIB):
-	$(MAKE) -C$(GNUEFI_DIR) CROSS_COMPILE=$(CROSS_COMPILE) ARCH=$(ARCH) lib
+	$(MAKE) -C$(GNUEFI_DIR) CROSS_COMPILE=$(CROSS_COMPILE) ARCH=$(GNUEFI_ARCH) lib
 
 .PHONY: driver clean.common clean.driver
 
@@ -113,8 +138,8 @@ $(DRIVER): $(OBJS)
 	@$(CC) -MM $(CFLAGS) $*.c > $*.d
 
 clean.common:
-	$(MAKE) -C$(GNUEFI_DIR) ARCH=$(ARCH) clean
-	rm -rf $(GNUEFI_DIR)/$(ARCH)
+	$(MAKE) -C$(GNUEFI_DIR) ARCH=$(GNUEFI_ARCH) clean
+	rm -rf $(GNUEFI_DIR)/$(GNUEFI_ARCH)
 	$(shell find . | grep "\.d$$" | xargs rm -f 2>/dev/null)
 
 clean.driver:

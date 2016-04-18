@@ -18,7 +18,7 @@ all: $(GNUEFI_LIB) $(GRUB_LIB)
 $(GRUB_DIR)/include/grub/cpu_$(CPU_ARCH):
 	@rm -rf $(GRUB_DIR)/include/grub/cpu*
 	@echo  [LN]  $(GRUB_DIR)/include/grub/$(CPU_ARCH) -\> $(GRUB_DIR)/include/grub/cpu
-	@cd $(GRUB_DIR)/include/grub && ln -s $(CPU_ARCH) cpu && touch cpu_$(ARCH)
+	@cd $(GRUB_DIR)/include/grub && ln -s $(CPU_ARCH) cpu && touch cpu_$(CPU_ARCH)
 
 $(GRUB_DIR)/config.h:
 	@echo  [CP]  $(notdir $@)

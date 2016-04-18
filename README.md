@@ -17,8 +17,9 @@ For additional info as well as precompiled drivers, see http://efi.akeo.ie
 * [_Common_] Fetch the git submodules with `git submodule init` and `git submodule update`.
 * [_Visual Studio_] Apply the included patches to the `grub\` subdirectory.
 * [_Visual Studio_] Open the solution file and hit `F5` to compile and debug the default driver.
-* [_gcc_] Run `make` in the top directory. If you have the relevant compiler installed, you can  
-  also run `make TARGET=<arch>` where `<arch>` is one of `x64`, `ia32` or `arm`.
+* [_gcc_] Run `make` in the top directory. If needed you can also issue something like  
+  `make ARCH=<arch> CROSS_COMPILE=<tuple>` where `<arch>` is one of `ia32`, `x64` or `arm`  
+  and tuple is the one for your cross-compiler (e.g. `arm-linux-gnueabihf-`).
 
 ## Testing
 
