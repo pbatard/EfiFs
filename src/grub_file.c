@@ -72,7 +72,7 @@ grub_file_read (grub_file_t file, void *buf, grub_size_t len)
 		return 0;
 
 	if (len > file->size - file->offset)
-		len = file->size - file->offset;
+		len = (grub_size_t) (file->size - file->offset);
 
 	/* Prevent an overflow.  */
 	if ((grub_ssize_t) len < 0)

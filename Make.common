@@ -3,8 +3,8 @@ SUBSYSTEM       = 12  # 12 = EFI runtime driver
 
 # Try to auto-detect the target ARCH
 ifeq ($(shell uname -o),Msys)
-  IS_MINGW32 = $(findstring MINGW32,$(shell uname -s))
-  IS_MINGW64 = $(findstring MINGW64,$(shell uname -s))
+  IS_MINGW32    = $(findstring MINGW32,$(shell uname -s))
+  IS_MINGW64    = $(findstring MINGW64,$(shell uname -s))
   ifeq ($(IS_MINGW32),MINGW32)
     ARCH        = ia32
   endif
@@ -36,52 +36,67 @@ ifeq ($(ARCH),x64)
   CROSS_COMPILE = $(GCC_ARCH)-$(MINGW_HOST)-mingw32-
   EP_PREFIX     =
   CFLAGS        = -m64 -mno-red-zone
-  LDFLAGS       = -Wl,-dll
+  LDFLAGS       = -Wl,-dll -Wl,--subsystem,$(SUBSYSTEM)
 else ifeq ($(ARCH),ia32)
   GNUEFI_ARCH   = ia32
   GCC_ARCH      = i686
   CPU_ARCH      = i386
   CROSS_COMPILE = $(GCC_ARCH)-$(MINGW_HOST)-mingw32-
   EP_PREFIX     = _
-  CFLAGS        = -m32 -mno-red-zone
-  LDFLAGS       = -Wl,-dll
+  CFLAGS        = -m32 -mno-red-zone -Wno-pointer-to-int-cast
+  LDFLAGS       = -Wl,-dll -Wl,--subsystem,$(SUBSYSTEM)
 else ifeq ($(ARCH),arm)
   GNUEFI_ARCH   = arm
   GCC_ARCH      = arm
   CPU_ARCH      = arm
-  CROSS_COMPILE = $(GCC_ARCH)-linux-gnueabi-
+  CROSS_COMPILE = $(GCC_ARCH)-linux-gnueabihf-
   EP_PREFIX     =
-  CFLAGS        = -marm -fpic -fshort-wchar
-  LDFLAGS       = -Wl,--no-wchar-size-warning
+  CFLAGS        = -marm -fpic -fshort-wchar -Wno-pointer-to-int-cast
+  LDFLAGS       = -Wl,--no-wchar-size-warning -Wl,--defsym=EFI_SUBSYSTEM=$(SUBSYSTEM)
+  CRT0_LIBS     = -lgnuefi
 endif
 
 TOPDIR         := $(dir $(lastword $(MAKEFILE_LIST)))
 GNUEFI_DIR      = $(TOPDIR)/gnu-efi
+GNUEFI_LIBS     = lib
 GRUB_DIR        = $(TOPDIR)/grub
 SRC_DIR         = $(TOPDIR)/src
 GNUEFI_INC      = $(GNUEFI_DIR)/inc
 GNUEFI_LIBDIR   = $(GNUEFI_DIR)/$(GNUEFI_ARCH)/lib
 GNUEFI_LIB      = $(GNUEFI_LIBDIR)/libefi.a
 
-# MinGW on Windows doesn't need a prefix
+# If the compiler produces an elf binary, we need to fiddle with a PE crt0
+ifneq ($(CRT0_LIBS),)
+  CRT0_DIR      = $(GNUEFI_DIR)/$(GNUEFI_ARCH)/gnuefi
+  LDFLAGS      += -L$(CRT0_DIR) -T $(GNUEFI_DIR)/gnuefi/elf_$(ARCH)_efi.lds $(CRT0_DIR)/crt0-efi-$(ARCH).o
+  GNUEFI_LIBS  += gnuefi
+endif
+
+# SYSTEMROOT is only defined on Windows systems
 ifneq ($(SYSTEMROOT),)
+  # MinGW on Windows doesn't use (tuple)-ar but (tuple)-gcc-ar
+  # so we remove the cross compiler tuple altogether
   CROSS_COMPILE =
 endif
+
 CC             := $(CROSS_COMPILE)gcc
+OBJCOPY        := $(CROSS_COMPILE)objcopy
+CFLAGS         += -fno-stack-protector -Wshadow -Wall -Wunused -Werror-implicit-function-declaration
+CFLAGS         += -Wno-pointer-sign    # -funsigned-char does not work :(
+CFLAGS         += -I$(GNUEFI_DIR)/inc -I$(GNUEFI_DIR)/inc/$(GNUEFI_ARCH) -I$(GNUEFI_DIR)/inc/protocol
+CFLAGS         += -DCONFIG_$(GNUEFI_ARCH) -D__MAKEWITH_GNUEFI -DGNU_EFI_USE_MS_ABI
+LDFLAGS        += -L$(GNUEFI_DIR)/$(GNUEFI_ARCH)/lib -e $(EP_PREFIX)efi_main
+LDFLAGS        += -s -Wl,-Bsymbolic -nostdlib -shared
+LIBS            = -lefi $(CRT0_LIBS)
+
 ifeq (, $(shell which $(CC)))
   $(error The selected compiler ($(CC)) was not found)
 endif
 
-CFLAGS         += -fno-stack-protector -Wshadow -Wall -Wunused -Werror-implicit-function-declaration
-CFLAGS         += -Wno-pointer-sign    # -funsigned-char does not work :(
-CFLAGS         += -I$(GNUEFI_INC) -I$(GNUEFI_INC)/$(GNUEFI_ARCH) -I$(GNUEFI_INC)/protocol
-CFLAGS         += -DCONFIG_$(GNUEFI_ARCH) -D__MAKEWITH_GNUEFI -DGNU_EFI_USE_MS_ABI
-LDFLAGS        += -Wl,--subsystem,$(SUBSYSTEM) -nostdlib
-
-GCCVERSION := $(shell $(CC) -dumpversion | cut -f1 -d.)
-GCCMINOR   := $(shell $(CC) -dumpversion | cut -f2 -d.)
-GCCMACHINE := $(shell $(CC) -dumpmachine)
-GCCNEWENOUGH := $(shell ( [ $(GCCVERSION) -gt "4" ]          \
+GCCVERSION     := $(shell $(CC) -dumpversion | cut -f1 -d.)
+GCCMINOR       := $(shell $(CC) -dumpversion | cut -f2 -d.)
+GCCMACHINE     := $(shell $(CC) -dumpmachine)
+GCCNEWENOUGH   := $(shell ( [ $(GCCVERSION) -gt "4" ]        \
                           || ( [ $(GCCVERSION) -eq "4" ]     \
                               && [ $(GCCMINOR) -ge "7" ] ) ) \
                         && echo 1)
@@ -102,7 +117,7 @@ ifdef DRIVERNAME
 
   OBJS          = utf8.o path.o missing.o logging.o grub_file.o this.o file.o driver.o \
                   $(GRUB_DIR)/grub-core/fs/fshelp.o $(GRUB_DIR)/grub-core/$(FSDIR)/$(DRIVERNAME).o
-  DRIVER        = $(DRIVERNAME)_$(ARCH).efi  
+  DRIVER        = $(DRIVERNAME)_$(ARCH)
 endif
 ifdef EXTRAOBJS
   OBJS         += $(addprefix $(GRUB_DIR)/grub-core/$(FSDIR)/,$(EXTRAOBJS))
@@ -121,16 +136,23 @@ ifdef OBJS
 endif
 
 $(GNUEFI_LIB):
-	$(MAKE) -C$(GNUEFI_DIR) CROSS_COMPILE=$(CROSS_COMPILE) ARCH=$(GNUEFI_ARCH) lib
+	$(MAKE) -C$(GNUEFI_DIR) CROSS_COMPILE=$(CROSS_COMPILE) ARCH=$(GNUEFI_ARCH) $(GNUEFI_LIBS)
 
 .PHONY: driver clean.common clean.driver
 
-driver: $(DRIVER)
+driver: $(DRIVER).efi
 
-$(DRIVER): $(OBJS)
-	@echo  [LD]  $(DRIVER)
-	@$(CC) $(LDFLAGS) $(OBJS) -o $(DRIVER) $(LIBS)
-	@chmod a-x $(DRIVER)
+$(DRIVER).efi: $(OBJS)
+	@echo  [LD]  $(notdir $@)
+ifeq ($(CRT0_LIBS),)	
+	@$(CC) $(LDFLAGS) $(OBJS) -o $(DRIVER).efi $(LIBS)
+else
+	@$(CC) $(LDFLAGS) $(OBJS) -o $(DRIVER).elf $(LIBS)
+	@$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel* \
+	            -j .rela* -j .reloc -j .eh_frame -O binary $(DRIVER).elf $@
+	@rm -f $(DRIVER).elf
+endif
+	@chmod a-x $(DRIVER).efi
 
 %.o: %.c
 	@echo  [CC]  $(notdir $@)
@@ -139,7 +161,6 @@ $(DRIVER): $(OBJS)
 
 clean.common:
 	$(MAKE) -C$(GNUEFI_DIR) ARCH=$(GNUEFI_ARCH) clean
-	rm -rf $(GNUEFI_DIR)/$(GNUEFI_ARCH)
 	$(shell find . | grep "\.d$$" | xargs rm -f 2>/dev/null)
 
 clean.driver:

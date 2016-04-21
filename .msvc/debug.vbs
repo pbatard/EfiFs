@@ -8,8 +8,9 @@
 
 ' Modify these variables as needed
 QEMU_PATH  = "C:\Program Files\qemu\"
+' You can add something like "-S -gdb tcp:127.0.0.1:1234" if you plan to use gdb to debug
+QEMU_OPTS  = "-net none -monitor none -parallel none"
 OVMF_DIR   = "http://efi.akeo.ie/OVMF/"
-OVMF_REV   = "r15214"
 ' Set to True if you need to download a file that might be cached locally
 NO_CACHE   = False
 
@@ -23,17 +24,29 @@ If (TARGET = "x86") Then
   UEFI_EXT  = "ia32"
   QEMU_ARCH = "i386"
   PRE_CMD   = "dir "
+  FS_BASE   = 0
 ElseIf (TARGET = "x64") Then
   UEFI_EXT  = "x64"
   QEMU_ARCH = "x86_64"
   PRE_CMD   = ""
+  FS_BASE   = 0
+ElseIf (TARGET = "ARM") Then
+  UEFI_EXT  = "arm"
+  QEMU_ARCH = "arm"
+  ' You can also add '-device VGA' to the options below, to get graphics output.
+  ' But if you do, be mindful that the keyboard input may not work... :(
+  QEMU_OPTS = "-M virt -cpu cortex-a15 " & QEMU_OPTS
+  PRE_CMD   = "dir "
+  ' With Linaro QEMU_EFI.fd, FS0: and FS1: are mapped to firmware memory areas
+  ' so the actual disks start at 2
+  FS_BASE   = 2
 Else
   MsgBox("Unsupported debug target: " & TARGET)
   Call WScript.Quit(1)
 End If
 BOOT_NAME  = "boot" & UEFI_EXT & ".efi"
 OVMF_ARCH  = UCase(UEFI_EXT)
-OVMF_ZIP   = "OVMF-" & OVMF_ARCH & "-" & OVMF_REV & ".zip"
+OVMF_ZIP   = "OVMF-" & OVMF_ARCH & ".zip"
 OVMF_BIOS  = "OVMF_" & OVMF_ARCH & ".fd"
 OVMF_URL   = OVMF_DIR & OVMF_ZIP
 QEMU_EXE   = "qemu-system-" & QEMU_ARCH & "w.exe"
@@ -52,12 +65,14 @@ IMG        = FS & IMG_EXT
 IMG_ZIP    = FS & ".zip"
 IMG_URL    = "http://efi.akeo.ie/test/" & IMG_ZIP
 DRV        = FS & "_" & UEFI_EXT & ".efi"
-MNT        = "fs1:"
-If ((FS = "bfs") Or (FS = "btrfs") Or (FS = "hfs") Or (FS = "jfs") Or (FS = "xfs")) Then
-  MNT      = "fs3:"
-ElseIf (FS = "zfs") Then
+MNT        = "fs" & CStr(FS_BASE + 1) & ":"
+' TODO: Is there a way to avoid this with newer OVMF's??
+If (Not (TARGET = "ARM")) And ((FS = "bfs") Or (FS = "btrfs") Or (FS = "hfs") Or (FS = "jfs") Or (FS = "xfs")) Then
+  MNT      = "fs" & Cstr(FS_BASE + 3) & ":"
+End If
+If (FS = "zfs") Then
   ' No idea why we get an '@' directory on ZFS, but it's "working" if we proceed from there
-  MNT      =  MNT & "/@"
+  MNT      =  MNT & "\@"
 End If
 
 
@@ -155,14 +170,14 @@ If Not fso.FileExists(IMG) Then
 End If
 
 ' Copy the files where required, and start QEMU
+' Note: Linaro's QEMU-EFI.fd firmware is very sensitive about '/' vs '\'
 Call shell.Run("%COMSPEC% /c mkdir ""image\efi\boot""", 0, True)
 Call fso.CopyFile(BIN, "image\" & DRV, True)
 ' Create a startup.nsh that: sets logging, loads the driver and executes an "Hello World" app from the disk
 Set file = fso.CreateTextFile("image\efi\boot\startup.nsh", True)
 Call file.Write("set FS_LOGGING " & LOG_LEVEL & vbCrLf &_
-  "load fs0:/" & DRV & vbCrLf &_
+  "load fs" & CStr(FS_BASE) & ":\" & DRV & vbCrLf &_
   "map -r" & vbCrLf &_
-  PRE_CMD & MNT & "/EFI/Boot/bootx64.efi" & vbCrLf)
+  PRE_CMD & MNT & "\EFI\Boot\bootx64.efi" & vbCrLf)
 Call file.Close()
-' Add something like "-S -gdb tcp:127.0.0.1:1234" if you want to use gdb to debug
-Call shell.Run("""" & QEMU_PATH & QEMU_EXE & """ -L . -bios " & OVMF_BIOS & " -net none -hda fat:image -hdb " & IMG, 1, True)
+Call shell.Run("""" & QEMU_PATH & QEMU_EXE & """ " & QEMU_OPTS & " -L . -bios " & OVMF_BIOS & " -hda fat:image -hdb " & IMG, 1, True)
