@@ -66,7 +66,6 @@ IMG_ZIP    = FS & ".zip"
 IMG_URL    = "http://efi.akeo.ie/test/" & IMG_ZIP
 DRV        = FS & "_" & UEFI_EXT & ".efi"
 MNT        = "fs" & CStr(FS_BASE + 1) & ":"
-' TODO: Is there a way to avoid this with newer OVMF's??
 If (Not (TARGET = "ARM")) And ((FS = "bfs") Or (FS = "btrfs") Or (FS = "hfs") Or (FS = "jfs") Or (FS = "xfs")) Then
   MNT      = "fs" & Cstr(FS_BASE + 3) & ":"
 End If

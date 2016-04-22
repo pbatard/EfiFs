@@ -93,15 +93,17 @@
     <TargetExt>.efi</TargetExt>
     <GenerateManifest>false</GenerateManifest>
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)x86_64\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)x64\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)$(ProjectName)\</IntDir>
+    <TargetName>$(ProjectName)_x64</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetExt>.efi</TargetExt>
     <GenerateManifest>false</GenerateManifest>
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)x86_32\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)ia32\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)$(ProjectName)\</IntDir>
+    <TargetName>$(ProjectName)_ia32</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <TargetExt>.efi</TargetExt>
@@ -109,20 +111,23 @@
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(OutDir)$(ProjectName)\</IntDir>
     <OutDir>$(SolutionDir)arm\$(Configuration)\</OutDir>
+    <TargetName>$(ProjectName)_arm</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetExt>.efi</TargetExt>
     <GenerateManifest>false</GenerateManifest>
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)x86_64\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)x64\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)$(ProjectName)\</IntDir>
+    <TargetName>$(ProjectName)_x64</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <TargetExt>.efi</TargetExt>
     <GenerateManifest>false</GenerateManifest>
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)x86_32\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)ia32\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)$(ProjectName)\</IntDir>
+    <TargetName>$(ProjectName)_ia32</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <TargetExt>.efi</TargetExt>
@@ -130,6 +135,7 @@
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(OutDir)$(ProjectName)\</IntDir>
     <OutDir>$(SolutionDir)arm\$(Configuration)\</OutDir>
+    <TargetName>$(ProjectName)_arm</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
