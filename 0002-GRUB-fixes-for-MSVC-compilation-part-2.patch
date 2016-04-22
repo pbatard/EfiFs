@@ -1,6 +1,6 @@
-From 895d0234ee21e43769e470d25f645e829b2b3cfb Mon Sep 17 00:00:00 2001
+From fb9eb71108bc8bfcf5c625391d8d236ec08f5f68 Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Fri, 8 Apr 2016 22:15:49 +0200
+Date: Fri, 22 Apr 2016 10:54:05 +0200
 Subject: [PATCH 2/2] GRUB fixes for MSVC compilation, part 2
 
 * Remove all memset/memcpy implicit dependencies
@@ -1594,5 +1594,5 @@ index 1e70e76..f567575 100644
    grub_xputs (nl);
  
 -- 
-1.9.5.msysgit.1
+2.7.1.windows.2
 

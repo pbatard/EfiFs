@@ -23,9 +23,9 @@
 #include "driver.h"
 
 CHAR16 *ShortDriverName = WIDEN(STRINGIFY(DRIVERNAME));
-CHAR16 *FullDriverName = L"efifs " WIDEN(STRINGIFY(FS_DRIVER_VERSION_MAJOR)) L"."
-		WIDEN(STRINGIFY(FS_DRIVER_VERSION_MINOR)) L"." WIDEN(STRINGIFY(FS_DRIVER_VERSION_MICRO))
-		L" " WIDEN(STRINGIFY(DRIVERNAME)) L" driver (" WIDEN(PACKAGE_STRING) L")";
+CHAR16 *FullDriverName = L"EFIFS " WIDEN(STRINGIFY(DRIVERNAME))
+		L" driver v" WIDEN(STRINGIFY(FS_DRIVER_VERSION_MAJOR)) L"."
+		WIDEN(STRINGIFY(FS_DRIVER_VERSION_MINOR)) L" ("  WIDEN(PACKAGE_STRING) L")";
 
 // Setup generic function calls for grub_<module>_init and grub_<module>_exit
 #define MAKE_FN_NAME(module, suffix) grub_ ## module ## _ ## suffix

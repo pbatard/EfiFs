@@ -1,6 +1,11 @@
 For detailed information about the changes below, please see the git log or
 visit: https://github.com/pbatard/efifs
 
+v0.9 (2016.04.22)
+* Add ARM (32-bit) support
+* Fix architecture specific compilation issues
+* Update GRUB and gnu-efi to latest
+
 v0.8 (2016.02.01)
 * Add x86_32 (ia32) 32-bit drivers
 * Switch to Visual Studio 2015

@@ -1,6 +1,6 @@
-From 40ed271a7c88bfb659daf10809153671b329921b Mon Sep 17 00:00:00 2001
+From a81c73ed26e3c8cf3def18478c232df9e808c030 Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Fri, 8 Apr 2016 15:23:13 +0200
+Date: Fri, 22 Apr 2016 10:53:55 +0200
 Subject: [PATCH 1/2] GRUB fixes for MSVC compilation, part 1
 
 * General MS compatibility fixes, for packed structs, initialization, etc.
@@ -9,6 +9,7 @@ Subject: [PATCH 1/2] GRUB fixes for MSVC compilation, part 1
  grub-core/fs/bfs.c          |  8 +++++---
  grub-core/fs/btrfs.c        | 14 ++++++++++----
  grub-core/fs/fat.c          |  8 ++++++--
+ grub-core/fs/fshelp.c       |  2 +-
  grub-core/fs/hfs.c          |  6 ++++++
  grub-core/fs/hfsplus.c      |  2 ++
  grub-core/fs/hfspluscomp.c  |  5 +++++
@@ -23,7 +24,7 @@ Subject: [PATCH 1/2] GRUB fixes for MSVC compilation, part 1
  grub-core/fs/xfs.c          |  3 +++
  grub-core/fs/zfs/zfs.c      |  6 +++---
  grub-core/fs/zfs/zfs_lz4.c  |  1 -
- grub-core/kern/misc.c       | 16 ++++++++--------
+ grub-core/kern/misc.c       | 18 +++++++++---------
  include/grub/btrfs.h        |  3 +++
  include/grub/hfs.h          |  2 ++
  include/grub/hfsplus.h      |  6 ++++++
@@ -34,7 +35,7 @@ Subject: [PATCH 1/2] GRUB fixes for MSVC compilation, part 1
  include/grub/x86_64/types.h |  2 +-
  include/grub/zfs/zap_leaf.h | 17 ++++++++++++++---
  include/grub/zfs/zio.h      |  2 ++
- 29 files changed, 155 insertions(+), 71 deletions(-)
+ 30 files changed, 157 insertions(+), 73 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
 index f673897..84247ca 100644
@@ -236,6 +237,19 @@ index 635c2c4..8f589f2 100644
  }
  
  #endif
+diff --git a/grub-core/fs/fshelp.c b/grub-core/fs/fshelp.c
+index 4c902ad..0beb2cf 100644
+--- a/grub-core/fs/fshelp.c
++++ b/grub-core/fs/fshelp.c
+@@ -371,7 +371,7 @@ grub_fshelp_read_file (grub_disk_t disk, grub_fshelp_node_t node,
+ 
+   /* Adjust LEN so it we can't read past the end of the file.  */
+   if (pos + len > filesize)
+-    len = filesize - pos;
++    len = (grub_size_t) (filesize - pos);
+ 
+   blockcnt = ((len + pos) + blocksize - 1) >> (log2blocksize + GRUB_DISK_SECTOR_BITS);
+ 
 diff --git a/grub-core/fs/hfs.c b/grub-core/fs/hfs.c
 index fc36831..65fe14b 100644
 --- a/grub-core/fs/hfs.c
@@ -704,7 +718,7 @@ index 2f73449..df2ec43 100644
  typedef struct _U16_S {
  	U16 v;
 diff --git a/grub-core/kern/misc.c b/grub-core/kern/misc.c
-index d1a54df..dbf909d 100644
+index d1a54df..42731a5 100644
 --- a/grub-core/kern/misc.c
 +++ b/grub-core/kern/misc.c
 @@ -138,7 +138,7 @@ grub_puts_ (const char *s)
@@ -742,6 +756,15 @@ index d1a54df..dbf909d 100644
 +	*p++ = (char)m + '0';
        }
      while (n);
+ 
+@@ -723,7 +723,7 @@ parse_printf_args (const char *fmt0, struct printf_args *args,
+ 
+       if (*fmt == '$')
+ 	{
+-	  curn = grub_strtoull (p, 0, 10) - 1;
++	  curn =(grub_size_t) grub_strtoull (p, 0, 10) - 1;
+ 	  fmt++;
+ 	}
  
 @@ -926,7 +926,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
  
@@ -1097,5 +1120,5 @@ index 19ce136..11ee51b 100644
  /*
   * Gang block headers are self-checksumming and contain an array
 -- 
-1.9.5.msysgit.1
+2.7.1.windows.2
 
