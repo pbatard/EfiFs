@@ -22,6 +22,9 @@
 #include "config.h"
 #include "driver.h"
 
+// Uncommenting this will disable compression in the NTFS or HFS+ drivers
+//#define DISABLE_COMPRESSION
+
 CHAR16 *ShortDriverName = WIDEN(STRINGIFY(DRIVERNAME));
 CHAR16 *FullDriverName = L"EFIFS " WIDEN(STRINGIFY(DRIVERNAME))
 		L" driver v" WIDEN(STRINGIFY(FS_DRIVER_VERSION_MAJOR)) L"."
@@ -34,13 +37,10 @@ CHAR16 *FullDriverName = L"EFIFS " WIDEN(STRINGIFY(DRIVERNAME))
 	extern void GRUB_FS_CALL(module, init)(void); \
 	extern void GRUB_FS_CALL(module, fini)(void)
 
-#define EVAL(x) x
-#define APPEND(x, y) EVAL(x) ## y
-
 // Declare all the modules we may need to access
 GRUB_DECLARE_MOD(DRIVERNAME);
-#if defined(ENABLE_COMPRESSION)
-GRUB_DECLARE_MOD(APPEND(DRIVERNAME, comp));
+#if defined(COMPRESSED_DRIVERNAME) && !defined(DISABLE_COMPRESSION)
+GRUB_DECLARE_MOD(COMPRESSED_DRIVERNAME);
 #endif
 #if defined(EXTRAMODULE)
 GRUB_DECLARE_MOD(EXTRAMODULE);
@@ -51,8 +51,8 @@ GRUB_DECLARE_MOD(EXTRAMODULE);
 
 GRUB_MOD_INIT GrubModuleInit[] = {
 	GRUB_FS_CALL(DRIVERNAME, init),
-#if defined(ENABLE_COMPRESSION)
-	GRUB_FS_CALL(APPEND(DRIVERNAME, comp), init),
+#if defined(COMPRESSED_DRIVERNAME) && !defined(DISABLE_COMPRESSION)
+	GRUB_FS_CALL(COMPRESSED_DRIVERNAME, init),
 #endif
 #if defined(EXTRAMODULE)
 	GRUB_FS_CALL(EXTRAMODULE, init),
@@ -65,8 +65,8 @@ GRUB_MOD_INIT GrubModuleInit[] = {
 
 GRUB_MOD_EXIT GrubModuleExit[] = {
 	GRUB_FS_CALL(DRIVERNAME, fini),
-#if defined(ENABLE_COMPRESSION)
-	GRUB_FS_CALL(APPEND(DRIVERNAME, comp), fini),
+#if defined(COMPRESSED_DRIVERNAME) && !defined(DISABLE_COMPRESSION)
+	GRUB_FS_CALL(COMPRESSED_DRIVERNAME, fini),
 #endif
 #if defined(EXTRAMODULE)
 	GRUB_FS_CALL(EXTRAMODULE, fini),

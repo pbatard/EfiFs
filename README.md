@@ -15,7 +15,8 @@ For additional info as well as precompiled drivers, see http://efi.akeo.ie
 ## Compilation
 
 * [_Common_] Fetch the git submodules with `git submodule init` and `git submodule update`.
-* [_Visual Studio_] Apply the included patches to the `grub\` subdirectory.
+* [_Visual Studio_] Apply the included patches to the `grub\` subdirectory. Note that the Clang and  
+  MSVC patches are __exclusive__, so you should only apply the one(s) that match the `.sln` you plan to use.
 * [_Visual Studio_] Open the solution file and hit `F5` to compile and debug the default driver.
 * [_gcc_] Run `make` in the top directory. If needed you can also issue something like
   `make ARCH=<arch> CROSS_COMPILE=<tuple>` where `<arch>` is one of `ia32`, `x64` or `arm`
@@ -49,7 +50,7 @@ To enable ARM compilation in Visual Studio 2015, you must perform the following:
   `C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Platforms\ARM\Platform.Common.props`.
 * Under the `<PropertyGroup>` section add the following:  
   `<WindowsSDKDesktopARMSupport>true</WindowsSDKDesktopARMSupport>`
-
+  
 ##Notes
 
 This is a pure GPLv3+ implementation of EFI drivers. Great care was taken
