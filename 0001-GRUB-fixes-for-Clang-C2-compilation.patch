@@ -1,21 +1,17 @@
-From 72a83a3f0a412771e1a65cd961d57ce7d590be68 Mon Sep 17 00:00:00 2001
+From a34f240895a081136a44820eab187d69ab29c421 Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Mon, 11 Jul 2016 13:52:02 +0100
+Date: Wed, 13 Jul 2016 14:19:14 +0100
 Subject: [PATCH] Clang/C2 compatibility fixes
 
 ---
- grub-core/fs/affs.c             |  4 ++--
- grub-core/fs/bfs.c              | 21 +++++++++++----------
- grub-core/fs/fat.c              |  8 ++++++--
- grub-core/fs/hfs.c              | 22 +++++++++++-----------
- grub-core/fs/zfs/zfs_lz4.c      |  2 +-
- grub-core/io/gzio.c             |  7 ++++---
- grub-core/kern/misc.c           |  4 ++--
- grub-core/lib/minilzo/lzoconf.h |  2 +-
- grub-core/lib/minilzo/minilzo.c |  4 ++--
- include/grub/types.h            |  2 +-
- include/grub/x86_64/types.h     |  2 +-
- 11 files changed, 42 insertions(+), 36 deletions(-)
+ grub-core/fs/affs.c             | 4 ++--
+ grub-core/fs/zfs/zfs_lz4.c      | 2 +-
+ grub-core/kern/misc.c           | 4 ++--
+ grub-core/lib/minilzo/lzoconf.h | 2 +-
+ grub-core/lib/minilzo/minilzo.c | 2 +-
+ include/grub/types.h            | 2 +-
+ include/grub/x86_64/types.h     | 2 +-
+ 7 files changed, 9 insertions(+), 9 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
 index f673897..8580d81 100644
@@ -32,115 +28,6 @@ index f673897..8580d81 100644
    };
  
  #define AFFS_MAX_LOG_BLOCK_SIZE 4
-diff --git a/grub-core/fs/bfs.c b/grub-core/fs/bfs.c
-index d2b490b..e2ac911 100644
---- a/grub-core/fs/bfs.c
-+++ b/grub-core/fs/bfs.c
-@@ -802,11 +802,11 @@ find_file (const char *path, grub_disk_t disk,
- 	   enum grub_fshelp_filetype exptype)
- {
-   grub_err_t err;
--  struct grub_fshelp_node root = {
--    .disk = disk,
--    .sb = sb,
--  };
--  struct grub_fshelp_node *found;
-+  struct grub_fshelp_node root, *found;
-+
-+  grub_memset(&root, 0, sizeof(root));
-+  root.disk = disk;
-+  root.sb = sb;
- 
-   err = read_extent (disk, sb, &sb->root_dir, 0, 0, &root.ino,
- 		     sizeof (root.ino));
-@@ -887,13 +887,14 @@ static grub_err_t
- grub_bfs_dir (grub_device_t device, const char *path,
- 	      grub_fs_dir_hook_t hook, void *hook_data)
- {
--  struct grub_bfs_dir_ctx ctx = {
--    .device = device,
--    .hook = hook,
--    .hook_data = hook_data
--  };
-+  struct grub_bfs_dir_ctx ctx;
-   grub_err_t err;
- 
-+  grub_memset(&ctx, 0, sizeof(ctx));
-+  ctx.device = device;
-+  ctx.hook = hook;
-+  ctx.hook_data = hook_data;
-+
-   err = mount (device->disk, &ctx.sb);
-   if (err)
-     return err;
-diff --git a/grub-core/fs/fat.c b/grub-core/fs/fat.c
-index 635c2c4..58af8c2 100644
---- a/grub-core/fs/fat.c
-+++ b/grub-core/fs/fat.c
-@@ -1107,8 +1107,12 @@ grub_fat_label (grub_device_t device, char **label)
- 	  chc = dir.type_specific.volume_label.character_count;
- 	  if (chc > ARRAY_SIZE (dir.type_specific.volume_label.str))
- 	    chc = ARRAY_SIZE (dir.type_specific.volume_label.str);
--	  for (i = 0; i < chc; i++)
--	    t[i] = grub_le_to_cpu16 (dir.type_specific.volume_label.str[i]);
-+	  for (i = 0; i < chc; i++) {
-+		  /* Clang/C2 x64 with minsize inserts a frigging memcpy(), even with -fno-builtin :( */
-+		  grub_uint16_t clang_c2_sucks;
-+		  grub_memcpy(&clang_c2_sucks, &dir.type_specific.volume_label.str[i], sizeof(grub_uint16_t));
-+		  t[i] = grub_le_to_cpu16(clang_c2_sucks);
-+	  }
- 	  *grub_utf16_to_utf8 ((grub_uint8_t *) *label, t, chc) = '\0';
- 	}
-     }
-diff --git a/grub-core/fs/hfs.c b/grub-core/fs/hfs.c
-index fc36831..468659a 100644
---- a/grub-core/fs/hfs.c
-+++ b/grub-core/fs/hfs.c
-@@ -857,7 +857,10 @@ grub_hfs_iterate_dir_node_found (struct grub_hfs_node *hnd, struct grub_hfs_reco
-   struct grub_hfs_catalog_key *ckey = rec->key;
- 
-   /* The lowest key possible with DIR as root directory.  */
--  const struct grub_hfs_catalog_key key = {0, ctx->dir_be, 0, ""};
-+  struct grub_hfs_catalog_key key;
-+
-+  grub_memset(&key, 0, sizeof(key));
-+  key.parent_dir = ctx->dir_be;
- 
-   if (grub_hfs_cmp_catkeys (rec->key, &key) <= 0)
-     ctx->found = grub_be_to_cpu32 (grub_get_unaligned32 (rec->data));
-@@ -1166,7 +1169,7 @@ lookup_file (grub_fshelp_node_t dir,
-     return grub_errno;
-   
-   (*foundnode)->inode = grub_be_to_cpu32 (fdrec.dir.dirid);
--  (*foundnode)->fdrec = fdrec;
-+  grub_memcpy(&(*foundnode)->fdrec, &fdrec, sizeof(fdrec));
-   (*foundnode)->data = dir->data;
-   *foundtype = (fdrec.frec.type == GRUB_HFS_FILETYPE_DIR) ? GRUB_FSHELP_DIR : GRUB_FSHELP_REG;
-   return GRUB_ERR_NONE;
-@@ -1180,17 +1183,14 @@ grub_hfs_find_dir (struct grub_hfs_data *data, const char *path,
- 		   grub_fshelp_node_t *found,
- 		   enum grub_fshelp_filetype exptype)
- {
--  struct grub_fshelp_node root = {
--    .data = data,
--    .inode = data->rootdir,
--    .fdrec = {
--      .frec = {
--	.type = GRUB_HFS_FILETYPE_DIR
--      }
--    }
--  };
-+  struct grub_fshelp_node root;
-   grub_err_t err;
- 
-+  grub_memset(&root, 0, sizeof(root));
-+  root.data = data;
-+  root.inode = data->rootdir;
-+  root.fdrec.frec.type = GRUB_HFS_FILETYPE_DIR;
-+
-   err = grub_fshelp_find_file_lookup (path, &root, found, lookup_file, NULL, exptype);
- 
-   if (&root == *found)
 diff --git a/grub-core/fs/zfs/zfs_lz4.c b/grub-core/fs/zfs/zfs_lz4.c
 index 2f73449..053d1f7 100644
 --- a/grub-core/fs/zfs/zfs_lz4.c
@@ -154,38 +41,6 @@ index 2f73449..053d1f7 100644
  #define	expect(expr, value)    (__builtin_expect((expr), (value)))
  #else
  #define	expect(expr, value)    (expr)
-diff --git a/grub-core/io/gzio.c b/grub-core/io/gzio.c
-index 0f2ea6b..573a30e 100644
---- a/grub-core/io/gzio.c
-+++ b/grub-core/io/gzio.c
-@@ -562,7 +562,7 @@ huft_build (unsigned *b,	/* code lengths in bits (all assumed <= BMAX) */
- 		  r.e = (uch) (16 + j);		/* bits in this table */
- 		  r.v.t = q;	/* pointer to this table */
- 		  j = i >> (w - l);	/* (get around Turbo C bug) */
--		  u[h - 1][j] = r;	/* connect to last table */
-+		  grub_memcpy (&u[h - 1][j], &r, sizeof (r));	/* connect to last table */
- 		}
- 	    }
- 
-@@ -585,7 +585,7 @@ huft_build (unsigned *b,	/* code lengths in bits (all assumed <= BMAX) */
- 	  /* fill code-like entries with r */
- 	  f = 1 << (k - w);
- 	  for (j = i >> w; j < z; j += f)
--	    q[j] = r;
-+	    grub_memcpy (&q[j], &r, sizeof (r));
- 
- 	  /* backwards increment the k-bit code i */
- 	  for (j = 1 << (k - 1); i & j; j >>= 1)
-@@ -1345,7 +1345,8 @@ grub_deflate_decompress (char *inbuf, grub_size_t insize, grub_off_t off,
-   return ret;
- }
- 
--
-+
-+
- 
- static struct grub_fs grub_gzio_fs =
-   {
 diff --git a/grub-core/kern/misc.c b/grub-core/kern/misc.c
 index d1a54df..5bec00c 100644
 --- a/grub-core/kern/misc.c
@@ -222,7 +77,7 @@ index 1d0fe14..b9c2e58 100644
       typedef __int64            lzo_int;
  #    else
 diff --git a/grub-core/lib/minilzo/minilzo.c b/grub-core/lib/minilzo/minilzo.c
-index 25a1f68..36c13be 100644
+index 25a1f68..7e18aa3 100644
 --- a/grub-core/lib/minilzo/minilzo.c
 +++ b/grub-core/lib/minilzo/minilzo.c
 @@ -2564,9 +2564,9 @@ LZOLIB_PUBLIC(lzo_hvoid_p, lzo_hmemset) (lzo_hvoid_p s, int c, lzo_hsize_t len)
@@ -236,15 +91,6 @@ index 25a1f68..36c13be 100644
  
  #if (defined(_WIN32) || defined(_WIN64)) && ((LZO_CC_INTELC && (__INTEL_COMPILER >= 1000)) || (LZO_CC_MSC && (_MSC_VER >= 1400)))
  #include <intrin.h>
-@@ -3459,7 +3459,7 @@ DO_COMPRESS      ( const lzo_bytep in , lzo_uint  in_len,
-         op += *out_len;
-         l  -= ll;
-     }
--    t += l;
-+    t += l;	// this gets replaced with a MEMSET?!?
- 
-     if (t > 0)
-     {
 diff --git a/include/grub/types.h b/include/grub/types.h
 index b93e482..afcda13 100644
 --- a/include/grub/types.h
