@@ -1,7 +1,7 @@
-From a34f240895a081136a44820eab187d69ab29c421 Mon Sep 17 00:00:00 2001
+From bf6591faa32cf00aefb80180952dafa1c921c21f Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
 Date: Wed, 13 Jul 2016 14:19:14 +0100
-Subject: [PATCH] Clang/C2 compatibility fixes
+Subject: [PATCH 1/2] Clang/C2 compatibility fixes
 
 ---
  grub-core/fs/affs.c             | 4 ++--
@@ -105,7 +105,7 @@ index b93e482..afcda13 100644
  {
  	return __builtin_bswap32(x);
 diff --git a/include/grub/x86_64/types.h b/include/grub/x86_64/types.h
-index 0bbdc6d..c86d531 100644
+index 0bbdc6d..866b345 100644
 --- a/include/grub/x86_64/types.h
 +++ b/include/grub/x86_64/types.h
 @@ -27,7 +27,7 @@
@@ -113,7 +113,7 @@ index 0bbdc6d..c86d531 100644
  
  /* The size of long.  */
 -#if defined(__MINGW32__) || defined(__ILP32__)
-+#if defined(__MINGW32__) || defined(__ILP32__) || defined(__c2__)
++#if defined(__MINGW32__) || defined(__ILP32__) || defined(_MSC_VER) || defined(__c2__)
  #define GRUB_TARGET_SIZEOF_LONG		4
  #else
  #define GRUB_TARGET_SIZEOF_LONG		8

@@ -15,8 +15,8 @@ For additional info as well as precompiled drivers, see http://efi.akeo.ie
 ## Compilation
 
 * [_Common_] Fetch the git submodules with `git submodule init` and `git submodule update`.
-* [_Visual Studio_] Apply the included patches to the `grub\` subdirectory. Note that the Clang and  
-  MSVC patches are __exclusive__, so you should only apply the one(s) that match the `.sln` you plan to use.
+* [_Visual Studio_] Apply the included patches to the `grub\` subdirectory. If you are using Clang/C2
+  you can apply the first patch only. If you are using MSVC, then you must apply both patches.
 * [_Visual Studio_] Open the solution file and hit `F5` to compile and debug the default driver.
 * [_gcc_] Run `make` in the top directory. If needed you can also issue something like
   `make ARCH=<arch> CROSS_COMPILE=<tuple>` where `<arch>` is one of `ia32`, `x64` or `arm`

@@ -42,7 +42,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <MASM Include="..\missing\intrinsics.asm">
+    <MASM Include="..\missing\intrinsics_x86.asm">
       <Filter>Assembly Files</Filter>
     </MASM>
   </ItemGroup>

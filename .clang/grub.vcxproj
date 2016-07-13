@@ -46,7 +46,7 @@
     <ClInclude Include="config.h" />
   </ItemGroup>
   <ItemGroup>
-    <MASM Include="..\missing\intrinsics.asm">
+    <MASM Include="..\missing\intrinsics_x86.asm">
       <FileType>Document</FileType>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</UseSafeExceptionHandlers>
       <UseSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseSafeExceptionHandlers>

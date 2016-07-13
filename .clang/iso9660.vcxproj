@@ -154,7 +154,7 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <MSExtensions>false</MSExtensions>
-      <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
+      <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin -Wno-array-bounds</AdditionalOptions>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -184,7 +184,7 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <MSExtensions>false</MSExtensions>
-      <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
+      <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin -Wno-array-bounds</AdditionalOptions>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -214,7 +214,7 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <MSExtensions>false</MSExtensions>
-      <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
+      <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin -Wno-array-bounds</AdditionalOptions>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -242,7 +242,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <Optimization>MinSize</Optimization>
       <MSExtensions>false</MSExtensions>
-      <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
+      <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin -Wno-array-bounds</AdditionalOptions>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -274,7 +274,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <Optimization>MinSize</Optimization>
       <MSExtensions>false</MSExtensions>
-      <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
+      <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin -Wno-array-bounds</AdditionalOptions>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -306,7 +306,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <Optimization>MinSize</Optimization>
       <MSExtensions>false</MSExtensions>
-      <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
+      <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin -Wno-array-bounds</AdditionalOptions>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>

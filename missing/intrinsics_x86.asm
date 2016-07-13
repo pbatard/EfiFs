@@ -2,7 +2,7 @@
 ; Needed as the x86 compiler inserts intrinsic memset/memcpy's
 
 IFNDEF AMD64
-  .model flat,stdcall
+	.model flat,stdcall
 ENDIF
 
 extern grub_memset:near, grub_memmove:near
