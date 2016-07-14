@@ -1,6 +1,11 @@
 For detailed information about the changes below, please see the git log or
 visit: https://github.com/pbatard/efifs
 
+v1.0 (2016.07.14)
+* Add Clang/C2 support in Visual Studio
+* Use assembly aliases for memset/memcpy intrinsics
+* Update GRUB and gnu-efi to latest
+
 v0.9 (2016.04.22)
 * Add ARM (32-bit) support
 * Fix architecture specific compilation issues

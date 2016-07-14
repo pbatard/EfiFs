@@ -43,7 +43,7 @@
     <ClCompile Include="..\src\grub.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="config.h" />
+    <ClInclude Include="..\config.h" />
   </ItemGroup>
   <ItemGroup>
     <MASM Include="..\missing\intrinsics_x86.asm">
@@ -155,7 +155,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>grub_err_printf=grub_printf;LZO_CFG_FREESTANDING;LZO_CFG_PGO;MINILZO_CFG_USE_INTERNAL_LZODEFS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
@@ -173,13 +173,13 @@
     </Lib>
     <PreBuildEvent>
       <Command>cd "$(SolutionDir)grub\include\grub\"
-call "$(SolutionDir).msvc\set_grub_cpu.cmd" $(Platform)</Command>
+call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
       <Message>Set GRUB include\grub\cpu</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>grub_err_printf=grub_printf;LZO_CFG_FREESTANDING;LZO_CFG_PGO;MINILZO_CFG_USE_INTERNAL_LZODEFS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
@@ -197,13 +197,13 @@ call "$(SolutionDir).msvc\set_grub_cpu.cmd" $(Platform)</Command>
     </Lib>
     <PreBuildEvent>
       <Command>cd "$(SolutionDir)grub\include\grub\"
-call "$(SolutionDir).msvc\set_grub_cpu.cmd" $(Platform)</Command>
+call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
       <Message>Set GRUB include\grub\cpu</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>grub_err_printf=grub_printf;LZO_CFG_FREESTANDING;LZO_CFG_PGO;MINILZO_CFG_USE_INTERNAL_LZODEFS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
@@ -221,13 +221,13 @@ call "$(SolutionDir).msvc\set_grub_cpu.cmd" $(Platform)</Command>
     </Lib>
     <PreBuildEvent>
       <Command>cd "$(SolutionDir)grub\include\grub\"
-call "$(SolutionDir).msvc\set_grub_cpu.cmd" $(Platform)</Command>
+call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
       <Message>Set GRUB include\grub\cpu</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>grub_err_printf=grub_printf;LZO_CFG_FREESTANDING;LZO_CFG_PGO;MINILZO_CFG_USE_INTERNAL_LZODEFS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
@@ -249,13 +249,13 @@ call "$(SolutionDir).msvc\set_grub_cpu.cmd" $(Platform)</Command>
     </Lib>
     <PreBuildEvent>
       <Command>cd "$(SolutionDir)grub\include\grub\"
-call "$(SolutionDir).msvc\set_grub_cpu.cmd" $(Platform)</Command>
+call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
       <Message>Set GRUB include\grub\cpu</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>grub_err_printf=grub_printf;LZO_CFG_FREESTANDING;LZO_CFG_PGO;MINILZO_CFG_USE_INTERNAL_LZODEFS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
@@ -277,13 +277,13 @@ call "$(SolutionDir).msvc\set_grub_cpu.cmd" $(Platform)</Command>
     </Lib>
     <PreBuildEvent>
       <Command>cd "$(SolutionDir)grub\include\grub\"
-call "$(SolutionDir).msvc\set_grub_cpu.cmd" $(Platform)</Command>
+call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
       <Message>Set GRUB include\grub\cpu</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>grub_err_printf=grub_printf;LZO_CFG_FREESTANDING;LZO_CFG_PGO;MINILZO_CFG_USE_INTERNAL_LZODEFS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
@@ -305,7 +305,7 @@ call "$(SolutionDir).msvc\set_grub_cpu.cmd" $(Platform)</Command>
     </Lib>
     <PreBuildEvent>
       <Command>cd "$(SolutionDir)grub\include\grub\"
-call "$(SolutionDir).msvc\set_grub_cpu.cmd" $(Platform)</Command>
+call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
       <Message>Set GRUB include\grub\cpu</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>

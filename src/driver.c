@@ -1,6 +1,6 @@
 /* driver.c - Wrapper for standalone EFI filesystem drivers */
 /*
- *  Copyright © 2014 Pete Batard <pete@akeo.ie>
+ *  Copyright © 2014-2016 Pete Batard <pete@akeo.ie>
  *  Based on iPXE's efi_driver.c and efi_file.c:
  *  Copyright © 2011,2013 Michael Brown <mbrown@fensystems.co.uk>.
  *
@@ -87,7 +87,7 @@ FreeFsInstance(EFI_FS *Instance) {
  * to consume in exclusive access (here EFI_DISK_IO).
  */
 static EFI_STATUS EFIAPI
-FSBindingSupported(EFI_DRIVER_BINDING *This,
+FSBindingSupported(EFI_DRIVER_BINDING_PROTOCOL *This,
 		EFI_HANDLE ControllerHandle,
 		EFI_DEVICE_PATH *RemainingDevicePath)
 {
@@ -115,7 +115,7 @@ FSBindingSupported(EFI_DRIVER_BINDING *This,
 }
 
 static EFI_STATUS EFIAPI
-FSBindingStart(EFI_DRIVER_BINDING *This,
+FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 		EFI_HANDLE ControllerHandle,
 		EFI_DEVICE_PATH *RemainingDevicePath)
 {
@@ -199,7 +199,7 @@ error:
 }
 
 static EFI_STATUS EFIAPI
-FSBindingStop(EFI_DRIVER_BINDING *This,
+FSBindingStop(EFI_DRIVER_BINDING_PROTOCOL *This,
 		EFI_HANDLE ControllerHandle, UINTN NumberOfChildren,
 		EFI_HANDLE *ChildHandleBuffer)
 {
@@ -245,19 +245,19 @@ FSBindingStop(EFI_DRIVER_BINDING *This,
  * is that Name uses ISO-639-2 ("eng") whereas Name2 uses RFC 4646 ("en")
  * See: http://www.loc.gov/standards/iso639-2/faq.html#6
  */
-static EFI_COMPONENT_NAME FSComponentName = {
+static EFI_COMPONENT_NAME_PROTOCOL FSComponentName = {
 	.GetDriverName = FSGetDriverName,
 	.GetControllerName = FSGetControllerName,
 	.SupportedLanguages = (CHAR8 *) "eng"
 };
 
-static EFI_COMPONENT_NAME2 FSComponentName2 = {
+static EFI_COMPONENT_NAME2_PROTOCOL FSComponentName2 = {
 	.GetDriverName = FSGetDriverName2,
 	.GetControllerName = FSGetControllerName2,
 	.SupportedLanguages = (CHAR8 *) "en"
 };
 
-static EFI_DRIVER_BINDING FSDriverBinding = {
+static EFI_DRIVER_BINDING_PROTOCOL FSDriverBinding = {
 	.Supported = FSBindingSupported,
 	.Start = FSBindingStart,
 	.Stop = FSBindingStop,
@@ -371,7 +371,7 @@ EFI_STATUS EFIAPI
 FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 {
 	EFI_STATUS Status;
-	EFI_LOADED_IMAGE *LoadedImage = NULL;
+	EFI_LOADED_IMAGE_PROTOCOL *LoadedImage = NULL;
 	VOID *Interface;
 	UINTN i;
 
@@ -430,8 +430,6 @@ FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	LoadedImage->Unload = FSDriverUninstall;
 
 	/* Initialize the relevant GRUB fs module(s) */
-	// TODO: Eventually, we could try to turn each GRUB module into their
-	// own EFI driver, have them register their interface and consume that.
 	for (i = 0; GrubModuleInit[i] != NULL; i++)
 		GrubModuleInit[i]();
 

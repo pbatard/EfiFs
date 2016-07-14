@@ -145,7 +145,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);COMPRESSED_DRIVERNAME=$(ProjectName)comp;GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
@@ -176,7 +176,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);COMPRESSED_DRIVERNAME=$(ProjectName)comp;GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
@@ -206,7 +206,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);COMPRESSED_DRIVERNAME=$(ProjectName)comp;GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
@@ -236,7 +236,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);COMPRESSED_DRIVERNAME=$(ProjectName)comp;GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
@@ -268,7 +268,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);COMPRESSED_DRIVERNAME=$(ProjectName)comp;GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
@@ -300,7 +300,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);COMPRESSED_DRIVERNAME=$(ProjectName)comp;GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
@@ -336,7 +336,7 @@
     <ClCompile Include="..\src\this.c" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="debug.vbs" />
+    <None Include="..\debug.vbs" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\driver.h" />

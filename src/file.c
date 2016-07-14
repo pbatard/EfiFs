@@ -1,6 +1,6 @@
 /* file.c - SimpleFileIo Interface */
 /*
- *  Copyright © 2014 Pete Batard <pete@akeo.ie>
+ *  Copyright © 2014-2016 Pete Batard <pete@akeo.ie>
  *  Based on iPXE's efi_driver.c and efi_file.c:
  *  Copyright © 2011,2013 Michael Brown <mbrown@fensystems.co.uk>.
  *
@@ -162,7 +162,6 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	strcpya(NewFile->path, clean_path);
 
 	/* Isolate the basename and dirname */
-	// TODO: would be nicer to have those if path.c
 	for (i = strlena(clean_path) - 1; i >= 0; i--) {
 		if (clean_path[i] == '/') {
 			clean_path[i] = 0;
