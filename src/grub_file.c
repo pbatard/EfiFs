@@ -362,6 +362,7 @@ GrubRead(EFI_GRUB_FILE *File, VOID *Data, UINTN *Len)
 	if (*Len > Remaining)
 		*Len = Remaining;
 
+	grub_errno = 0;
 	len = p->read(f, (char *) Data, (grub_size_t) *Len);
 
 	if (len < 0) {

@@ -505,6 +505,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 	EFI_FILE_SYSTEM_INFO *FSInfo = (EFI_FILE_SYSTEM_INFO *) Data;
 	EFI_FILE_INFO *Info = (EFI_FILE_INFO *) Data;
+	EFI_FILE_SYSTEM_VOLUME_LABEL_INFO *VLInfo = (EFI_FILE_SYSTEM_VOLUME_LABEL_INFO *)Data;
 	CHAR16 GuidString[36];
 	EFI_TIME Time;
 	CHAR8* label;
@@ -542,7 +543,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 		Status = Utf8ToUtf16NoAllocUpdateLen(File->basename, Info->FileName, &tmpLen);
 		if (EFI_ERROR(Status)) {
 			if (Status != EFI_BUFFER_TOO_SMALL)
-				PrintStatusError(Status, L"Could not convert basename to UTF-8");
+				PrintStatusError(Status, L"Could not convert basename to UTF-16");
 			return Status;
 		}
 
@@ -589,6 +590,23 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 			}
 			FSInfo->Size = sizeof(EFI_FILE_SYSTEM_INFO) - 1 + tmpLen;
 			*Len = FSInfo->Size;
+		}
+		return EFI_SUCCESS;
+
+	} else if (CompareMem(Type, &FileSystemVolumeLabelInfo, sizeof(*Type)) == 0) {
+
+		/* Get the volume label */
+		Status = GrubLabel(File, &label);
+		if (EFI_ERROR(Status)) {
+			PrintStatusError(Status, L"Could not read disk label");
+		}
+		else {
+			Status = Utf8ToUtf16NoAllocUpdateLen(label, VLInfo->VolumeLabel, Len);
+			if (EFI_ERROR(Status)) {
+				if (Status != EFI_BUFFER_TOO_SMALL)
+					PrintStatusError(Status, L"Could not convert label to UTF-16");
+				return Status;
+			}
 		}
 		return EFI_SUCCESS;
 
