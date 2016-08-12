@@ -626,11 +626,11 @@ error:
  * @ret Status          EFI_SUCCESS if the conversion was successful, and EFI error code on error
  */
 EFI_STATUS
-Utf8ToUtf16NoAlloc(CHAR8 *src, CHAR16 *Dst, UINTN Len)
+Utf8ToUtf16NoAllocUpdateLen(CHAR8 *src, CHAR16 *Dst, UINTN *Len)
 {
-	UINTN RetLen, srcLen = strlena(src);
+	UINTN orgLen = *Len, srcLen = strlena(src);
 
-	if ((Dst == NULL) || (Len < 1))
+	if ((Dst == NULL) || (*Len < 1))
 		return EFI_INVALID_PARAMETER;
 
 	if (srcLen++ == 0) {	/* +1 for NUL terminator */
@@ -638,13 +638,20 @@ Utf8ToUtf16NoAlloc(CHAR8 *src, CHAR16 *Dst, UINTN Len)
 		return EFI_SUCCESS;
 	}
 
-	if (!ConvertUcs2Utf8(TRUE, (UINT8 *) src, srcLen, (UINT8 *) Dst, Len, &RetLen))
+	if (!ConvertUcs2Utf8(TRUE, (UINT8 *) src, srcLen, (UINT8 *) Dst, *Len, Len))
 		return EFI_NO_MAPPING;
 
-	if (RetLen > Len)
+	if (*Len > orgLen)
 		return EFI_BUFFER_TOO_SMALL;
 
 	return EFI_SUCCESS;
+}
+
+EFI_STATUS
+Utf8ToUtf16NoAlloc(CHAR8 *src, CHAR16 *Dst, UINTN Len)
+{
+	UINTN tmpLen = Len;
+	return Utf8ToUtf16NoAllocUpdateLen(src, Dst, &tmpLen);
 }
 
 /**
@@ -691,11 +698,11 @@ error:
  * @ret Status          EFI_SUCCESS if the conversion was successful, and EFI error code on error
  */
 EFI_STATUS
-Utf16ToUtf8NoAlloc(CHAR16 *Src, CHAR8 *dst, UINTN len)
+Utf16ToUtf8NoAllocUpdateLen(CHAR16 *Src, CHAR8 *dst, UINTN *len)
 {
-	UINTN retlen, SrcLen = StrLen(Src);
+	UINTN orglen = *len, SrcLen = StrLen(Src);
 
-	if ((dst == NULL) || (len < 1))
+	if ((dst == NULL) || (*len < 1))
 		return EFI_INVALID_PARAMETER;
 
 	if (SrcLen++ == 0) {	/* +1 for NUL terminator */
@@ -703,11 +710,19 @@ Utf16ToUtf8NoAlloc(CHAR16 *Src, CHAR8 *dst, UINTN len)
 		return EFI_SUCCESS;
 	}
 
-	if (!ConvertUcs2Utf8(FALSE, (UINT8 *) Src, SrcLen * sizeof(CHAR16), (UINT8 *) dst, len, &retlen))
+	if (!ConvertUcs2Utf8(FALSE, (UINT8 *) Src, SrcLen * sizeof(CHAR16), (UINT8 *) dst, *len, len))
 		return EFI_NO_MAPPING;
 
-	if (retlen > len)
+	if (*len > orglen)
 		return EFI_BUFFER_TOO_SMALL;
 
 	return EFI_SUCCESS;
 }
+
+EFI_STATUS
+Utf16ToUtf8NoAlloc(CHAR16 *Src, CHAR8 *dst, UINTN len)
+{
+	UINTN tmplen = len;
+	return Utf16ToUtf8NoAllocUpdateLen(Src, dst, &tmplen);
+}
+

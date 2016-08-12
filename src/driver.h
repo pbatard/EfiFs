@@ -147,8 +147,10 @@ extern UINT64 GrubGetFileOffset(EFI_GRUB_FILE *File);
 extern VOID GrubSetFileOffset(EFI_GRUB_FILE *File, UINT64 Offset);
 extern CHAR16 *Utf8ToUtf16Alloc(CHAR8 *src);
 extern EFI_STATUS Utf8ToUtf16NoAlloc(CHAR8 *src, CHAR16 *Dst, UINTN Len);
+extern EFI_STATUS Utf8ToUtf16NoAllocUpdateLen(CHAR8 *src, CHAR16 *Dst, UINTN *Len);
 extern CHAR8 *Utf16ToUtf8Alloc(CHAR16 *Src);
 extern EFI_STATUS Utf16ToUtf8NoAlloc(CHAR16 *Src, CHAR8 *dst, UINTN len);
+extern EFI_STATUS Utf16ToUtf8NoAllocUpdateLen(CHAR16 *Src, CHAR8 *dst, UINTN *len);
 extern EFI_STATUS FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle);
 extern VOID FSUninstall(EFI_FS *This, EFI_HANDLE ControllerHandle);
 extern EFI_STATUS EFIAPI FileOpenVolume(EFI_FILE_IO_INTERFACE *This,

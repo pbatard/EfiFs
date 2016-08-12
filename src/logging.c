@@ -1,6 +1,6 @@
 /* logging.c - EFI logging */
 /*
- *  Copyright © 2014 Pete Batard <pete@akeo.ie>
+ *  Copyright © 2014-2016 Pete Batard <pete@akeo.ie>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ UINTN LogLevel = DEFAULT_LOGLEVEL;
  * @v ...			Any extra parameters
  */
 VOID
-PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...)
+PrintStatusError(EFI_STATUS Status, CONST CHAR16 *Format, ...)
 {
 	CHAR16 StatusString[64];
 	va_list ap;

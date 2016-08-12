@@ -508,6 +508,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 	CHAR16 GuidString[36];
 	EFI_TIME Time;
 	CHAR8* label;
+	INTN tmpLen;
 
 	PrintInfo(L"GetInfo(%llx|'%s', %d) %s\n", (UINT64) This,
 		FileName(File), *Len, File->IsDir?L"<DIR>":L"");
@@ -537,8 +538,8 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 			Info->PhysicalSize = GrubGetFileSize(File);
 		}
 
-		Status = Utf8ToUtf16NoAlloc(File->basename, Info->FileName,
-				(INTN)(Info->Size - sizeof(EFI_FILE_INFO)));
+		tmpLen = (INTN)(Info->Size - sizeof(EFI_FILE_INFO) - 1);
+		Status = Utf8ToUtf16NoAllocUpdateLen(File->basename, Info->FileName, &tmpLen);
 		if (EFI_ERROR(Status)) {
 			if (Status != EFI_BUFFER_TOO_SMALL)
 				PrintStatusError(Status, L"Could not convert basename to UTF-8");
@@ -546,8 +547,8 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 		}
 
 		/* The Info struct size already accounts for the extra NUL */
-		Info->Size = sizeof(EFI_FILE_INFO) +
-				StrLen(Info->FileName) * sizeof(CHAR16);
+		Info->Size = sizeof(EFI_FILE_INFO) + tmpLen;
+		*Len = Info->Size;
 		return EFI_SUCCESS;
 
 	} else if (CompareMem(Type, &FileSystemInfo, sizeof(*Type)) == 0) {
@@ -576,16 +577,18 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 		Status = GrubLabel(File, &label);
 		if (EFI_ERROR(Status)) {
 			PrintStatusError(Status, L"Could not read disk label");
+			FSInfo->VolumeLabel[0] = 0;
+			*Len = sizeof(EFI_FILE_SYSTEM_INFO);
 		} else {
-			Status = Utf8ToUtf16NoAlloc(label, FSInfo->VolumeLabel,
-					(INTN)(FSInfo->Size - sizeof(EFI_FILE_SYSTEM_INFO)));
+			tmpLen = (INTN)(FSInfo->Size - sizeof(EFI_FILE_SYSTEM_INFO) - 1);
+			Status = Utf8ToUtf16NoAllocUpdateLen(label, FSInfo->VolumeLabel, &tmpLen);
 			if (EFI_ERROR(Status)) {
 				if (Status != EFI_BUFFER_TOO_SMALL)
-					PrintStatusError(Status, L"Could not convert label to UTF-8");
+					PrintStatusError(Status, L"Could not convert label to UTF-16");
 				return Status;
 			}
-			Info->Size = sizeof(EFI_FILE_SYSTEM_INFO) +
-					StrLen(FSInfo->VolumeLabel) * sizeof(CHAR16);
+			FSInfo->Size = sizeof(EFI_FILE_SYSTEM_INFO) - 1 + tmpLen;
+			*Len = FSInfo->Size;
 		}
 		return EFI_SUCCESS;
 
