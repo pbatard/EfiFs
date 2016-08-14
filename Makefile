@@ -22,7 +22,7 @@ $(GRUB_DIR)/include/grub/cpu_$(CPU_ARCH):
 
 $(GRUB_DIR)/config.h:
 	@echo  [CP]  $(notdir $@)
-	@cp $(CURDIR)/.msvc/config.h $(GRUB_DIR)
+	@cp $(CURDIR)/config.h $(GRUB_DIR)
 
 $(GRUB_LIB): $(GRUB_DIR)/config.h $(GRUB_DIR)/include/grub/cpu_$(CPU_ARCH) $(OBJS) 
 	@echo  [AR]  $(notdir $@)
