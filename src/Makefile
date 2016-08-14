@@ -1,5 +1,5 @@
 DRIVER_MAKEFILE = $(CURDIR)/../Make.common
-FILESYSTEMS     = affs bfs btrfs exfat ext2 hfs hfsplus iso9660 jfs nilfs2 ntfs reiserfs sfs udf ufs2 xfs zfs
+FILESYSTEMS     = affs bfs btrfs exfat ext2 f2fs hfs hfsplus iso9660 jfs nilfs2 ntfs reiserfs sfs udf ufs2 xfs zfs
 
 .PHONY: all clean
 
@@ -17,11 +17,15 @@ btrfs:
 	@rm -f this.o
 	+$(MAKE) DRIVERNAME=$@ FSDIR=fs EXTRAMODULE=gzio EXTRAMODULEDIR=io -f $(DRIVER_MAKEFILE) driver
 
+exfat:
+	@rm -f this.o
+	+$(MAKE) DRIVERNAME=$@ FSDIR=fs -f $(DRIVER_MAKEFILE) driver
+
 ext2:
 	@rm -f this.o
 	+$(MAKE) DRIVERNAME=$@ FSDIR=fs -f $(DRIVER_MAKEFILE) driver
 
-exfat:
+f2fs:
 	@rm -f this.o
 	+$(MAKE) DRIVERNAME=$@ FSDIR=fs -f $(DRIVER_MAKEFILE) driver
 

@@ -15,7 +15,9 @@ For additional info as well as precompiled drivers, see http://efi.akeo.ie
 ## Compilation
 
 * [_Common_] Fetch the git submodules with `git submodule init` and `git submodule update`.
-* [_Visual Studio_] Apply the included patches to the `grub\` subdirectory. If you are using Clang/C2
+* [_Common_] Apply the included f2fs patch to the `grub\` subdirectory. This adds F2FS support,
+  which is not yet included in GRUB2.
+* [_Visual Studio_] Apply the other patches to the `grub\` subdirectory. If you are using Clang/C2
   you can apply the first patch only. If you are using MSVC, then you must apply both patches.
 * [_Visual Studio_] Open the solution file and hit `F5` to compile and debug the default driver.
 * [_gcc_] Run `make` in the top directory. If needed you can also issue something like
