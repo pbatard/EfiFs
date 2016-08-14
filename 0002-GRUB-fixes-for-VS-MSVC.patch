@@ -1,8 +1,8 @@
-From cd7ce326e12977b2f3d57752569ed3b7b4d4201c Mon Sep 17 00:00:00 2001
+From 6848bbc5d6bb52448d2998cb3f3357de7273d255 Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Wed, 13 Jul 2016 16:19:14 +0100
-Subject: [PATCH 2/2] MSVC compatibility fixes, for packed structs,
- initialization, etc
+Date: Sun, 14 Aug 2016 14:59:37 +0200
+Subject: [PATCH] MSVC compatibility fixes, for packed structs, initialization,
+ etc
 
 ---
  grub-core/fs/affs.c         |  2 ++
@@ -35,7 +35,7 @@ Subject: [PATCH 2/2] MSVC compatibility fixes, for packed structs,
  27 files changed, 147 insertions(+), 38 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
-index 8580d81..26e4a33 100644
+index 25f8e68..38b7afd 100644
 --- a/grub-core/fs/affs.c
 +++ b/grub-core/fs/affs.c
 @@ -30,6 +30,7 @@
@@ -593,7 +593,7 @@ index 293f027..3babbce 100644
  /* Information about a "mounted" ufs filesystem.  */
  struct grub_ufs_data
 diff --git a/grub-core/fs/xfs.c b/grub-core/fs/xfs.c
-index ca9c0c3..fa4a44a 100644
+index 9f66dd6..0c806d0 100644
 --- a/grub-core/fs/xfs.c
 +++ b/grub-core/fs/xfs.c
 @@ -59,6 +59,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
@@ -604,15 +604,15 @@ index ca9c0c3..fa4a44a 100644
  /* Recognized xfs format versions */
  #define XFS_SB_VERSION_4		4	/* Good old XFS filesystem */
  #define XFS_SB_VERSION_5		5	/* CRC enabled filesystem */
-@@ -79,6 +80,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
- #define XFS_SB_FEAT_INCOMPAT_SUPPORTED \
- 	(XFS_SB_FEAT_INCOMPAT_FTYPE)
+@@ -84,6 +85,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
+ 	(XFS_SB_FEAT_INCOMPAT_FTYPE | \
+ 	 XFS_SB_FEAT_INCOMPAT_META_UUID)
  
 +PRAGMA_BEGIN_PACKED
  struct grub_xfs_sblock
  {
    grub_uint8_t magic[4];
-@@ -195,6 +197,7 @@ struct grub_xfs_dirblock_tail
+@@ -200,6 +202,7 @@ struct grub_xfs_dirblock_tail
    grub_uint32_t leaf_count;
    grub_uint32_t leaf_stale;
  } GRUB_PACKED;
@@ -643,7 +643,7 @@ index 6e1fff9..b1589a0 100644
      {
  
 diff --git a/grub-core/kern/misc.c b/grub-core/kern/misc.c
-index 5bec00c..1159e74 100644
+index f0af232..218d9a5 100644
 --- a/grub-core/kern/misc.c
 +++ b/grub-core/kern/misc.c
 @@ -968,7 +968,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
@@ -817,7 +817,7 @@ index 5ffb38f..cc6d92a 100644
  
  static inline struct grub_term_coordinate
 diff --git a/include/grub/types.h b/include/grub/types.h
-index afcda13..3c9565a 100644
+index bb8a711..5b44fea 100644
 --- a/include/grub/types.h
 +++ b/include/grub/types.h
 @@ -26,10 +26,20 @@
