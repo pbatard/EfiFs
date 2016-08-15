@@ -41,7 +41,7 @@ static EFI_MUTEX_PROTOCOL MutexProtocol = { 0 };
 
 /* Return the driver name */
 static EFI_STATUS EFIAPI
-FSGetDriverName(EFI_COMPONENT_NAME *This,
+FSGetDriverName(EFI_COMPONENT_NAME_PROTOCOL *This,
 		CHAR8 *Language, CHAR16 **DriverName)
 {
 	*DriverName = FullDriverName;
@@ -49,7 +49,7 @@ FSGetDriverName(EFI_COMPONENT_NAME *This,
 }
 
 static EFI_STATUS EFIAPI
-FSGetDriverName2(EFI_COMPONENT_NAME2 *This,
+FSGetDriverName2(EFI_COMPONENT_NAME2_PROTOCOL *This,
 		CHAR8 *Language, CHAR16 **DriverName)
 {
 	*DriverName = FullDriverName;
@@ -58,7 +58,7 @@ FSGetDriverName2(EFI_COMPONENT_NAME2 *This,
 
 /* Return the controller name (unsupported for a filesystem) */
 static EFI_STATUS EFIAPI
-FSGetControllerName(EFI_COMPONENT_NAME *This,
+FSGetControllerName(EFI_COMPONENT_NAME_PROTOCOL *This,
 		EFI_HANDLE ControllerHandle, EFI_HANDLE ChildHandle,
 		CHAR8 *Language, CHAR16 **ControllerName)
 {
@@ -66,7 +66,7 @@ FSGetControllerName(EFI_COMPONENT_NAME *This,
 }
 
 static EFI_STATUS EFIAPI
-FSGetControllerName2(EFI_COMPONENT_NAME2 *This,
+FSGetControllerName2(EFI_COMPONENT_NAME2_PROTOCOL *This,
 		EFI_HANDLE ControllerHandle, EFI_HANDLE ChildHandle,
 		CHAR8 *Language, CHAR16 **ControllerName)
 {
@@ -89,10 +89,10 @@ FreeFsInstance(EFI_FS *Instance) {
 static EFI_STATUS EFIAPI
 FSBindingSupported(EFI_DRIVER_BINDING_PROTOCOL *This,
 		EFI_HANDLE ControllerHandle,
-		EFI_DEVICE_PATH *RemainingDevicePath)
+		EFI_DEVICE_PATH_PROTOCOL *RemainingDevicePath)
 {
 	EFI_STATUS Status;
-	EFI_DISK_IO *DiskIo;
+	EFI_DISK_IO_PROTOCOL *DiskIo;
 
 	/* Don't handle this unless we can get exclusive access to DiskIO through it */
 	Status = BS->OpenProtocol(ControllerHandle,
@@ -121,7 +121,7 @@ FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 {
 	EFI_STATUS Status;
 	EFI_FS *Instance;
-	EFI_DEVICE_PATH *DevicePath;
+	EFI_DEVICE_PATH_PROTOCOL *DevicePath;
 
 	PrintDebug(L"FSBindingStart\n");
 
@@ -132,7 +132,7 @@ FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 		PrintStatusError(Status, L"Could not allocate a new file system instance");
 		return Status;
 	}
-	Instance->FileIoInterface.Revision = EFI_FILE_IO_INTERFACE_REVISION;
+	Instance->FileIoInterface.Revision = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_REVISION;
 	Instance->FileIoInterface.OpenVolume = FileOpenVolume,
 
 	/* Fill the device path for our instance */
@@ -205,7 +205,7 @@ FSBindingStop(EFI_DRIVER_BINDING_PROTOCOL *This,
 {
 	EFI_STATUS Status;
 	EFI_FS *Instance;
-	EFI_FILE_IO_INTERFACE *FileIoInterface;
+	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *FileIoInterface;
 
 	PrintDebug(L"FSBindingStop\n");
 

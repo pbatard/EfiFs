@@ -34,7 +34,7 @@
 
 /* Driver version */
 #define FS_DRIVER_VERSION_MAJOR 1
-#define FS_DRIVER_VERSION_MINOR 0
+#define FS_DRIVER_VERSION_MINOR 1
 
 #ifndef ARRAYSIZE
 #define ARRAYSIZE(A)            (sizeof(A)/sizeof((A)[0]))
@@ -88,14 +88,14 @@ typedef struct _EFI_GRUB_FILE {
 
 /* A file system instance */
 typedef struct _EFI_FS {
-	LIST_ENTRY            *Flink;
-	LIST_ENTRY            *Blink;
-	EFI_FILE_IO_INTERFACE  FileIoInterface;
-	EFI_BLOCK_IO          *BlockIo;
-	EFI_DISK_IO           *DiskIo;
-	EFI_GRUB_FILE         *RootFile;
-	VOID                  *GrubDevice;
-	CHAR16                *DevicePathString;
+	LIST_ENTRY                      *Flink;
+	LIST_ENTRY                      *Blink;
+	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL FileIoInterface;
+	EFI_BLOCK_IO_PROTOCOL           *BlockIo;
+	EFI_DISK_IO_PROTOCOL            *DiskIo;
+	EFI_GRUB_FILE                   *RootFile;
+	VOID                            *GrubDevice;
+	CHAR16                          *DevicePathString;
 } EFI_FS;
 
 /* Mirrors a similar construct from GRUB, while EFI-zing it */
@@ -153,7 +153,7 @@ extern EFI_STATUS Utf16ToUtf8NoAlloc(CHAR16 *Src, CHAR8 *dst, UINTN len);
 extern EFI_STATUS Utf16ToUtf8NoAllocUpdateLen(CHAR16 *Src, CHAR8 *dst, UINTN *len);
 extern EFI_STATUS FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle);
 extern VOID FSUninstall(EFI_FS *This, EFI_HANDLE ControllerHandle);
-extern EFI_STATUS EFIAPI FileOpenVolume(EFI_FILE_IO_INTERFACE *This,
+extern EFI_STATUS EFIAPI FileOpenVolume(EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *This,
 		EFI_FILE_HANDLE *Root);
 extern EFI_STATUS EFIAPI FSDriverInstall(EFI_HANDLE ImageHandle,
 		EFI_SYSTEM_TABLE* SystemTable);

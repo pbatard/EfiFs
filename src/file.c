@@ -549,7 +549,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 
 		/* The Info struct size already accounts for the extra NUL */
 		Info->Size = sizeof(EFI_FILE_INFO) + tmpLen;
-		*Len = Info->Size;
+		*Len = (INTN)Info->Size;
 		return EFI_SUCCESS;
 
 	} else if (CompareMem(Type, &FileSystemInfo, sizeof(*Type)) == 0) {
@@ -589,7 +589,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 				return Status;
 			}
 			FSInfo->Size = sizeof(EFI_FILE_SYSTEM_INFO) - 1 + tmpLen;
-			*Len = FSInfo->Size;
+			*Len = (INTN)FSInfo->Size;
 		}
 		return EFI_SUCCESS;
 
@@ -667,7 +667,7 @@ FileFlush(EFI_FILE_HANDLE This)
  * @ret Status		EFI status code
  */
 EFI_STATUS EFIAPI
-FileOpenVolume(EFI_FILE_IO_INTERFACE *This, EFI_FILE_HANDLE *Root)
+FileOpenVolume(EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *This, EFI_FILE_HANDLE *Root)
 {
 	EFI_FS *FSInstance = _CR(This, EFI_FS, FileIoInterface);
 
