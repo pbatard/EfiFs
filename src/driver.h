@@ -92,7 +92,11 @@ typedef struct _EFI_FS {
 	LIST_ENTRY                      *Blink;
 	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL FileIoInterface;
 	EFI_BLOCK_IO_PROTOCOL           *BlockIo;
+	EFI_BLOCK_IO2_PROTOCOL          *BlockIo2;
+	EFI_BLOCK_IO2_TOKEN             BlockIo2Token;
 	EFI_DISK_IO_PROTOCOL            *DiskIo;
+	EFI_DISK_IO2_PROTOCOL           *DiskIo2;
+	EFI_DISK_IO2_TOKEN              DiskIo2Token;
 	EFI_GRUB_FILE                   *RootFile;
 	VOID                            *GrubDevice;
 	CHAR16                          *DevicePathString;

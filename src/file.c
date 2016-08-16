@@ -200,6 +200,15 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	return EFI_SUCCESS;
 }
 
+/* Ex version */
+static EFI_STATUS EFIAPI
+FileOpenEx(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New, CHAR16 *Name,
+	UINT64 Mode, UINT64 Attributes, EFI_FILE_IO_TOKEN *Token)
+{
+	return FileOpen(This, New, Name, Mode, Attributes);
+}
+
+
 /**
  * Close file
  *
@@ -409,6 +418,13 @@ FileRead(EFI_FILE_HANDLE This, UINTN *Len, VOID *Data)
 	return GrubRead(File, Data, Len);
 }
 
+/* Ex version */
+static EFI_STATUS EFIAPI
+FileReadEx(IN EFI_FILE_PROTOCOL *This, IN OUT EFI_FILE_IO_TOKEN *Token)
+{
+	return FileRead(This, &(Token->BufferSize), Token->Buffer);
+}
+
 /**
  * Write to file
  *
@@ -424,6 +440,13 @@ FileWrite(EFI_FILE_HANDLE This, UINTN *Len, VOID *Data)
 
 	PrintError(L"Cannot write to '%s'\n", FileName(File));
 	return EFI_WRITE_PROTECTED;
+}
+
+/* Ex version */
+static EFI_STATUS EFIAPI
+FileWriteEx(IN EFI_FILE_PROTOCOL *This, IN OUT EFI_FILE_IO_TOKEN *Token)
+{
+	return FileWrite(This, &(Token->BufferSize), Token->Buffer);
 }
 
 /**
@@ -659,6 +682,13 @@ FileFlush(EFI_FILE_HANDLE This)
 	return EFI_SUCCESS;
 }
 
+/* Ex version */
+static EFI_STATUS EFIAPI
+FileFlushEx(EFI_FILE_HANDLE This, EFI_FILE_IO_TOKEN *Token)
+{
+	return FileFlush(This);
+}
+
 /**
  * Open root directory
  *
@@ -703,7 +733,7 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 	}
 
 	/* Setup the EFI part */
-	This->RootFile->EfiFile.Revision = EFI_FILE_HANDLE_REVISION;
+	This->RootFile->EfiFile.Revision = EFI_FILE_PROTOCOL_REVISION2;
 	This->RootFile->EfiFile.Open = FileOpen;
 	This->RootFile->EfiFile.Close = FileClose;
 	This->RootFile->EfiFile.Delete = FileDelete;
@@ -714,6 +744,10 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 	This->RootFile->EfiFile.GetInfo = FileGetInfo;
 	This->RootFile->EfiFile.SetInfo = FileSetInfo;
 	This->RootFile->EfiFile.Flush = FileFlush;
+	This->RootFile->EfiFile.OpenEx = FileOpenEx;
+	This->RootFile->EfiFile.ReadEx = FileReadEx;
+	This->RootFile->EfiFile.WriteEx = FileWriteEx;
+	This->RootFile->EfiFile.FlushEx = FileFlushEx;
 
 	/* Setup the other attributes */
 	This->RootFile->path = "/";
@@ -721,7 +755,7 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 	This->RootFile->IsDir = TRUE;
 
 	/* Install the simple file system protocol. */
-	Status = LibInstallProtocolInterfaces(&ControllerHandle,
+	Status = BS->InstallMultipleProtocolInterfaces(&ControllerHandle,
 			&FileSystemProtocol, &This->FileIoInterface,
 			NULL);
 	if (EFI_ERROR(Status)) {
