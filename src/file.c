@@ -145,7 +145,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 		return EFI_SUCCESS;
 	}
 
-	// TODO: eventually we should seek for already opened files and increase RefCount */
+	// TODO: eventually we should seek for already opened files and increase RefCount
 	/* Allocate and initialise an instance of a file */
 	Status = GrubCreateFile(&NewFile, File->FileSystem);
 	if (EFI_ERROR(Status)) {
@@ -538,7 +538,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 		FileName(File), *Len, File->IsDir?L"<DIR>":L"");
 
 	/* Determine information to return */
-	if (CompareMem(Type, &GenericFileInfo, sizeof(*Type)) == 0) {
+	if (CompareMem(Type, &gEfiFileInfoGuid, sizeof(*Type)) == 0) {
 
 		/* Fill file information */
 		PrintExtra(L"Get regular file information\n");
@@ -575,7 +575,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 		*Len = (INTN)Info->Size;
 		return EFI_SUCCESS;
 
-	} else if (CompareMem(Type, &FileSystemInfo, sizeof(*Type)) == 0) {
+	} else if (CompareMem(Type, &gEfiFileSystemInfoGuid, sizeof(*Type)) == 0) {
 
 		/* Get file system information */
 		PrintExtra(L"Get file system information\n");
@@ -616,7 +616,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 		}
 		return EFI_SUCCESS;
 
-	} else if (CompareMem(Type, &FileSystemVolumeLabelInfo, sizeof(*Type)) == 0) {
+	} else if (CompareMem(Type, &gEfiFileSystemVolumeLabelInfoIdGuid, sizeof(*Type)) == 0) {
 
 		/* Get the volume label */
 		Status = GrubLabel(File, &label);

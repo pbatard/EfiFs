@@ -97,13 +97,13 @@ FSBindingSupported(EFI_DRIVER_BINDING_PROTOCOL *This,
 
 	/* Don't handle this unless we can get exclusive access to DiskIO through it */
 	Status = BS->OpenProtocol(ControllerHandle,
-			&DiskIo2Protocol, (VOID **)&DiskIo2,
+			&gEfiDiskIo2ProtocolGuid, (VOID **) &DiskIo2,
 			This->DriverBindingHandle, ControllerHandle,
 			EFI_OPEN_PROTOCOL_BY_DRIVER);
 	if (EFI_ERROR(Status))
 		DiskIo2 = NULL;
 	Status = BS->OpenProtocol(ControllerHandle,
-			&DiskIoProtocol, (VOID **) &DiskIo,
+			&gEfiDiskIoProtocolGuid, (VOID **) &DiskIo,
 			This->DriverBindingHandle, ControllerHandle,
 			EFI_OPEN_PROTOCOL_BY_DRIVER);
 	if (EFI_ERROR(Status))
@@ -154,7 +154,7 @@ FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 	}
 
 	/* Prefer UEFI 2.0 conversion protocols if available */
-	Status = BS->LocateProtocol(&DevicePathToTextProtocol, NULL, (VOID**)&DevicePathToText);
+	Status = BS->LocateProtocol(&DevicePathToTextProtocol, NULL, (VOID**) &DevicePathToText);
 	if (Status == EFI_SUCCESS)
 		Instance->DevicePathString = DevicePathToText->ConvertDevicePathToText(DevicePath, FALSE, FALSE);
 	else
@@ -168,14 +168,14 @@ FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 
 	/* Get access to the Block IO protocol for this controller */
 	Status = BS->OpenProtocol(ControllerHandle,
-			&BlockIo2Protocol, (VOID **)&Instance->BlockIo2,
+			&gEfiBlockIo2ProtocolGuid, (VOID **) &Instance->BlockIo2,
 			This->DriverBindingHandle, ControllerHandle,
 			EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 	if (EFI_ERROR(Status))
 		Instance->BlockIo2 = NULL;
 
 	Status = BS->OpenProtocol(ControllerHandle,
-			&BlockIoProtocol, (VOID **) &Instance->BlockIo,
+			&gEfiBlockIoProtocolGuid, (VOID **) &Instance->BlockIo,
 			This->DriverBindingHandle, ControllerHandle,
 			/* http://wiki.phoenix.com/wiki/index.php/EFI_BOOT_SERVICES#OpenProtocol.28.29
 			 * EFI_OPEN_PROTOCOL_BY_DRIVER returns Access Denied here, most likely
@@ -190,14 +190,14 @@ FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 
 	/* Get exclusive access to the Disk IO protocol */
 	Status = BS->OpenProtocol(ControllerHandle,
-			&DiskIo2Protocol, (VOID**)&Instance->DiskIo2,
+			&gEfiDiskIo2ProtocolGuid, (VOID**) &Instance->DiskIo2,
 			This->DriverBindingHandle, ControllerHandle,
 			EFI_OPEN_PROTOCOL_BY_DRIVER);
 	if (EFI_ERROR(Status))
 		Instance->DiskIo2 = NULL;
 
 	Status = BS->OpenProtocol(ControllerHandle,
-			&DiskIoProtocol, (VOID**) &Instance->DiskIo,
+			&gEfiDiskIoProtocolGuid, (VOID**) &Instance->DiskIo,
 			This->DriverBindingHandle, ControllerHandle,
 			EFI_OPEN_PROTOCOL_BY_DRIVER);
 	if (EFI_ERROR(Status)) {
@@ -218,9 +218,9 @@ FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 	 */
 	if (EFI_ERROR(Status)) {
 		GrubDeviceExit(Instance);
-		BS->CloseProtocol(ControllerHandle, &DiskIo2Protocol,
+		BS->CloseProtocol(ControllerHandle, &gEfiDiskIo2ProtocolGuid,
 			This->DriverBindingHandle, ControllerHandle);
-		BS->CloseProtocol(ControllerHandle, &DiskIoProtocol,
+		BS->CloseProtocol(ControllerHandle, &gEfiDiskIoProtocolGuid,
 			This->DriverBindingHandle, ControllerHandle);
 	}
 
@@ -243,7 +243,7 @@ FSBindingStop(EFI_DRIVER_BINDING_PROTOCOL *This,
 
 	/* Get a pointer back to our FS instance through its installed protocol */
 	Status = BS->OpenProtocol(ControllerHandle,
-			&FileSystemProtocol, (VOID **) &FileIoInterface,
+			&gEfiSimpleFileSystemProtocolGuid, (VOID **) &FileIoInterface,
 			This->DriverBindingHandle, ControllerHandle,
 			EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 	if (EFI_ERROR(Status)) {
@@ -259,9 +259,9 @@ FSBindingStop(EFI_DRIVER_BINDING_PROTOCOL *This,
 		PrintStatusError(Status, L"Could not destroy grub device");
 	}
 
-	BS->CloseProtocol(ControllerHandle, &DiskIo2Protocol,
-		This->DriverBindingHandle, ControllerHandle);
-	BS->CloseProtocol(ControllerHandle, &DiskIoProtocol,
+	BS->CloseProtocol(ControllerHandle, &gEfiDiskIo2ProtocolGuid,
+			This->DriverBindingHandle, ControllerHandle);
+	BS->CloseProtocol(ControllerHandle, &gEfiDiskIoProtocolGuid,
 			This->DriverBindingHandle, ControllerHandle);
 
 	FreeFsInstance(Instance);
@@ -375,9 +375,9 @@ FSDriverUninstall(EFI_HANDLE ImageHandle)
 
 	/* Now that all controllers are disconnected, we can safely remove our protocols */
 	BS->UninstallMultipleProtocolInterfaces(ImageHandle,
-			&DriverBindingProtocol, &FSDriverBinding,
-			&ComponentNameProtocol, &FSComponentName,
-			&ComponentName2Protocol, &FSComponentName2,
+			&gEfiDriverBindingProtocolGuid, &FSDriverBinding,
+			&gEfiComponentNameProtocolGuid, &FSComponentName,
+			&gEfiComponentName2ProtocolGuid, &FSComponentName2,
 			NULL);
 
 	/* Release the relevant GRUB module(s) */
@@ -437,7 +437,7 @@ FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	}
 
 	/* Grab a handle to this image, so that we can add an unload to our driver */
-	Status = BS->OpenProtocol(ImageHandle, &LoadedImageProtocol,
+	Status = BS->OpenProtocol(ImageHandle, &gEfiLoadedImageProtocolGuid,
 			(VOID **) &LoadedImage, ImageHandle,
 			NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 	if (EFI_ERROR(Status)) {
@@ -451,9 +451,9 @@ FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 
 	/* Install driver */
 	Status = BS->InstallMultipleProtocolInterfaces(&FSDriverBinding.DriverBindingHandle,
-			&DriverBindingProtocol, &FSDriverBinding,
-			&ComponentNameProtocol, &FSComponentName,
-			&ComponentName2Protocol, &FSComponentName2,
+			&gEfiDriverBindingProtocolGuid, &FSDriverBinding,
+			&gEfiComponentNameProtocolGuid, &FSComponentName,
+			&gEfiComponentName2ProtocolGuid, &FSComponentName2,
 			NULL);
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"Could not bind driver");
