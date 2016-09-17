@@ -10,7 +10,8 @@ For additional info as well as precompiled drivers, see http://efi.akeo.ie
 
 * [Visual Studio 2015](http://www.visualstudio.com/products/visual-studio-community-vs) or MinGW/gcc
 * A git client able to initialize/update submodules
-* [QEMU](http://www.qemu.org) if debugging with Visual Studio
+* [QEMU](http://www.qemu.org) __v2.7 or later__ if debugging with Visual Studio
+  (NB: You can find QEMU Windows binaries [here](https://qemu.weilnetz.de/w64/))
 
 ## Compilation
 
