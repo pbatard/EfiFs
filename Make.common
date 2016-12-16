@@ -17,6 +17,9 @@ else
   else ifeq ($(shell uname -m),arm)
     ARCH        = arm
     CROSS_COMPILE =
+  else ifeq ($(shell uname -m),aa64)
+    ARCH        = aarch64
+    CROSS_COMPILE =
   else
     ARCH        = ia32
   endif
@@ -28,6 +31,8 @@ ifeq ($(shell uname -m),x86_64)
 else
   MINGW_HOST    = w32
 endif
+
+CRT0_ARCH       = $(ARCH)
 
 ifeq ($(ARCH),x64)
   GNUEFI_ARCH   = x86_64
@@ -54,6 +59,16 @@ else ifeq ($(ARCH),arm)
   CFLAGS        = -marm -fpic -fshort-wchar -Wno-pointer-to-int-cast
   LDFLAGS       = -Wl,--no-wchar-size-warning -Wl,--defsym=EFI_SUBSYSTEM=$(SUBSYSTEM)
   CRT0_LIBS     = -lgnuefi
+else ifeq ($(ARCH),aa64)
+  GNUEFI_ARCH   = aarch64
+  GCC_ARCH      = aarch64
+  CPU_ARCH      = arm64
+  CRT0_ARCH     = aarch64
+  CROSS_COMPILE = $(GCC_ARCH)-linux-gnu-
+  EP_PREFIX     =
+  CFLAGS        = -fpic -fshort-wchar -Wno-pointer-to-int-cast
+  LDFLAGS       = -Wl,--no-wchar-size-warning -Wl,--defsym=EFI_SUBSYSTEM=$(SUBSYSTEM)
+  CRT0_LIBS     = -lgnuefi
 endif
 
 TOPDIR         := $(dir $(lastword $(MAKEFILE_LIST)))
@@ -68,7 +83,7 @@ GNUEFI_LIB      = $(GNUEFI_LIBDIR)/libefi.a
 # If the compiler produces an elf binary, we need to fiddle with a PE crt0
 ifneq ($(CRT0_LIBS),)
   CRT0_DIR      = $(GNUEFI_DIR)/$(GNUEFI_ARCH)/gnuefi
-  LDFLAGS      += -L$(CRT0_DIR) -T $(GNUEFI_DIR)/gnuefi/elf_$(ARCH)_efi.lds $(CRT0_DIR)/crt0-efi-$(ARCH).o
+  LDFLAGS      += -L$(CRT0_DIR) -T $(GNUEFI_DIR)/gnuefi/elf_$(CRT0_ARCH)_efi.lds $(CRT0_DIR)/crt0-efi-$(CRT0_ARCH).o
   GNUEFI_LIBS  += gnuefi
 endif
 

@@ -4,6 +4,7 @@ set ARCH=
 if "%1"=="Win32" set ARCH=i386
 if "%1"=="x64" set ARCH=x86_64
 if "%1"=="ARM" set ARCH=arm
+if "%1"=="ARM64" set ARCH=arm64
 if "%ARCH%"=="" (
   echo Unsupported arch %1
   exit 1

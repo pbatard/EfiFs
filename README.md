@@ -22,8 +22,10 @@ For additional info as well as precompiled drivers, see http://efi.akeo.ie
   you can apply the first patch only. If you are using MSVC, then you must apply both patches.
 * [_Visual Studio_] Open the solution file and hit `F5` to compile and debug the default driver.
 * [_gcc_] Run `make` in the top directory. If needed you can also issue something like
-  `make ARCH=<arch> CROSS_COMPILE=<tuple>` where `<arch>` is one of `ia32`, `x64` or `arm`
-  and tuple is the one for your cross-compiler (e.g. `arm-linux-gnueabihf-`).
+  `make ARCH=<arch> CROSS_COMPILE=<tuple>` where `<arch>` is one of `ia32`, `x64`, `arm` or 
+  `aa64` (the __official__ UEFI abbreviations for an arch, as used in `/efi/boot/boot[ARCH].efi`)
+  and tuple is the one for your cross-compiler, such as `arm-linux-gnueabihf-`.
+  e.g. `make ARCH=aa64 CROSS_COMPILE=aarch64-linux-gnu-`
 
 ## Testing
 

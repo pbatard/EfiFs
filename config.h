@@ -8,6 +8,8 @@
 #define GRUB_TARGET_CPU "i386"
 #elif defined (_M_ARM) || defined(__arm__)
 #define GRUB_TARGET_CPU "arm"
+#elif defined (_M_ARM64) || defined(__aarch64__)
+#define GRUB_TARGET_CPU "arm64"
 #else
 #error Usupported architecture
 #endif
