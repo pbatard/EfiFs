@@ -10,7 +10,6 @@
 QEMU_PATH  = "C:\Program Files\qemu\"
 ' You can add something like "-S -gdb tcp:127.0.0.1:1234" if you plan to use gdb to debug
 QEMU_OPTS  = "-net none -monitor none -parallel none"
-OVMF_DIR   = "http://efi.akeo.ie/OVMF/"
 ' Set to True if you need to download a file that might be cached locally
 NO_CACHE   = False
 
@@ -24,12 +23,12 @@ If (TARGET = "x86") Then
   UEFI_EXT  = "ia32"
   QEMU_ARCH = "i386"
   PRE_CMD   = "dir "
-  FS_BASE   = 0
+  FW_BASE   = "OVMF"
 ElseIf (TARGET = "x64") Then
   UEFI_EXT  = "x64"
   QEMU_ARCH = "x86_64"
+  FW_BASE   = "OVMF"
   PRE_CMD   = ""
-  FS_BASE   = 0
 ElseIf (TARGET = "ARM") Then
   UEFI_EXT  = "arm"
   QEMU_ARCH = "arm"
@@ -37,18 +36,17 @@ ElseIf (TARGET = "ARM") Then
   ' But if you do, be mindful that the keyboard input may not work... :(
   QEMU_OPTS = "-M virt -cpu cortex-a15 " & QEMU_OPTS
   PRE_CMD   = "dir "
-  ' With Linaro QEMU_EFI.fd, FS0: and FS1: are mapped to firmware memory areas
-  ' so the actual disks start at 2
-  FS_BASE   = 2
+  FW_BASE   = "QEMU_EFI"
 Else
   MsgBox("Unsupported debug target: " & TARGET)
   Call WScript.Quit(1)
 End If
 BOOT_NAME  = "boot" & UEFI_EXT & ".efi"
-OVMF_ARCH  = UCase(UEFI_EXT)
-OVMF_ZIP   = "OVMF-" & OVMF_ARCH & ".zip"
-OVMF_BIOS  = "OVMF_" & OVMF_ARCH & ".fd"
-OVMF_URL   = OVMF_DIR & OVMF_ZIP
+FW_ARCH    = UCase(UEFI_EXT)
+FW_DIR     = "http://efi.akeo.ie/" & FW_BASE & "/"
+FW_ZIP     = FW_BASE & "-" & FW_ARCH & ".zip"
+FW_FILE    = FW_BASE & "_" & FW_ARCH & ".fd"
+FW_URL     = FW_DIR & FW_ZIP
 QEMU_EXE   = "qemu-system-" & QEMU_ARCH & "w.exe"
 
 LOG_LEVEL  = 0
@@ -65,10 +63,7 @@ IMG        = FS & IMG_EXT
 IMG_ZIP    = FS & ".zip"
 IMG_URL    = "http://efi.akeo.ie/test/" & IMG_ZIP
 DRV        = FS & "_" & UEFI_EXT & ".efi"
-MNT        = "fs" & CStr(FS_BASE + 1) & ":"
-If (Not (TARGET = "ARM")) And ((FS = "bfs") Or (FS = "btrfs") Or (FS = "hfs") Or (FS = "jfs") Or (FS = "xfs")) Then
-  MNT      = "fs" & Cstr(FS_BASE + 3) & ":"
-End If
+MNT        = "fs1:"
 If (FS = "zfs") Then
   ' No idea why we get an '@' directory on ZFS, but it's "working" if we proceed from there
   MNT      =  MNT & "\@"
@@ -97,7 +92,7 @@ Sub DownloadHttp(Url, File)
   Set xHttp = createobject("Microsoft.XMLHTTP")
   Set bStrm = createobject("Adodb.Stream")
   Call xHttp.Open("GET", Url, False)
-    If NO_CACHE = True Then
+  If NO_CACHE = True Then
     Call xHttp.SetRequestHeader("If-None-Match", "some-random-string")
     Call xHttp.SetRequestHeader("Cache-Control", "no-cache,max-age=0")
     Call xHttp.SetRequestHeader("Pragma", "no-cache")
@@ -140,24 +135,24 @@ If Not fso.FileExists(QEMU_PATH & QEMU_EXE) Then
   Call WScript.Quit(1)
 End If
 
-' Fetch the Tianocore UEFI BIOS and unzip it
-If Not fso.FileExists(OVMF_BIOS) Then
-  Call WScript.Echo("The latest OVMF BIOS file, needed for QEMU/EFI, " &_
-    "will be downloaded from: " & OVMF_URL & vbCrLf & vbCrLf &_
+' Fetch the UEFI firmware and unzip it
+If Not fso.FileExists(FW_FILE) Then
+  Call WScript.Echo("The UEFI firmware file, needed for QEMU, " &_
+    "will be downloaded from: " & FW_URL & vbCrLf & vbCrLf &_
     "Note: Unless you delete the file, this should only happen once.")
-  Call DownloadHttp(OVMF_URL, OVMF_ZIP)
+  Call DownloadHttp(FW_URL, FW_ZIP)
 End If
-If Not fso.FileExists(OVMF_ZIP) And Not fso.FileExists(OVMF_BIOS) Then
-  Call WScript.Echo("There was a problem downloading the OVMF BIOS file.")
+If Not fso.FileExists(FW_ZIP) And Not fso.FileExists(FW_FILE) Then
+  Call WScript.Echo("There was a problem downloading the QEMU UEFI firmware.")
   Call WScript.Quit(1)
 End If
-If fso.FileExists(OVMF_ZIP) Then
-  Call Unzip(OVMF_ZIP, "OVMF.fd")
-  Call fso.MoveFile("OVMF.fd", OVMF_BIOS)
-  Call fso.DeleteFile(OVMF_ZIP)
+If fso.FileExists(FW_ZIP) Then
+  Call Unzip(FW_ZIP, FW_BASE & ".fd")
+  Call fso.MoveFile(FW_BASE & ".fd", FW_FILE)
+  Call fso.DeleteFile(FW_ZIP)
 End If
-If Not fso.FileExists(OVMF_BIOS) Then
-  Call WScript.Echo("There was a problem unzipping the OVMF BIOS file.")
+If Not fso.FileExists(FW_FILE) Then
+  Call WScript.Echo("There was a problem unzipping the QEMU UEFI firmware.")
   Call WScript.Quit(1)
 End If
 
@@ -179,8 +174,8 @@ Call fso.CopyFile(BIN, "image\" & DRV, True)
 ' Create a startup.nsh that: sets logging, loads the driver and executes an "Hello World" app from the disk
 Set file = fso.CreateTextFile("image\efi\boot\startup.nsh", True)
 Call file.Write("set FS_LOGGING " & LOG_LEVEL & vbCrLf &_
-  "load fs" & CStr(FS_BASE) & ":\" & DRV & vbCrLf &_
+  "load fs0:\" & DRV & vbCrLf &_
   "map -r" & vbCrLf &_
   PRE_CMD & MNT & "\EFI\Boot\bootx64.efi" & vbCrLf)
 Call file.Close()
-Call shell.Run("""" & QEMU_PATH & QEMU_EXE & """ " & QEMU_OPTS & " -L . -bios " & OVMF_BIOS & " -hda fat:image -hdb " & IMG, 1, True)
+Call shell.Run("""" & QEMU_PATH & QEMU_EXE & """ " & QEMU_OPTS & " -L . -bios " & FW_FILE & " -hda fat:image -hdb " & IMG, 1, True)
