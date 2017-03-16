@@ -1,6 +1,7 @@
 # Set the default behavior, in case people don't have core.autocrlf set.
 * text=auto
-
+# git apply may fail unless it is fed LF terminated patches...
+*.patch eol=lf
 *.c text
 *.h text
 *.md text 
