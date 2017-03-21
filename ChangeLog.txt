@@ -3,7 +3,7 @@ visit: https://github.com/pbatard/efifs
 
 v1.1 (2016.12.28)
 * Add Arm64 platform support
-* Add F2FS support
+* Add F2FS support (EXPERIMENTAL)
 * Internal improvements
 * Update GRUB and gnu-efi to latest
 
