@@ -178,4 +178,4 @@ Call file.Write("set FS_LOGGING " & LOG_LEVEL & vbCrLf &_
   "map -r" & vbCrLf &_
   PRE_CMD & MNT & "\EFI\Boot\bootx64.efi" & vbCrLf)
 Call file.Close()
-Call shell.Run("""" & QEMU_PATH & QEMU_EXE & """ " & QEMU_OPTS & " -L . -bios " & FW_FILE & " -hda fat:image -hdb " & IMG, 1, True)
+Call shell.Run("""" & QEMU_PATH & QEMU_EXE & """ " & QEMU_OPTS & " -L . -bios " & FW_FILE & " -hda fat:rw:image -hdb " & IMG, 1, True)
