@@ -35,6 +35,9 @@
     <ClCompile Include="..\..\grub\grub-core\fs\zfs\zfs_sha256.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\grub\grub-core\lib\crypto.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\debug.vbs">

@@ -148,7 +148,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;__MAKEWITH_GNUEFI;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;GRUB_FILE=__FILE__;DRIVERNAME=$(ProjectName);DRIVERNAME_STR="ReiserFS";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <UndefinePreprocessorDefinitions>
@@ -157,6 +157,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <MSExtensions>false</MSExtensions>
       <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -178,7 +179,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;__MAKEWITH_GNUEFI;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;GRUB_FILE=__FILE__;DRIVERNAME=$(ProjectName);DRIVERNAME_STR="ReiserFS";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <UndefinePreprocessorDefinitions>
@@ -187,6 +188,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <MSExtensions>false</MSExtensions>
       <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -207,8 +209,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;__MAKEWITH_GNUEFI;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;GRUB_FILE=__FILE__;DRIVERNAME=$(ProjectName);DRIVERNAME_STR="ReiserFS";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <UndefinePreprocessorDefinitions>
@@ -217,6 +219,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <MSExtensions>false</MSExtensions>
       <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -238,13 +241,14 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;__MAKEWITH_GNUEFI;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;GRUB_FILE=__FILE__;DRIVERNAME=$(ProjectName);DRIVERNAME_STR="ReiserFS";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <Optimization>MinSize</Optimization>
       <MSExtensions>false</MSExtensions>
       <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -270,13 +274,14 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;__MAKEWITH_GNUEFI;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;GRUB_FILE=__FILE__;DRIVERNAME=$(ProjectName);DRIVERNAME_STR="ReiserFS";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <Optimization>MinSize</Optimization>
       <MSExtensions>false</MSExtensions>
       <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -301,14 +306,15 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;__MAKEWITH_GNUEFI;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;GRUB_FILE=__FILE__;DRIVERNAME=$(ProjectName);DRIVERNAME_STR="ReiserFS";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <Optimization>MinSize</Optimization>
       <MSExtensions>false</MSExtensions>
       <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>

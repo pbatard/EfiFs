@@ -148,7 +148,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);COMPRESSED_DRIVERNAME=$(ProjectName)comp;GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;__MAKEWITH_GNUEFI;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;GRUB_FILE=__FILE__;DRIVERNAME=$(ProjectName);COMPRESSED_DRIVERNAME=$(ProjectName)comp;DRIVERNAME_STR="NTFS";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <UndefinePreprocessorDefinitions>
@@ -157,6 +157,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <MSExtensions>false</MSExtensions>
       <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -179,7 +180,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);COMPRESSED_DRIVERNAME=$(ProjectName)comp;GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;__MAKEWITH_GNUEFI;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;GRUB_FILE=__FILE__;DRIVERNAME=$(ProjectName);COMPRESSED_DRIVERNAME=$(ProjectName)comp;DRIVERNAME_STR="NTFS";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <UndefinePreprocessorDefinitions>
@@ -188,6 +189,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <MSExtensions>false</MSExtensions>
       <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -209,7 +211,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);COMPRESSED_DRIVERNAME=$(ProjectName)comp;GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;__MAKEWITH_GNUEFI;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;GRUB_FILE=__FILE__;DRIVERNAME=$(ProjectName);COMPRESSED_DRIVERNAME=$(ProjectName)comp;DRIVERNAME_STR="NTFS";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <UndefinePreprocessorDefinitions>
@@ -218,6 +220,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <MSExtensions>false</MSExtensions>
       <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -239,13 +242,14 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);COMPRESSED_DRIVERNAME=$(ProjectName)comp;GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;__MAKEWITH_GNUEFI;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;GRUB_FILE=__FILE__;DRIVERNAME=$(ProjectName);COMPRESSED_DRIVERNAME=$(ProjectName)comp;DRIVERNAME_STR="NTFS";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <MSExtensions>false</MSExtensions>
       <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
       <Optimization>MinSize</Optimization>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -271,13 +275,14 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);COMPRESSED_DRIVERNAME=$(ProjectName)comp;GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;__MAKEWITH_GNUEFI;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;GRUB_FILE=__FILE__;DRIVERNAME=$(ProjectName);COMPRESSED_DRIVERNAME=$(ProjectName)comp;DRIVERNAME_STR="NTFS";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <MSExtensions>false</MSExtensions>
       <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
       <Optimization>MinSize</Optimization>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -303,13 +308,14 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);COMPRESSED_DRIVERNAME=$(ProjectName)comp;GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;__MAKEWITH_GNUEFI;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;GRUB_FILE=__FILE__;DRIVERNAME=$(ProjectName);COMPRESSED_DRIVERNAME=$(ProjectName)comp;DRIVERNAME_STR="NTFS";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <MSExtensions>false</MSExtensions>
       <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
       <Optimization>MinSize</Optimization>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>

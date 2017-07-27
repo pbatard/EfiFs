@@ -33,12 +33,12 @@
     <ClCompile Include="..\..\grub\grub-core\kern\misc.c" />
     <ClCompile Include="..\..\grub\grub-core\lib\crc.c" />
     <ClCompile Include="..\..\grub\grub-core\lib\minilzo\minilzo.c">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">LZO_CFG_FREESTANDING;MINILZO_CFG_SKIP_LZO1X_1_COMPRESS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">LZO_CFG_FREESTANDING;MINILZO_CFG_SKIP_LZO1X_1_COMPRESS;LZO_CFG_PGO;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">LZO_CFG_FREESTANDING;MINILZO_CFG_SKIP_LZO1X_1_COMPRESS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">LZO_CFG_FREESTANDING;MINILZO_CFG_SKIP_LZO1X_1_COMPRESS;LZO_CFG_PGO;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">LZO_CFG_FREESTANDING;MINILZO_CFG_SKIP_LZO1X_1_COMPRESS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">LZO_CFG_FREESTANDING;MINILZO_CFG_SKIP_LZO1X_1_COMPRESS;LZO_CFG_PGO;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">LZO_CFG_FREESTANDING;MINILZO_CFG_SKIP_LZO1X_1_COMPRESS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">LZO_CFG_FREESTANDING;MINILZO_CFG_SKIP_LZO1X_1_COMPRESS;LZO_CFG_PGO;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">LZO_CFG_FREESTANDING;MINILZO_CFG_SKIP_LZO1X_1_COMPRESS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">LZO_CFG_FREESTANDING;MINILZO_CFG_SKIP_LZO1X_1_COMPRESS;LZO_CFG_PGO;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">LZO_CFG_FREESTANDING;MINILZO_CFG_SKIP_LZO1X_1_COMPRESS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">LZO_CFG_FREESTANDING;MINILZO_CFG_SKIP_LZO1X_1_COMPRESS;LZO_CFG_PGO;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <ClCompile Include="..\..\src\grub.c" />
   </ItemGroup>
@@ -54,6 +54,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">true</ExcludedFromBuild>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AMD64</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AMD64</PreprocessorDefinitions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </MASM>
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -157,8 +161,8 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>grub_err_printf=grub_printf;LZO_CFG_FREESTANDING;LZO_CFG_PGO;MINILZO_CFG_USE_INTERNAL_LZODEFS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>grub_err_printf=grub_printf;LZO_CFG_FREESTANDING;LZO_CFG_PGO;MINILZO_CFG_USE_INTERNAL_LZODEFS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -181,8 +185,8 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>grub_err_printf=grub_printf;LZO_CFG_FREESTANDING;LZO_CFG_PGO;MINILZO_CFG_USE_INTERNAL_LZODEFS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>grub_err_printf=grub_printf;LZO_CFG_FREESTANDING;LZO_CFG_PGO;MINILZO_CFG_USE_INTERNAL_LZODEFS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -205,8 +209,8 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>grub_err_printf=grub_printf;LZO_CFG_FREESTANDING;LZO_CFG_PGO;MINILZO_CFG_USE_INTERNAL_LZODEFS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)\grub\include;$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>grub_err_printf=grub_printf;LZO_CFG_FREESTANDING;LZO_CFG_PGO;MINILZO_CFG_USE_INTERNAL_LZODEFS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -229,8 +233,8 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>grub_err_printf=grub_printf;LZO_CFG_FREESTANDING;LZO_CFG_PGO;MINILZO_CFG_USE_INTERNAL_LZODEFS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>grub_err_printf=grub_printf;LZO_CFG_FREESTANDING;LZO_CFG_PGO;MINILZO_CFG_USE_INTERNAL_LZODEFS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -257,8 +261,8 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>grub_err_printf=grub_printf;LZO_CFG_FREESTANDING;LZO_CFG_PGO;MINILZO_CFG_USE_INTERNAL_LZODEFS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>grub_err_printf=grub_printf;LZO_CFG_FREESTANDING;LZO_CFG_PGO;MINILZO_CFG_USE_INTERNAL_LZODEFS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -285,8 +289,8 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)\grub\include;$(SolutionDir)\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>grub_err_printf=grub_printf;LZO_CFG_FREESTANDING;LZO_CFG_PGO;MINILZO_CFG_USE_INTERNAL_LZODEFS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(VCClangInstallDir)\include;$(SolutionDir)\missing;$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)\grub\include;$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>grub_err_printf=grub_printf;LZO_CFG_FREESTANDING;LZO_CFG_PGO;MINILZO_CFG_USE_INTERNAL_LZODEFS;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
