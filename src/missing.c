@@ -1,6 +1,6 @@
 /* missing.c - Missing convenience calls from the EFI interface */
 /*
- *  Copyright © 2014 Pete Batard <pete@akeo.ie>
+ *  Copyright © 2014-2017 Pete Batard <pete@akeo.ie>
  *  Based on GRUB  --  GRand Unified Bootloader
  *  Copyright © 1999-2010 Free Software Foundation, Inc.
  *
@@ -20,6 +20,44 @@
 
 #include <efi.h>
 #include <efilib.h>
+
+ // Microsoft's intrinsics are a major pain in the ass
+ // https://stackoverflow.com/a/2945619/1069307
+#if defined(_M_X64) && (defined(_MSC_VER) || defined(__c2__))
+#include <stddef.h>		// For size_t
+
+void* memset(void *, int, size_t);
+#pragma intrinsic(memset)
+#pragma function(memset)
+void* memset(void *s, int c, size_t n)
+{
+	SetMem(s, (UINTN)n, (UINT8)c);
+	return s;
+}
+
+void* memcpy(void *, const void *, size_t);
+#pragma intrinsic(memcpy)
+#pragma function(memcpy)
+void* memcpy(void *s1, const void *s2, size_t n)
+{
+	CopyMem(s1, s2, (UINTN)n);
+	return s1;
+}
+
+int memcmp(const void*, const void *, size_t);
+#pragma intrinsic(memcmp)
+#pragma function(memcmp)
+int memcmp(const void *s1, const void *s2, size_t n)
+{
+	return (int)CompareMem(s1, s2, (UINTN)n);
+}
+
+void* memmove(void *s1, const void *s2, size_t n)
+{
+	CopyMem(s1, s2, n);
+	return s1;
+}
+#endif
 
 VOID
 strcpya(CHAR8 *dst, CONST CHAR8 *src)
