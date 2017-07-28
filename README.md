@@ -1,4 +1,4 @@
-efifs - EFI File System Drivers
+EfiFs - EFI File System Drivers
 ===============================
 
 This is a GPLv3+ implementation of standalone EFI File System drivers, based on the
@@ -8,7 +8,9 @@ For additional info as well as precompiled drivers, see http://efi.akeo.ie
 
 ## Requirements
 
-* [Visual Studio 2017](https://www.visualstudio.com/vs/community/) or MinGW/gcc
+* [Visual Studio 2017](https://www.visualstudio.com/vs/community/) (Windows), MinGW (Windows), gcc (Linux) or
+  [EDK2](https://github.com/tianocore/edk2)/VS2015 (Windows). Note that EDK2 is supported with the Visual
+  Studio compiler __only__.
 * A git client able to initialize/update submodules
 * [QEMU](http://www.qemu.org) __v2.7 or later__ if debugging with Visual Studio
   (NB: You can find QEMU Windows binaries [here](https://qemu.weilnetz.de/w64/))
@@ -19,8 +21,20 @@ For additional info as well as precompiled drivers, see http://efi.akeo.ie
 * [_Common_] Apply the included f2fs patch to the `grub\` subdirectory. This adds F2FS support,
   which is not yet included in GRUB2.
 * [_Visual Studio_] Apply the other patches to the `grub\` subdirectory. If you are using Clang/C2
-  you can apply the first patch only. If you are using MSVC, then you must apply both patches.
+  you can apply the first patch only. If you are using MSVC, you must apply 2 patches and if you
+  are using EDK2 you should apply all of them.
 * [_Visual Studio_] Open the solution file and hit `F5` to compile and debug the default driver.
+* [_EDK2_] Open and elevated command prompt and create a symbolic link, inside your
+  EDK2 directory, to the EfiFs source. For instance, if you have EKD2 in `C:\edk2` and EfiFs in `C:\efifs`, 
+  youd should run `mklink /D EfiFsPkg C:\efifs` inside the `C:\edk2` directory.
+* [_EDK2_] Open a Visual Studio command prompt and, after having invoked `Edk2Setup.bat` run something like:  
+  ```
+  build -a X64 -b RELEASE -t VS2015 -p EfiFsPkg/EfiFsPkg.dsc
+  ```  
+  NB: To build an individual driver, such as NTFS, you would can also use something like:  
+  ```
+  build -a X64 -b RELEASE -t VS2015 -p EfiFsPkg/EfiFsPkg.dsc -m EfiFsPkg/EfiFsPkg/Ntfs.inf
+  ```
 * [_gcc_] Run `make` in the top directory. If needed you can also issue something like
   `make ARCH=<arch> CROSS_COMPILE=<tuple>` where `<arch>` is one of `ia32`, `x64`, `arm` or
   `aa64` (the __official__ UEFI abbreviations for an arch, as used in `/efi/boot/boot[ARCH].efi`)
