@@ -1,6 +1,6 @@
 /* fs_driver.h - Wrapper for standalone EFI filesystem drivers */
 /*
- *  Copyright © 2014-2016 Pete Batard <pete@akeo.ie>
+ *  Copyright © 2014-2017 Pete Batard <pete@akeo.ie>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,8 +16,45 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if defined(__MAKEWITH_GNUEFI)
 #include <efi.h>
-#include <efilink.h>
+#include <efilib.h>
+#include <efidebug.h>	/* ASSERT */
+#else
+#include <Base.h>
+#include <Uefi.h>
+
+#include <Library/DebugLib.h>
+#include <Library/BaseLib.h>
+#include <Library/BaseMemoryLib.h>
+#include <Library/UefiRuntimeServicesTableLib.h>
+#include <Library/UefiDriverEntryPoint.h>
+#include <Library/UefiBootServicesTableLib.h>
+#include <Library/MemoryAllocationLib.h>
+#include <Library/DevicePathLib.h>
+#include <Library/PrintLib.h>
+#include <Library/UefiLib.h>
+
+#include <Protocol/UnicodeCollation.h>
+#include <Protocol/LoadedImage.h>
+#include <Protocol/DriverBinding.h>
+#include <Protocol/DevicePathFromText.h>
+#include <Protocol/DevicePathToText.h>
+#include <Protocol/DebugPort.h>
+#include <Protocol/DebugSupport.h>
+#include <Protocol/SimpleFileSystem.h>
+#include <Protocol/BlockIo.h>
+#include <Protocol/BlockIo2.h>
+#include <Protocol/DiskIo.h>
+#include <Protocol/DiskIo2.h>
+#include <Protocol/ComponentName.h>
+#include <Protocol/ComponentName2.h>
+
+#include <Guid/FileSystemInfo.h>
+#include <Guid/FileInfo.h>
+#include <Guid/FileSystemVolumeLabelInfo.h>
+#include <Guid/ShellVariableGuid.h>
+#endif
 
 #pragma once
 
@@ -27,9 +64,31 @@
 #endif
 
 /* Having GNU_EFI_USE_MS_ABI should avoid the need for that ugly uefi_call_wrapper */
-#if !defined(__MAKEWITH_GNUEFI) || !defined(GNU_EFI_USE_MS_ABI)
+#if defined(_GNU_EFI) && !defined(GNU_EFI_USE_MS_ABI)
 #error gnu-efi, with option GNU_EFI_USE_MS_ABI, is required for the compilation of this driver.
 #endif
+#endif
+
+/* Sort out the differences between EDK2 and gnu-efi */
+#if defined(_GNU_EFI)
+#define STUPID_CLANG_REF(a,b) a.b
+#define FORWARD_LINK_REF(list) STUPID_CLANG_REF(list,Flink)
+#else
+#define STUPID_CLANG_REF(a,b) a.b
+#define FORWARD_LINK_REF(list) STUPID_CLANG_REF(list, ForwardLink)
+#define Atoi (INTN)StrDecimalToUintn
+#define APrint AsciiPrint
+#define strlena AsciiStrLen
+#define strcmpa AsciiStrCmp
+#define BS gBS
+#define RT gRT
+#define ST gST
+#define _CR BASE_CR
+#define PROTO_NAME(x) gEfi ## x ## Guid
+#define GUID_NAME(x) gEfi ## x ## Guid
+#define SIZE_OF_EFI_FILE_SYSTEM_VOLUME_LABEL_INFO SIZE_OF_EFI_FILE_SYSTEM_VOLUME_LABEL
+#define EFI_FILE_SYSTEM_VOLUME_LABEL_INFO EFI_FILE_SYSTEM_VOLUME_LABEL
+#define EFI_SIGNATURE_32(a,b,c,d) SIGNATURE_32(a,b,c,d)
 #endif
 
 /* Driver version */
@@ -63,12 +122,24 @@
 #define FS_LOGLEVEL_DEBUG       4
 #define FS_LOGLEVEL_EXTRA       5
 
-typedef UINTN (*Print_t)        (IN CHAR16 *fmt, ... );
+typedef UINTN (*Print_t)        (IN CONST CHAR16 *fmt, ... );
 extern Print_t PrintError;
 extern Print_t PrintWarning;
 extern Print_t PrintInfo;
 extern Print_t PrintDebug;
 extern Print_t PrintExtra;
+
+/**
+ * Print an error message along with a human readable EFI status code
+ *
+ * @v Status		EFI status code
+ * @v Format		A non '\n' terminated error message string
+ * @v ...			Any extra parameters
+ */
+#define PrintStatusError(Status, Format, ...) \
+	if (LogLevel >= FS_LOGLEVEL_ERROR) { \
+		Print(Format, ##__VA_ARGS__); PrintStatus(Status); }
+
 
 /* Forward declaration */
 struct _EFI_FS;
@@ -129,7 +200,7 @@ extern VOID strcpya(CHAR8 *dst, CONST CHAR8 *src);
 extern CHAR8 *strchra(const CHAR8 *s, INTN c);
 extern CHAR8 *strrchra(const CHAR8 *s, INTN c);
 extern VOID SetLogging(VOID);
-extern VOID PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...);
+extern VOID PrintStatus(EFI_STATUS Status);
 extern VOID GrubDriverInit(VOID);
 extern VOID GrubDriverExit(VOID);
 extern CHAR16 *GrubGetUuid(EFI_FS *This);
@@ -159,5 +230,7 @@ extern EFI_STATUS FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle);
 extern VOID FSUninstall(EFI_FS *This, EFI_HANDLE ControllerHandle);
 extern EFI_STATUS EFIAPI FileOpenVolume(EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *This,
 		EFI_FILE_HANDLE *Root);
+extern EFI_GUID *GetFSGuid(VOID);
+extern EFI_STATUS PrintGuid (EFI_GUID *Guid);
 extern EFI_STATUS EFIAPI FSDriverInstall(EFI_HANDLE ImageHandle,
 		EFI_SYSTEM_TABLE* SystemTable);

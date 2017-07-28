@@ -1,7 +1,7 @@
-From bf6591faa32cf00aefb80180952dafa1c921c21f Mon Sep 17 00:00:00 2001
+From d05789f5d54ed27069f1c54a1697a8ae28527134 Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
 Date: Wed, 13 Jul 2016 14:19:14 +0100
-Subject: [PATCH 1/2] Clang/C2 compatibility fixes
+Subject: [PATCH 2/4] Clang/C2 compatibility fixes
 
 ---
  grub-core/fs/affs.c             | 4 ++--
@@ -42,7 +42,7 @@ index 2f73449..053d1f7 100644
  #else
  #define	expect(expr, value)    (expr)
 diff --git a/grub-core/kern/misc.c b/grub-core/kern/misc.c
-index d1a54df..5bec00c 100644
+index 3b633d5..9024c10 100644
 --- a/grub-core/kern/misc.c
 +++ b/grub-core/kern/misc.c
 @@ -138,7 +138,7 @@ grub_puts_ (const char *s)
@@ -118,5 +118,5 @@ index 0bbdc6d..866b345 100644
  #else
  #define GRUB_TARGET_SIZEOF_LONG		8
 -- 
-2.8.1.windows.1
+2.9.3.windows.2
 

@@ -1,6 +1,6 @@
 /* grub.c - The elastic binding between grub and standalone EFI */
 /*
- *  Copyright © 2014 Pete Batard <pete@akeo.ie>
+ *  Copyright © 2014-2017 Pete Batard <pete@akeo.ie>
  *  Based on GRUB, glibc and additional software:
  *  Copyright © 2001-2014 Free Software Foundation, Inc.
  *
@@ -17,9 +17,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#include <efi.h>
-#include <efilib.h>
 
 #include <grub/err.h>
 #include <grub/misc.h>
@@ -131,7 +128,11 @@ grub_realloc(void *p, grub_size_t new_size)
 
 	if (ptr != NULL) {
 		ptr = &ptr[-1];
+#if defined(__MAKEWITH_GNUEFI)
 		ptr = ReallocatePool(ptr, (UINTN)*ptr, (UINTN)(new_size + sizeof(grub_size_t)));
+#else
+		ptr = ReallocatePool((UINTN)*ptr, (UINTN)(new_size + sizeof(grub_size_t)), ptr);
+#endif
 		if (ptr != NULL)
 			*ptr++ = new_size;
 	}
@@ -265,10 +266,10 @@ GrubTimeToEfiTime(const INT32 t, EFI_TIME *tp)
 		rem -= SECS_PER_DAY;
 		++days;
 	}
-	tp->Hour = rem / SECS_PER_HOUR;
+	tp->Hour = (UINT8) (rem / SECS_PER_HOUR);
 	rem %= SECS_PER_HOUR;
-	tp->Minute = rem / 60;
-	tp->Second = rem % 60;
+	tp->Minute = (UINT8) (rem / 60);
+	tp->Second = (UINT8) (rem % 60);
 	y = 1970;
 
 	while (days < 0 || days >= (__isleap (y) ? 366 : 365)) {
@@ -281,11 +282,11 @@ GrubTimeToEfiTime(const INT32 t, EFI_TIME *tp)
 			- LEAPS_THRU_END_OF (y - 1));
 		y = yg;
 	}
-	tp->Year = y;
+	tp->Year = (UINT16) y;
 	ip = __mon_yday[__isleap(y)];
 	for (y = 11; days < (long int) ip[y]; --y)
 		continue;
 	days -= ip[y];
-	tp->Month = y + 1;
-	tp->Day = days + 1;
+	tp->Month = (UINT8) (y + 1);
+	tp->Day = (UINT8) (days + 1);
 }

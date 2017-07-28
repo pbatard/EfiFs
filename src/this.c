@@ -16,9 +16,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <efi.h>
-#include <efilib.h>
-
 #include "config.h"
 #include "driver.h"
 
@@ -90,5 +87,7 @@ GRUB_MOD_EXIT GrubModuleExit[] = {
 	NULL
 };
 
+#if defined(__MAKEWITH_GNUEFI)
 // Designate the driver entrypoint
 EFI_DRIVER_ENTRY_POINT(FSDriverInstall)
+#endif

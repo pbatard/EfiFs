@@ -1,6 +1,6 @@
 /* driver.c - Wrapper for standalone EFI filesystem drivers */
 /*
- *  Copyright © 2014-2016 Pete Batard <pete@akeo.ie>
+ *  Copyright © 2014-2017 Pete Batard <pete@akeo.ie>
  *  Based on iPXE's efi_driver.c and efi_file.c:
  *  Copyright © 2011,2013 Michael Brown <mbrown@fensystems.co.uk>.
  *
@@ -17,9 +17,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#include <efi.h>
-#include <efilib.h>
 
 #include "driver.h"
 
@@ -115,9 +112,9 @@ FSBindingSupported(EFI_DRIVER_BINDING_PROTOCOL *This,
 	 * actually support, but not check if the target is valid or
 	 * initialize anything, so we must close all protocols we opened.
 	 */
-	BS->CloseProtocol(ControllerHandle, &DiskIo2Protocol,
+	BS->CloseProtocol(ControllerHandle, &gEfiDiskIo2ProtocolGuid,
 		This->DriverBindingHandle, ControllerHandle);
-	BS->CloseProtocol(ControllerHandle, &DiskIoProtocol,
+	BS->CloseProtocol(ControllerHandle, &gEfiDiskIoProtocolGuid,
 			This->DriverBindingHandle, ControllerHandle);
 
 	return EFI_SUCCESS;
@@ -154,11 +151,14 @@ FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 	}
 
 	/* Prefer UEFI 2.0 conversion protocols if available */
-	Status = BS->LocateProtocol(&DevicePathToTextProtocol, NULL, (VOID**) &DevicePathToText);
+	Instance->DevicePathString = NULL;
+	Status = BS->LocateProtocol(&gEfiDevicePathToTextProtocolGuid, NULL, (VOID**) &DevicePathToText);
 	if (Status == EFI_SUCCESS)
 		Instance->DevicePathString = DevicePathToText->ConvertDevicePathToText(DevicePath, FALSE, FALSE);
+#if defined(_GNU_EFI)
 	else
 		Instance->DevicePathString = DevicePathToStr(DevicePath);
+#endif
 
 	if (Instance->DevicePathString == NULL) {
 		Status = EFI_OUT_OF_RESOURCES;
@@ -317,27 +317,28 @@ GetFSGuid(VOID)
 {
 	INTN i, j, k, Len = StrLen(ShortDriverName);
 	static EFI_GUID Guid = { 0xEF1F5EF1, 0xF17E, 0x5857, { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } };
-	CHAR16 *FsName = StrDuplicate(ShortDriverName);
+	CHAR16 c;
 	const CHAR16 *PlusName = L"plus";
 	UINT8 Data4[12];	/* +4 so that we can also reduce something like "1234567plus" into "1234567+" */
 
-	StrLwr(FsName);
 	for (i = 0, j = 0, k = 0; j < ARRAYSIZE(Data4); i = (i+1)%Len, j++) {
+		c = ShortDriverName[i];
+		if ((c >= L'A') && (c <= L'Z'))
+			c += L'a' - L'A';
 		/* Convert any 'plus' that is part of the name to '+' */
-		if (FsName[i] == PlusName[k]) {
+		if (c == PlusName[k]) {
 			if (++k == 4) {
 				k = 0;
 				j -= 3;
 				Data4[j] = (UINT8) '+';
 			} else {
-				Data4[j] = (UINT8) FsName[i];
+				Data4[j] = (UINT8) c;
 			}
 		} else {
 			k = 0;
-			Data4[j] = (UINT8) FsName[i];
+			Data4[j] = (UINT8) c;
 		}
 	}
-	FreePool(FsName);
 	CopyMem(Guid.Data4, Data4, 8);
 
 	return &Guid;
@@ -409,7 +410,9 @@ FSDriverInstall(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	VOID *Interface;
 	UINTN i;
 
+#if defined(_GNU_EFI)
 	InitializeLib(ImageHandle, SystemTable);
+#endif
 	SetLogging();
 	EfiImageHandle = ImageHandle;
 

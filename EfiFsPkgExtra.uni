@@ -1,0 +1,10 @@
+// /** @file
+// Module Localized content
+//
+// Copyright (c) 2017, Pete Batard <pete@akeo.ie>
+//
+// **/
+
+#string STR_PROPERTIES_PACKAGE_NAME 
+#language en-US 
+"EfiFs Package"

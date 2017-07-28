@@ -1,6 +1,6 @@
 /* grub_file.c - GRUB file handling interface */
 /*
- *  Copyright © 2014 Pete Batard <pete@akeo.ie>
+ *  Copyright © 2014-2017 Pete Batard <pete@akeo.ie>
  *  Based on GRUB  --  GRand Unified Bootloader
  *  Copyright © 2001-2014 Free Software Foundation, Inc.
  *
@@ -17,10 +17,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#include <efi.h>
-#include <efilib.h>
-#include <efidebug.h>	/* ASSERT */
 
 #include <grub/err.h>
 #include <grub/misc.h>
@@ -119,7 +115,7 @@ grub_file_seek(grub_file_t file, grub_off_t offset)
 	{
 		grub_error (GRUB_ERR_OUT_OF_RANGE,
 			N_("attempt to seek outside of the file"));
-		return -1;
+		return (grub_off_t)-1;
 	}
 
 	old = file->offset;
@@ -143,16 +139,28 @@ grub_disk_read(grub_disk_t disk, grub_disk_addr_t sector,
 {
 	EFI_STATUS Status;
 	EFI_FS* FileSystem = (EFI_FS *) disk->data;
+	EFI_BLOCK_IO_MEDIA *Media;
 
 	ASSERT(FileSystem != NULL);
 	ASSERT(FileSystem->DiskIo != NULL);
 	ASSERT(FileSystem->BlockIo != NULL);
 
+	if (FileSystem->BlockIo2 != NULL) {
+		Media = FileSystem->BlockIo2->Media;
+	} else {
+		Media = FileSystem->BlockIo->Media;
+	}
+
 	/* NB: We could get the actual blocksize through FileSystem->BlockIo->Media->BlockSize
 	 * but GRUB uses the fixed GRUB_DISK_SECTOR_SIZE, so we follow suit
 	 */
-	Status = FileSystem->DiskIo->ReadDisk(FileSystem->DiskIo, FileSystem->BlockIo->Media->MediaId,
+	if (FileSystem->DiskIo2 != NULL) {
+		Status = FileSystem->DiskIo2->ReadDiskEx(FileSystem->DiskIo2, Media->MediaId,
+			sector * GRUB_DISK_SECTOR_SIZE + offset, &(FileSystem->DiskIo2Token), size, buf);
+	} else {
+		Status = FileSystem->DiskIo->ReadDisk(FileSystem->DiskIo, Media->MediaId,
 			sector * GRUB_DISK_SECTOR_SIZE + offset, (UINTN)size, buf);
+	}
 
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"Could not read block at address %08x", sector);
@@ -170,8 +178,35 @@ grub_disk_get_size (grub_disk_t disk)
 	ASSERT(FileSystem != NULL);
 	ASSERT(FileSystem->BlockIo != NULL);
 
-	return (grub_uint64_t) (FileSystem->BlockIo->Media->LastBlock + 1) *
+	if (FileSystem->BlockIo2 != NULL) {
+		return (FileSystem->BlockIo2->Media->LastBlock + 1) *
+			FileSystem->BlockIo2->Media->BlockSize;
+	}
+
+	return (FileSystem->BlockIo->Media->LastBlock + 1) *
 			FileSystem->BlockIo->Media->BlockSize;
+}
+
+grub_disk_dev_t grub_disk_dev_list;
+
+void
+grub_disk_dev_register(grub_disk_dev_t dev)
+{
+	dev->next = grub_disk_dev_list;
+	grub_disk_dev_list = dev;
+}
+
+void
+grub_disk_dev_unregister(grub_disk_dev_t dev)
+{
+	grub_disk_dev_t *p, q;
+
+	for (p = &grub_disk_dev_list, q = *p; q; p = &(q->next), q = q->next)
+		if (q == dev)
+		{
+			*p = q->next;
+			break;
+		}
 }
 
 grub_device_t
@@ -188,7 +223,7 @@ grub_device_open(const char *name)
 			grub_printf("Could not convert device '%s' to UTF-16\n", name);
 		return NULL;
 	}
-	for (FileSystem = (EFI_FS *) FsListHead.Flink; FileSystem != (EFI_FS *) &FsListHead;
+	for (FileSystem = (EFI_FS *) FORWARD_LINK_REF(FsListHead); FileSystem != (EFI_FS *) &FsListHead;
 			FileSystem = (EFI_FS *) FileSystem->Flink) {
 		if (StrCmp(FileSystem->DevicePathString, Name) == 0)
 			break;
@@ -240,7 +275,7 @@ GrubDeviceInit(EFI_FS *FileSystem)
 	FreePool(name);
 
 	if (FileSystem->GrubDevice == NULL) {
-		RemoveEntryList(FileSystem);
+		RemoveEntryList((LIST_ENTRY *)FileSystem);
 		return EFI_NOT_FOUND;
 	}
 
@@ -251,7 +286,7 @@ EFI_STATUS
 GrubDeviceExit(EFI_FS *FileSystem)
 {
 	grub_device_close((grub_device_t) FileSystem->GrubDevice);
-	RemoveEntryList(FileSystem);
+	RemoveEntryList((LIST_ENTRY *)FileSystem);
 
 	return EFI_SUCCESS;
 }

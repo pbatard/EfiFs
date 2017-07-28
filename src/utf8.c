@@ -18,9 +18,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <efi.h>
-#include <efilib.h>
-#include <efidebug.h>	/* ASSERT */
+#include "driver.h"
 
 /*
  * Define this if you want to support UTF-16 in UCS-2

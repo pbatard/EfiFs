@@ -1,8 +1,8 @@
-From 6848bbc5d6bb52448d2998cb3f3357de7273d255 Mon Sep 17 00:00:00 2001
+From da61392469c17c75021380581cf84db47e18c584 Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Sun, 14 Aug 2016 14:59:37 +0200
-Subject: [PATCH] MSVC compatibility fixes, for packed structs, initialization,
- etc
+Date: Fri, 28 Jul 2017 12:54:37 +0100
+Subject: [PATCH 3/4] MSVC compatibility fixes, for packed structs,
+ initialization, etc
 
 ---
  grub-core/fs/affs.c         |  2 ++
@@ -16,7 +16,7 @@ Subject: [PATCH] MSVC compatibility fixes, for packed structs, initialization,
  grub-core/fs/jfs.c          |  2 ++
  grub-core/fs/nilfs2.c       |  2 ++
  grub-core/fs/ntfs.c         |  2 ++
- grub-core/fs/reiserfs.c     |  7 +++++++
+ grub-core/fs/reiserfs.c     | 16 +++++++++++++++-
  grub-core/fs/sfs.c          |  4 +++-
  grub-core/fs/udf.c          |  2 ++
  grub-core/fs/ufs.c          |  2 ++
@@ -26,16 +26,16 @@ Subject: [PATCH] MSVC compatibility fixes, for packed structs, initialization,
  include/grub/btrfs.h        |  3 +++
  include/grub/hfs.h          |  2 ++
  include/grub/hfsplus.h      |  6 ++++++
- include/grub/misc.h         |  8 ++++++++
+ include/grub/misc.h         | 10 ++++++++++
  include/grub/ntfs.h         |  2 ++
  include/grub/term.h         |  4 ++--
  include/grub/types.h        | 36 +++++++++++++++++++++++++-----------
  include/grub/zfs/zap_leaf.h | 17 ++++++++++++++---
  include/grub/zfs/zio.h      |  2 ++
- 27 files changed, 147 insertions(+), 38 deletions(-)
+ 27 files changed, 157 insertions(+), 39 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
-index 25f8e68..38b7afd 100644
+index 8580d81..26e4a33 100644
 --- a/grub-core/fs/affs.c
 +++ b/grub-core/fs/affs.c
 @@ -30,6 +30,7 @@
@@ -75,7 +75,7 @@ index d2b490b..8d78fd6 100644
  struct grub_bfs_data
  {
 diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
-index 9cffa91..c9617a0 100644
+index 4849c1c..de1f023 100644
 --- a/grub-core/fs/btrfs.c
 +++ b/grub-core/fs/btrfs.c
 @@ -48,6 +48,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
@@ -154,7 +154,7 @@ index 9cffa91..c9617a0 100644
  	      stripen *= nsubstripes;
  	      redundancy = nsubstripes;
 diff --git a/grub-core/fs/fat.c b/grub-core/fs/fat.c
-index 635c2c4..8f589f2 100644
+index 8d8dc35..f3b5717 100644
 --- a/grub-core/fs/fat.c
 +++ b/grub-core/fs/fat.c
 @@ -75,6 +75,7 @@ enum
@@ -189,7 +189,7 @@ index 635c2c4..8f589f2 100644
  
  typedef struct grub_fat_dir_entry grub_fat_dir_node_t;
  
-@@ -722,7 +726,7 @@ grub_fat_iterate_dir_next (grub_fshelp_node_t node,
+@@ -726,7 +730,7 @@ grub_fat_iterate_dir_next (grub_fshelp_node_t node,
        grub_dprintf ("exfat", "unknown primary type 0x%02x\n",
  		    dir.entry_type);
      }
@@ -198,7 +198,7 @@ index 635c2c4..8f589f2 100644
  }
  
  #else
-@@ -849,7 +853,7 @@ grub_fat_iterate_dir_next (grub_fshelp_node_t node,
+@@ -853,7 +857,7 @@ grub_fat_iterate_dir_next (grub_fshelp_node_t node,
        return GRUB_ERR_NONE;
      }
  
@@ -490,29 +490,39 @@ index 6f84688..4fa140e 100644
  static char *
  grub_ntfs_read_symlink (grub_fshelp_node_t node)
 diff --git a/grub-core/fs/reiserfs.c b/grub-core/fs/reiserfs.c
-index 39736f6..b14de19 100644
+index 39736f6..c3c65f2 100644
 --- a/grub-core/fs/reiserfs.c
 +++ b/grub-core/fs/reiserfs.c
-@@ -42,6 +42,7 @@
+@@ -42,15 +42,27 @@
  
  GRUB_MOD_LICENSE ("GPLv3+");
  
 +#ifndef _MSC_VER
++#ifndef MIN
  #define MIN(a, b) \
    ({ typeof (a) _a = (a); \
       typeof (b) _b = (b); \
-@@ -51,6 +52,10 @@ GRUB_MOD_LICENSE ("GPLv3+");
+      _a < _b ? _a : _b; })
+-
++#endif
++#ifndef MAX
+ #define MAX(a, b) \
    ({ typeof (a) _a = (a); \
       typeof (b) _b = (b); \
       _a > _b ? _a : _b; })
++#endif
 +#else
++#ifndef MIN
 +#define MIN(a, b) ((a)<(b)?(a):(b))
++#endif
++#ifndef MAX
 +#define MAX(a, b) ((a)>(b)?(a):(b))
++#endif
 +#endif
  
  #define REISERFS_SUPER_BLOCK_OFFSET 0x10000
  #define REISERFS_MAGIC_LEN 12
-@@ -82,6 +87,7 @@ enum grub_reiserfs_item_type
+@@ -82,6 +94,7 @@ enum grub_reiserfs_item_type
      GRUB_REISERFS_UNKNOWN
    };
  
@@ -520,7 +530,7 @@ index 39736f6..b14de19 100644
  struct grub_reiserfs_superblock
  {
    grub_uint32_t block_count;
-@@ -217,6 +223,7 @@ struct grub_reiserfs_directory_header
+@@ -217,6 +230,7 @@ struct grub_reiserfs_directory_header
    grub_uint16_t location;
    grub_uint16_t state;
  } GRUB_PACKED;
@@ -643,10 +653,10 @@ index 6e1fff9..b1589a0 100644
      {
  
 diff --git a/grub-core/kern/misc.c b/grub-core/kern/misc.c
-index f0af232..218d9a5 100644
+index 9024c10..498ec83 100644
 --- a/grub-core/kern/misc.c
 +++ b/grub-core/kern/misc.c
-@@ -968,7 +968,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
+@@ -969,7 +969,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
  	  {
  	    grub_size_t len = 0;
  	    grub_size_t fill;
@@ -754,10 +764,10 @@ index 117740a..5a8caf5 100644
  /* Return the offset of the record with the index INDEX, in the node
     NODE which is part of the B+ tree BTREE.  */
 diff --git a/include/grub/misc.h b/include/grub/misc.h
-index 2a9f87c..bc6fbec 100644
+index 2a9f87c..e353dcd 100644
 --- a/include/grub/misc.h
 +++ b/include/grub/misc.h
-@@ -27,11 +27,19 @@
+@@ -27,12 +27,22 @@
  #include <grub/i18n.h>
  #include <grub/compiler.h>
  
@@ -774,9 +784,12 @@ index 2a9f87c..bc6fbec 100644
 +#define ALIGN_DOWN(addr, align) \
 +	((addr) & ~(align - 1))
 +#endif
++#ifndef ARRAY_SIZE
  #define ARRAY_SIZE(array) (sizeof (array) / sizeof (array[0]))
++#endif
  #define COMPILE_TIME_ASSERT(cond) switch (0) { case 1: case !(cond): ; }
  
+ #define grub_dprintf(condition, ...) grub_real_dprintf(GRUB_FILE, __LINE__, condition, __VA_ARGS__)
 diff --git a/include/grub/ntfs.h b/include/grub/ntfs.h
 index d1a6af6..203e014 100644
 --- a/include/grub/ntfs.h
@@ -817,7 +830,7 @@ index 5ffb38f..cc6d92a 100644
  
  static inline struct grub_term_coordinate
 diff --git a/include/grub/types.h b/include/grub/types.h
-index bb8a711..5b44fea 100644
+index afcda13..3c9565a 100644
 --- a/include/grub/types.h
 +++ b/include/grub/types.h
 @@ -26,10 +26,20 @@
@@ -951,5 +964,5 @@ index 19ce136..11ee51b 100644
  /*
   * Gang block headers are self-checksumming and contain an array
 -- 
-2.8.1.windows.1
+2.9.3.windows.2
 

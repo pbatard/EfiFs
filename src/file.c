@@ -1,6 +1,6 @@
 /* file.c - SimpleFileIo Interface */
 /*
- *  Copyright © 2014-2016 Pete Batard <pete@akeo.ie>
+ *  Copyright © 2014-2017 Pete Batard <pete@akeo.ie>
  *  Based on iPXE's efi_driver.c and efi_file.c:
  *  Copyright © 2011,2013 Michael Brown <mbrown@fensystems.co.uk>.
  *
@@ -17,9 +17,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#include <efi.h>
-#include <efilib.h>
 
 #include "driver.h"
 
@@ -54,7 +51,7 @@ InfoHook(const CHAR8 *name, const GRUB_DIRHOOK_INFO *Info, VOID *Data)
 	if (strcmpa(name, File->basename) != 0)
 		return 0;
 
-	File->IsDir = (Info->Dir);
+	File->IsDir = (BOOLEAN) (Info->Dir);
 	if (Info->MtimeSet)
 		File->Mtime = Info->Mtime;
 
@@ -529,7 +526,6 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 	EFI_FILE_SYSTEM_INFO *FSInfo = (EFI_FILE_SYSTEM_INFO *) Data;
 	EFI_FILE_INFO *Info = (EFI_FILE_INFO *) Data;
 	EFI_FILE_SYSTEM_VOLUME_LABEL_INFO *VLInfo = (EFI_FILE_SYSTEM_VOLUME_LABEL_INFO *)Data;
-	CHAR16 GuidString[36];
 	EFI_TIME Time;
 	CHAR8* label;
 	INTN tmpLen;
@@ -588,13 +584,22 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 		FSInfo->Size = *Len;
 		FSInfo->ReadOnly = 1;
 		/* NB: This should really be cluster size, but we don't have access to that */
-		FSInfo->BlockSize = File->FileSystem->BlockIo->Media->BlockSize;
+		if (File->FileSystem->BlockIo2 != NULL) {
+			FSInfo->BlockSize = File->FileSystem->BlockIo2->Media->BlockSize;
+		} else {
+			FSInfo->BlockSize = File->FileSystem->BlockIo->Media->BlockSize;
+		}
 		if (FSInfo->BlockSize  == 0) {
 			PrintWarning(L"Corrected Media BlockSize\n");
 			FSInfo->BlockSize = 512;
 		}
-		FSInfo->VolumeSize = (File->FileSystem->BlockIo->Media->LastBlock + 1) *
-			FSInfo->BlockSize;
+		if (File->FileSystem->BlockIo2 != NULL) {
+			FSInfo->VolumeSize = (File->FileSystem->BlockIo2->Media->LastBlock + 1) *
+				FSInfo->BlockSize;
+		} else {
+			FSInfo->VolumeSize = (File->FileSystem->BlockIo->Media->LastBlock + 1) *
+				FSInfo->BlockSize;
+		}
 		/* No idea if we can easily get this for GRUB, and the device is RO anyway */
 		FSInfo->FreeSpace = 0;
 
@@ -635,9 +640,9 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 
 	} else {
 
-		GuidToString(GuidString, Type);
-		PrintError(L"'%s': Cannot get information of type %s\n",
-				FileName(File), GuidString);
+		Print(L"'%s': Cannot get information of type ", FileName(File));
+		PrintGuid(Type);
+		Print(L"\n");
 		return EFI_UNSUPPORTED;
 
 	}
@@ -656,11 +661,11 @@ static EFI_STATUS EFIAPI
 FileSetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN Len, VOID *Data)
 {
 	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
-	CHAR16 GuidString[36];
 
-	GuidToString(GuidString, Type);
-	PrintError(L"Cannot set information of type %s for file '%s'\n",
-			GuidString, FileName(File));
+	Print(L"Cannot set information of type ");
+	PrintGuid(Type);
+	Print(L" for file '%s'\n", FileName(File));
+
 	return EFI_WRITE_PROTECTED;
 }
 
@@ -756,7 +761,7 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 
 	/* Install the simple file system protocol. */
 	Status = BS->InstallMultipleProtocolInterfaces(&ControllerHandle,
-			&FileSystemProtocol, &This->FileIoInterface,
+			&gEfiSimpleFileSystemProtocolGuid, &This->FileIoInterface,
 			NULL);
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"Could not install simple file system protocol");
@@ -772,7 +777,7 @@ FSUninstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 {
 	PrintInfo(L"FSUninstall: %s\n", This->DevicePathString);
 
-	LibUninstallProtocolInterfaces(ControllerHandle,
-			&FileSystemProtocol, &This->FileIoInterface,
+	BS->UninstallMultipleProtocolInterfaces(ControllerHandle,
+			&gEfiSimpleFileSystemProtocolGuid, &This->FileIoInterface,
 			NULL);
 }

@@ -1,6 +1,6 @@
 /* logging.c - EFI logging */
 /*
- *  Copyright © 2014-2016 Pete Batard <pete@akeo.ie>
+ *  Copyright © 2014-2017 Pete Batard <pete@akeo.ie>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,10 +16,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <efi.h>
-#include <efilib.h>
-#include <efistdarg.h>
-
 #include "driver.h"
 
 /* Not defined in gnu-efi yet */
@@ -29,7 +25,7 @@
 extern EFI_GUID gShellVariableGuid;
 EFI_GUID ShellVariable = SHELL_VARIABLE_GUID;
 
-static UINTN PrintNone(IN CHAR16 *fmt, ... ) { return 0; }
+static UINTN PrintNone(IN CONST CHAR16 *fmt, ... ) { return 0; }
 Print_t PrintError = PrintNone;
 Print_t PrintWarning = PrintNone;
 Print_t PrintInfo = PrintNone;
@@ -45,30 +41,25 @@ Print_t* PrintTable[] = { &PrintError, &PrintWarning, &PrintInfo,
 UINTN LogLevel = DEFAULT_LOGLEVEL;
 
 /**
- * Print an error message along with a human readable EFI status code
+ * Print status
  *
  * @v Status		EFI status code
- * @v Format		A non '\n' terminated error message string
- * @v ...			Any extra parameters
  */
 VOID
-PrintStatusError(EFI_STATUS Status, CONST CHAR16 *Format, ...)
+PrintStatus(EFI_STATUS Status)
 {
+#if defined(__MAKEWITH_GNUEFI)
 	CHAR16 StatusString[64];
-	va_list ap;
-
-	if (LogLevel < FS_LOGLEVEL_ERROR)
-		return;
-
 	StatusToString(StatusString, Status);
-	va_start(ap, Format);
-	VPrint((CHAR16 *)Format, ap);
-	va_end(ap);
 	// Make sure the Status is unsigned 32 bits
 	Print(L": [%d] %s\n", (Status & 0x7FFFFFFF), StatusString);
+#else
+	Print(L": [%d]\n", (Status & 0x7FFFFFFF));
+#endif
 }
 
-/* You can control the verbosity of the driver output by setting the shell environment
+/*
+ * You can control the verbosity of the driver output by setting the shell environment
  * variable FS_LOGGING to one of the values defined in the FS_LOGLEVEL constants
  */
 VOID

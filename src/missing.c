@@ -18,12 +18,12 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <efi.h>
-#include <efilib.h>
+#include "driver.h"
 
- // Microsoft's intrinsics are a major pain in the ass
- // https://stackoverflow.com/a/2945619/1069307
-#if defined(_M_X64) && (defined(_MSC_VER) || defined(__c2__))
+// Microsoft's intrinsics are a major pain in the ass
+// https://stackoverflow.com/a/2945619/1069307
+#if defined(_MSC_VER) || defined(__c2__)
+#if !defined(__MAKEWITH_GNUEFI) || defined(_M_X64)
 #include <stddef.h>		// For size_t
 
 void* memset(void *, int, size_t);
@@ -57,6 +57,33 @@ void* memmove(void *s1, const void *s2, size_t n)
 	CopyMem(s1, s2, n);
 	return s1;
 }
+
+INT64 _allmul(INT64 a, INT64 b)
+{
+	INT64 _a = (a>=0)?a:-a, _b = (b>=0)?b:-b;
+	if (((a > 0) & (b < 0)) || ((a < 0) && (b > 0)))
+		return -MultU64x32(_a, (UINTN)_b);
+	return MultU64x32(_a, (UINTN)_b);
+}
+
+INT64 _allshl(INT64 a, INTN b)
+{
+	return (b >= 0) ? (INT64)LShiftU64((UINT64)a, (UINTN)b) :
+		(INT64)RShiftU64((UINT64)a, (UINTN)-b);
+}
+
+INT64 _allshr(INT64 a, INTN b)
+{
+	return (b >= 0) ? (INT64)RShiftU64((UINT64)a, (UINTN)b) :
+		(INT64)LShiftU64((UINT64)a, (UINTN)-b);
+}
+
+UINT64 _aullshr(UINT64 a, INTN b)
+{
+	return (b >= 0) ? RShiftU64(a, (UINTN)b) :
+		LShiftU64(a, (UINTN)-b);
+}
+#endif
 #endif
 
 VOID
@@ -90,4 +117,28 @@ strrchra(const CHAR8 *s, INTN c)
 	while (*s++);
 
 	return p;
+}
+
+EFI_STATUS
+PrintGuid(EFI_GUID *Guid)
+{
+	if (Guid == NULL) {
+		Print(L"ERROR: PrintGuid called with a NULL value.\n");
+		return EFI_INVALID_PARAMETER;
+	}
+
+	Print(L"%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x\n",
+		Guid->Data1,
+		Guid->Data2,
+		Guid->Data3,
+		Guid->Data4[0],
+		Guid->Data4[1],
+		Guid->Data4[2],
+		Guid->Data4[3],
+		Guid->Data4[4],
+		Guid->Data4[5],
+		Guid->Data4[6],
+		Guid->Data4[7]
+	);
+	return EFI_SUCCESS;
 }

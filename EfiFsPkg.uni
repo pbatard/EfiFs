@@ -1,0 +1,9 @@
+// /** @file
+// Module implementations for EfiFs
+//
+// Copyright (c) 2017, Pete Batard <pete@akeo.ie>
+//
+// **/
+
+#string STR_PACKAGE_ABSTRACT    #language en-US "Module implementations for EfiFs"
+#string STR_PACKAGE_DESCRIPTION #language en-US "This Package contains the module implementation of EfiFs."
