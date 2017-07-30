@@ -69,6 +69,13 @@
 #endif
 #endif
 
+/* Sort out the platform specifics */
+#if defined(_M_ARM64) || defined(__aarch64__) || defined (_M_X64) || defined(__x86_64__)
+#define PERCENT_P L"%llx"
+#else
+#define PERCENT_P L"%x"
+#endif
+
 /* Sort out the differences between EDK2 and gnu-efi */
 #if defined(_GNU_EFI)
 #define STUPID_CLANG_REF(a,b) a.b

@@ -2,6 +2,7 @@
 * text=auto
 # git apply may fail unless it is fed LF terminated patches...
 *.patch eol=lf
+*.sh eol=lf
 *.c text
 *.h text
 *.md text 

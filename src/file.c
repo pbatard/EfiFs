@@ -81,7 +81,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	INTN i, len;
 	BOOLEAN AbsolutePath = (*Name == L'\\');
 
-	PrintInfo(L"Open(%llx%s, \"%s\")\n", (UINT64) This,
+	PrintInfo(L"Open(" PERCENT_P L"%s, \"%s\")\n", (UINTN) This,
 			IS_ROOT(File)?L" <ROOT>":L"", Name);
 
 	/* Fail unless opening read-only */
@@ -101,7 +101,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 		PrintInfo(L"  Reopening %s\n", IS_ROOT(File)?L"<ROOT>":FileName(File));
 		File->RefCount++;
 		*New = This;
-		PrintInfo(L"  RET: %llx\n", (UINT64) *New);
+		PrintInfo(L"  RET: " PERCENT_P L"\n", (UINTN) *New);
 		return EFI_SUCCESS;
 	}
 
@@ -138,7 +138,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 		*New = &File->FileSystem->RootFile->EfiFile;
 		/* Must make sure that DirIndex is reset too (NB: no concurrent access!) */
 		File->FileSystem->RootFile->DirIndex = 0;
-		PrintInfo(L"  RET: %llx\n", (UINT64) *New);
+		PrintInfo(L"  RET: " PERCENT_P L"\n", (UINTN) *New);
 		return EFI_SUCCESS;
 	}
 
@@ -193,7 +193,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	NewFile->RefCount++;
 	*New = &NewFile->EfiFile;
 
-	PrintInfo(L"  RET: %llx\n", (UINT64) *New);
+	PrintInfo(L"  RET: " PERCENT_P L"\n", (UINTN) *New);
 	return EFI_SUCCESS;
 }
 
@@ -217,7 +217,7 @@ FileClose(EFI_FILE_HANDLE This)
 {
 	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 
-	PrintInfo(L"Close(%llx|'%s') %s\n", (UINT64) This, FileName(File),
+	PrintInfo(L"Close(" PERCENT_P L"|'%s') %s\n", (UINTN) This, FileName(File),
 		IS_ROOT(File)?L"<ROOT>":L"");
 
 	/* Nothing to do it this is the root */
@@ -405,7 +405,7 @@ FileRead(EFI_FILE_HANDLE This, UINTN *Len, VOID *Data)
 {
 	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 
-	PrintInfo(L"Read(%llx|'%s', %d) %s\n", (UINT64) This, FileName(File),
+	PrintInfo(L"Read(" PERCENT_P L"|'%s', %d) %s\n", (UINTN) This, FileName(File),
 			*Len, File->IsDir?L"<DIR>":L"");
 
 	/* If this is a directory, then fetch the directory entries */
@@ -459,7 +459,7 @@ FileSetPosition(EFI_FILE_HANDLE This, UINT64 Position)
 	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 	UINT64 FileSize;
 
-	PrintInfo(L"SetPosition(%llx|'%s', %lld) %s\n", (UINT64) This,
+	PrintInfo(L"SetPosition(" PERCENT_P L"|'%s', %lld) %s\n", (UINTN) This,
 		FileName(File), Position, (File->IsDir)?L"<DIR>":L"");
 
 	/* If this is a directory, reset the Index to the start */
@@ -475,7 +475,7 @@ FileSetPosition(EFI_FILE_HANDLE This, UINT64 Position)
 	 */
 	FileSize = GrubGetFileSize(File);
 	if (Position > FileSize) {
-		PrintError(L"'%s': Cannot seek to %#llx of %llx\n",
+		PrintError(L"'%s': Cannot seek to #%llx of %llx\n",
 				FileName(File), Position, FileSize);
 		return EFI_UNSUPPORTED;
 	}
@@ -500,7 +500,7 @@ FileGetPosition(EFI_FILE_HANDLE This, UINT64 *Position)
 {
 	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 
-	PrintInfo(L"GetPosition(%llx|'%s', %lld)\n", (UINT64) This, FileName(File));
+	PrintInfo(L"GetPosition(" PERCENT_P L"|'%s', %lld)\n", (UINTN) This, FileName(File));
 
 	if (File->IsDir)
 		*Position = File->DirIndex;
@@ -528,9 +528,9 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 	EFI_FILE_SYSTEM_VOLUME_LABEL_INFO *VLInfo = (EFI_FILE_SYSTEM_VOLUME_LABEL_INFO *)Data;
 	EFI_TIME Time;
 	CHAR8* label;
-	INTN tmpLen;
+	UINTN tmpLen;
 
-	PrintInfo(L"GetInfo(%llx|'%s', %d) %s\n", (UINT64) This,
+	PrintInfo(L"GetInfo(" PERCENT_P L"|'%s', %d) %s\n", (UINTN) This,
 		FileName(File), *Len, File->IsDir?L"<DIR>":L"");
 
 	/* Determine information to return */
@@ -558,7 +558,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 			Info->PhysicalSize = GrubGetFileSize(File);
 		}
 
-		tmpLen = (INTN)(Info->Size - sizeof(EFI_FILE_INFO) - 1);
+		tmpLen = (UINTN)(Info->Size - sizeof(EFI_FILE_INFO) - 1);
 		Status = Utf8ToUtf16NoAllocUpdateLen(File->basename, Info->FileName, &tmpLen);
 		if (EFI_ERROR(Status)) {
 			if (Status != EFI_BUFFER_TOO_SMALL)
@@ -683,7 +683,7 @@ FileFlush(EFI_FILE_HANDLE This)
 {
 	EFI_GRUB_FILE *File = _CR(This, EFI_GRUB_FILE, EfiFile);
 
-	PrintInfo(L"Flush(%llx|'%s')\n", (UINT64) This, FileName(File));
+	PrintInfo(L"Flush(" PERCENT_P L"|'%s')\n", (UINTN) This, FileName(File));
 	return EFI_SUCCESS;
 }
 

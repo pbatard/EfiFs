@@ -9,37 +9,51 @@ For additional info as well as precompiled drivers, see http://efi.akeo.ie
 ## Requirements
 
 * [Visual Studio 2017](https://www.visualstudio.com/vs/community/) (Windows), MinGW (Windows), gcc (Linux) or
-  [EDK2](https://github.com/tianocore/edk2)/VS2015 (Windows). Note that EDK2 is supported with the Visual
-  Studio compiler __only__.
+  [EDK2](https://github.com/tianocore/edk2).
 * A git client able to initialize/update submodules
 * [QEMU](http://www.qemu.org) __v2.7 or later__ if debugging with Visual Studio
   (NB: You can find QEMU Windows binaries [here](https://qemu.weilnetz.de/w64/))
 
 ## Compilation
 
-* [_Common_] Fetch the git submodules with `git submodule init` and `git submodule update`.
-* [_Common_] Apply the included f2fs patch to the `grub\` subdirectory. This adds F2FS support,
-  which is not yet included in GRUB2.
-* [_Visual Studio_] Apply the other patches to the `grub\` subdirectory. If you are using Clang/C2
-  you can apply the first patch only. If you are using MSVC, you must apply 2 patches and if you
-  are using EDK2 you should apply all of them.
-* [_Visual Studio_] Open the solution file and hit `F5` to compile and debug the default driver.
-* [_EDK2_] Open and elevated command prompt and create a symbolic link, inside your
-  EDK2 directory, to the EfiFs source. For instance, if you have EKD2 in `C:\edk2` and EfiFs in `C:\efifs`, 
-  youd should run `mklink /D EfiFsPkg C:\efifs` inside the `C:\edk2` directory.
-* [_EDK2_] Open a Visual Studio command prompt and, after having invoked `Edk2Setup.bat` run something like:  
-  ```
-  build -a X64 -b RELEASE -t VS2015 -p EfiFsPkg/EfiFsPkg.dsc
-  ```  
-  NB: To build an individual driver, such as NTFS, you would can also use something like:  
-  ```
-  build -a X64 -b RELEASE -t VS2015 -p EfiFsPkg/EfiFsPkg.dsc -m EfiFsPkg/EfiFsPkg/Ntfs.inf
-  ```
-* [_gcc_] Run `make` in the top directory. If needed you can also issue something like
+### Common
+
+* Fetch the git submodules with `git submodule init` and `git submodule update`.
+* Apply the included f2fs patch to the `grub\` subdirectory. This adds F2FS support, which is not
+  yet included in GRUB2.
+* Apply the other patches to the `grub\` subdirectory.
+
+### Visual Studio (non EDK2)
+
+* Open the solution file and hit `F5` to compile and debug the default driver.
+
+### gcc (non EDK2)
+
+* Run `make` in the top directory. If needed you can also issue something like
   `make ARCH=<arch> CROSS_COMPILE=<tuple>` where `<arch>` is one of `ia32`, `x64`, `arm` or
   `aa64` (the __official__ UEFI abbreviations for an arch, as used in `/efi/boot/boot[ARCH].efi`)
   and tuple is the one for your cross-compiler, such as `arm-linux-gnueabihf-`.
   e.g. `make ARCH=aa64 CROSS_COMPILE=aarch64-linux-gnu-`
+
+### EDK2
+
+* Open an elevated command prompt and create a symbolic link called `EfiFsPkg`, inside your EDK2 
+  directory, to the EfiFs source. On Windows, from an elevated prompt, you could run something like
+  `mklink /D EfiFsPkg C:\efifs`, and on Linux `ln -s ../efifs EfiFsPkg`.
+* From a command prompt, set Grub to target the platform you are compiling for by invoking:
+  * (Windows) `set_grub_cpu.cmd <arch>`
+  * (Linux) `./set_grub_cpu.sh <arch>`  
+  Where `<arch>` is one of `ia32`, `x64`, `arm` or `aa64`.  
+  Note that you __MUST__ invoke the `set_grub_cpu` script __every time you switch target__.
+* After having invoked `Edk2Setup.bat` (Windows) or `edksetup.sh` (Linux) run something like:  
+  ```
+  build -a X64 -b RELEASE -t <toolchain> -p EfiFsPkg/EfiFsPkg.dsc
+  ```  
+  where `<toolchain>` is something like `VS2015` (Windows) or `GCC5` (Linux).  
+  NB: To build an individual driver, such as NTFS, you would can also use something like:  
+  ```
+  build -a X64 -b RELEASE -t <toolchain> -p EfiFsPkg/EfiFsPkg.dsc -m EfiFsPkg/EfiFsPkg/Ntfs.inf
+  ```
 
 ## Testing
 
@@ -76,3 +90,32 @@ While in this section, you may also want to select the installation of _Clang/C2
 This is a pure GPLv3+ implementation of EFI drivers. Great care was taken
 not to use non GPLv3 compatible sources, such as rEFInd's `fsw_efi` (GPLv2 only)
 or Intel's FAT driver (requires an extra copyright notice).
+
+## Bonus: Commands to compile EfiFs using EDK2 on Debian GNU/Linux 9.1
+
+As root:
+```
+apt-get install nasm uuid-dev gcc-arm-linux-gnueabihf gcc-aarch64-linux-gnu
+cd /usr/src
+git clone https://github.com/tianocore/edk2.git
+git clone https://github.com/pbatard/efifs.git
+cd efifs
+git submodule init
+git submodule update
+cd grub
+git am ../*.patch
+cd /usr/src/edk2
+ln -s ../efifs EfiFsPkg
+make -C /usr/src/edk2/BaseTools/Source/C
+export GCC5_ARM_PREFIX=arm-linux-gnueabihf-
+export GCC5_AARCH64_PREFIX=aarch64-linux-gnu-
+source edksetup.sh
+./EfiFsPkg/set_grub_cpu.sh X64
+build -a X64 -b RELEASE -t GCC5 -p EfiFsPkg/EfiFsPkg.dsc
+./EfiFsPkg/set_grub_cpu.sh IA32
+build -a IA32 -b RELEASE -t GCC5 -p EfiFsPkg/EfiFsPkg.dsc
+./EfiFsPkg/set_grub_cpu.sh ARM
+build -a ARM -b RELEASE -t GCC5 -p EfiFsPkg/EfiFsPkg.dsc
+./EfiFsPkg/set_grub_cpu.sh AARCH64
+build -a AARCH64 -b RELEASE -t GCC5 -p EfiFsPkg/EfiFsPkg.dsc
+```

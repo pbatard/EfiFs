@@ -74,7 +74,7 @@ SetLogging(VOID)
 		LogLevel = Atoi(LogVar);
 
 	for (i=0; i<ARRAYSIZE(PrintTable); i++)
-		*PrintTable[i] = (i < LogLevel)?Print:PrintNone;
+		*PrintTable[i] = (i < LogLevel)?(Print_t)Print:(Print_t)PrintNone;
 
 	PrintExtra(L"LogLevel = %d\n", LogLevel);
 }

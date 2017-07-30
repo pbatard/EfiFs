@@ -62,7 +62,7 @@ INT64 _allmul(INT64 a, INT64 b)
 {
 	INT64 _a = (a>=0)?a:-a, _b = (b>=0)?b:-b;
 	if (((a > 0) & (b < 0)) || ((a < 0) && (b > 0)))
-		return -MultU64x32(_a, (UINTN)_b);
+		return -1LL * MultU64x32(_a, (UINTN)_b);
 	return MultU64x32(_a, (UINTN)_b);
 }
 
