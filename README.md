@@ -19,9 +19,8 @@ For additional info as well as precompiled drivers, see http://efi.akeo.ie
 ### Common
 
 * Fetch the git submodules with `git submodule init` and `git submodule update`.
-* Apply the included f2fs patch to the `grub\` subdirectory. This adds F2FS support, which is not
-  yet included in GRUB2.
-* Apply the other patches to the `grub\` subdirectory.
+* Apply the included patches to the `grub\` subdirectory. This adds F2FS support, and fixes that
+  are required for Clang and MSVC compilation.
 
 ### Visual Studio (non EDK2)
 
@@ -87,9 +86,9 @@ While in this section, you may also want to select the installation of _Clang/C2
 
 ## Additional Notes
 
-This is a pure GPLv3+ implementation of EFI drivers. Great care was taken
-not to use non GPLv3 compatible sources, such as rEFInd's `fsw_efi` (GPLv2 only)
-or Intel's FAT driver (requires an extra copyright notice).
+This is a pure GPLv3+ implementation of EFI drivers. Great care was taken not to
+use any code from non GPLv3 compatible sources, such as rEFInd's `fsw_efi` (GPLv2
+only) or Intel's FAT driver (requires an extra copyright notice).
 
 ## Bonus: Commands to compile EfiFs using EDK2 on Debian GNU/Linux 9.1
 
