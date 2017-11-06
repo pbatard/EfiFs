@@ -12,6 +12,7 @@
 *.vhd
 *.zip
 arm
+aa64
 ia32
 image
 x64

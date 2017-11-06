@@ -9,14 +9,17 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
+    <Filter Include="Source Files\arm">
+      <UniqueIdentifier>{20c8e9bd-0fa8-46d3-b825-e3eebd64ab3d}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source Files\x86_64">
-      <UniqueIdentifier>{70897b8f-ef20-415f-a6d1-5cbd549a305c}</UniqueIdentifier>
+      <UniqueIdentifier>{87122940-e80f-416d-a840-5e32f703f3ff}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\ia32">
-      <UniqueIdentifier>{856e55b7-af6f-4af6-a0ef-e7aaefb04500}</UniqueIdentifier>
+      <UniqueIdentifier>{e6e3d25a-4fce-4036-bef9-3cfbafc4baaf}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\arm">
-      <UniqueIdentifier>{c07e2cd0-6942-4e5f-a7c9-7b42b2203824}</UniqueIdentifier>
+    <Filter Include="Source Files\aarch64">
+      <UniqueIdentifier>{cf7e7031-77e5-4827-9aa6-f996fc4b3d06}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -92,8 +95,14 @@
     <ClCompile Include="..\..\gnu-efi\lib\error.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\gnu-efi\lib\arm\math.c">
+      <Filter>Source Files\arm</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\gnu-efi\lib\x86_64\math.c">
       <Filter>Source Files\x86_64</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\gnu-efi\lib\ia32\math.c">
+      <Filter>Source Files\ia32</Filter>
     </ClCompile>
     <ClCompile Include="..\..\gnu-efi\lib\x86_64\initplat.c">
       <Filter>Source Files\x86_64</Filter>
@@ -101,14 +110,14 @@
     <ClCompile Include="..\..\gnu-efi\lib\ia32\initplat.c">
       <Filter>Source Files\ia32</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\gnu-efi\lib\ia32\math.c">
-      <Filter>Source Files\ia32</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\gnu-efi\lib\arm\initplat.c">
       <Filter>Source Files\arm</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\gnu-efi\lib\arm\math.c">
-      <Filter>Source Files\arm</Filter>
+    <ClCompile Include="..\..\gnu-efi\lib\aarch64\initplat.c">
+      <Filter>Source Files\aarch64</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\gnu-efi\lib\aarch64\math.c">
+      <Filter>Source Files\aarch64</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

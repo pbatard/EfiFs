@@ -1,5 +1,9 @@
 ARCH            = x64
-SUBSYSTEM       = 12  # 12 = EFI runtime driver
+# You can alter the subsystem according to your EFI binary target:
+# 10 = EFI application
+# 11 = EFI boot service driver
+# 12 = EFI runtime driver
+SUBSYSTEM       = 11
 
 # Try to auto-detect the target ARCH
 ifeq ($(shell uname -o),Msys)

@@ -9,9 +9,6 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="Assembly Files">
-      <UniqueIdentifier>{8de95906-c39f-40d0-990c-dcb07d3d4a6d}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\grub\grub-core\kern\err.c">
@@ -40,15 +37,5 @@
     <ClInclude Include="..\..\config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <MASM Include="..\..\missing\intrinsics_x86.asm">
-      <Filter>Assembly Files</Filter>
-    </MASM>
-  </ItemGroup>
-  <ItemGroup>
-    <ARMASM Include="..\..\missing\intrinsics_arm.asm">
-      <Filter>Assembly Files</Filter>
-    </ARMASM>
   </ItemGroup>
 </Project>

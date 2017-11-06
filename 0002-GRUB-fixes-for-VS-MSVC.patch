@@ -1,38 +1,40 @@
-From da61392469c17c75021380581cf84db47e18c584 Mon Sep 17 00:00:00 2001
+From 4de8e63b5cf25cc83a53e76254f15745d474541b Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Fri, 28 Jul 2017 12:54:37 +0100
-Subject: [PATCH 3/4] MSVC compatibility fixes, for packed structs,
- initialization, etc
+Date: Sat, 4 Nov 2017 22:36:40 +0000
+Subject: [PATCH] MSVC compatibility fixes, for packed structs, initialization,
+ etc
 
 ---
- grub-core/fs/affs.c         |  2 ++
- grub-core/fs/bfs.c          |  2 ++
- grub-core/fs/btrfs.c        | 14 ++++++++++----
- grub-core/fs/fat.c          |  8 ++++++--
- grub-core/fs/hfs.c          |  6 ++++++
- grub-core/fs/hfsplus.c      |  2 ++
- grub-core/fs/hfspluscomp.c  |  5 +++++
- grub-core/fs/iso9660.c      | 36 ++++++++++++++++++++++++------------
- grub-core/fs/jfs.c          |  2 ++
- grub-core/fs/nilfs2.c       |  2 ++
- grub-core/fs/ntfs.c         |  2 ++
- grub-core/fs/reiserfs.c     | 16 +++++++++++++++-
- grub-core/fs/sfs.c          |  4 +++-
- grub-core/fs/udf.c          |  2 ++
- grub-core/fs/ufs.c          |  2 ++
- grub-core/fs/xfs.c          |  3 +++
- grub-core/fs/zfs/zfs.c      |  4 ++--
- grub-core/kern/misc.c       |  2 +-
- include/grub/btrfs.h        |  3 +++
- include/grub/hfs.h          |  2 ++
- include/grub/hfsplus.h      |  6 ++++++
- include/grub/misc.h         | 10 ++++++++++
- include/grub/ntfs.h         |  2 ++
- include/grub/term.h         |  4 ++--
- include/grub/types.h        | 36 +++++++++++++++++++++++++-----------
- include/grub/zfs/zap_leaf.h | 17 ++++++++++++++---
- include/grub/zfs/zio.h      |  2 ++
- 27 files changed, 157 insertions(+), 39 deletions(-)
+ grub-core/fs/affs.c             |  2 ++
+ grub-core/fs/bfs.c              |  2 ++
+ grub-core/fs/btrfs.c            | 16 +++++++++++-----
+ grub-core/fs/fat.c              |  8 ++++++--
+ grub-core/fs/hfs.c              |  6 ++++++
+ grub-core/fs/hfsplus.c          |  2 ++
+ grub-core/fs/hfspluscomp.c      |  5 +++++
+ grub-core/fs/iso9660.c          | 36 ++++++++++++++++++++++++------------
+ grub-core/fs/jfs.c              |  2 ++
+ grub-core/fs/nilfs2.c           |  4 +++-
+ grub-core/fs/ntfs.c             |  2 ++
+ grub-core/fs/reiserfs.c         | 16 +++++++++++++++-
+ grub-core/fs/sfs.c              |  4 +++-
+ grub-core/fs/udf.c              |  2 ++
+ grub-core/fs/ufs.c              |  2 ++
+ grub-core/fs/xfs.c              |  3 +++
+ grub-core/fs/zfs/zfs.c          |  4 ++--
+ grub-core/kern/misc.c           |  2 +-
+ grub-core/lib/minilzo/lzodefs.h |  3 +++
+ include/grub/arm64/types.h      |  4 ++++
+ include/grub/btrfs.h            |  3 +++
+ include/grub/hfs.h              |  2 ++
+ include/grub/hfsplus.h          |  6 ++++++
+ include/grub/misc.h             | 10 ++++++++++
+ include/grub/ntfs.h             |  2 ++
+ include/grub/term.h             |  4 ++--
+ include/grub/types.h            | 36 +++++++++++++++++++++++++-----------
+ include/grub/zfs/zap_leaf.h     | 17 ++++++++++++++---
+ include/grub/zfs/zio.h          |  2 ++
+ 29 files changed, 166 insertions(+), 41 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
 index 8580d81..26e4a33 100644
@@ -75,7 +77,7 @@ index d2b490b..8d78fd6 100644
  struct grub_bfs_data
  {
 diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
-index 4849c1c..de1f023 100644
+index 4849c1c..51dc891 100644
 --- a/grub-core/fs/btrfs.c
 +++ b/grub-core/fs/btrfs.c
 @@ -48,6 +48,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
@@ -126,6 +128,15 @@ index 4849c1c..de1f023 100644
  
  #define GRUB_BTRFS_EXTENT_INLINE 0
  #define GRUB_BTRFS_EXTENT_REGULAR 1
+@@ -227,7 +233,7 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data,
+ static grub_err_t
+ read_sblock (grub_disk_t disk, struct grub_btrfs_superblock *sb)
+ {
+-  struct grub_btrfs_superblock sblock;
++  struct grub_btrfs_superblock sblock = { 0 };
+   unsigned i;
+   grub_err_t err = GRUB_ERR_NONE;
+   for (i = 0; i < ARRAY_SIZE (superblock_sectors); i++)
 @@ -692,8 +698,8 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
  			       "couldn't find the chunk descriptor");
  	  }
@@ -450,7 +461,7 @@ index aab3e8c..4ec849a 100644
  
  static grub_dl_t my_mod;
 diff --git a/grub-core/fs/nilfs2.c b/grub-core/fs/nilfs2.c
-index 598a2a5..137a555 100644
+index 598a2a5..a566361 100644
 --- a/grub-core/fs/nilfs2.c
 +++ b/grub-core/fs/nilfs2.c
 @@ -132,6 +132,7 @@ struct grub_nilfs2_super_block
@@ -469,6 +480,15 @@ index 598a2a5..137a555 100644
  
  enum
  {
+@@ -735,7 +737,7 @@ static grub_err_t
+ grub_nilfs2_load_sb (struct grub_nilfs2_data *data)
+ {
+   grub_disk_t disk = data->disk;
+-  struct grub_nilfs2_super_block sb2;
++  struct grub_nilfs2_super_block sb2 = { 0 };
+   grub_uint64_t partition_size;
+   int valid[2];
+   int swp = 0;
 diff --git a/grub-core/fs/ntfs.c b/grub-core/fs/ntfs.c
 index 6f84688..4fa140e 100644
 --- a/grub-core/fs/ntfs.c
@@ -563,7 +583,7 @@ index 57b8d8d..a69eae6 100644
  {
    grub_uint32_t off;
 diff --git a/grub-core/fs/udf.c b/grub-core/fs/udf.c
-index 839bff8..ab3d0d5 100644
+index 00a1609..e918267 100644
 --- a/grub-core/fs/udf.c
 +++ b/grub-core/fs/udf.c
 @@ -113,6 +113,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
@@ -574,7 +594,7 @@ index 839bff8..ab3d0d5 100644
  struct grub_udf_lb_addr
  {
    grub_uint32_t block_num;
-@@ -344,6 +345,7 @@ struct grub_udf_aed
+@@ -370,6 +371,7 @@ struct grub_udf_aed
    grub_uint32_t prev_ae;
    grub_uint32_t ae_len;
  } GRUB_PACKED;
@@ -665,6 +685,36 @@ index 9024c10..498ec83 100644
  	    grub_size_t i;
  
  	    while (len < format2 && p[len])
+diff --git a/grub-core/lib/minilzo/lzodefs.h b/grub-core/lib/minilzo/lzodefs.h
+index 0e40e33..eea56b1 100644
+--- a/grub-core/lib/minilzo/lzodefs.h
++++ b/grub-core/lib/minilzo/lzodefs.h
+@@ -670,6 +670,9 @@
+ #  define LZO_ARCH_I086             1
+ #  define LZO_ARCH_IA16             1
+ #  define LZO_INFO_ARCH             "i086"
++#elif defined(__aarch64__) || defined(_M_ARM64)
++#  define LZO_ARCH_ARM64            1
++#  define LZO_INFO_ARCH             "arm64"
+ #elif defined(__alpha__) || defined(__alpha) || defined(_M_ALPHA)
+ #  define LZO_ARCH_ALPHA            1
+ #  define LZO_INFO_ARCH             "alpha"
+diff --git a/include/grub/arm64/types.h b/include/grub/arm64/types.h
+index d132c5e..54b5e63 100644
+--- a/include/grub/arm64/types.h
++++ b/include/grub/arm64/types.h
+@@ -23,7 +23,11 @@
+ #define GRUB_TARGET_SIZEOF_VOID_P	8
+ 
+ /* The size of long.  */
++#if defined(_MSC_VER)
++#define GRUB_TARGET_SIZEOF_LONG		4
++#else
+ #define GRUB_TARGET_SIZEOF_LONG		8
++#endif
+ 
+ /* currently only support little-endian.  */
+ #undef GRUB_TARGET_WORDS_BIGENDIAN
 diff --git a/include/grub/btrfs.h b/include/grub/btrfs.h
 index 9d93fb6..f62312c 100644
 --- a/include/grub/btrfs.h
@@ -811,10 +861,10 @@ index d1a6af6..203e014 100644
  struct grub_ntfs_attr
  {
 diff --git a/include/grub/term.h b/include/grub/term.h
-index 5ffb38f..cc6d92a 100644
+index 8117e2a..f87c0d0 100644
 --- a/include/grub/term.h
 +++ b/include/grub/term.h
-@@ -334,12 +334,12 @@ void grub_term_restore_pos (struct grub_term_coordinate *pos);
+@@ -335,12 +335,12 @@ void grub_term_restore_pos (struct grub_term_coordinate *pos);
  
  static inline unsigned grub_term_width (struct grub_term_output *term)
  {

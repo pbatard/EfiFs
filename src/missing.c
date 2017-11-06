@@ -22,8 +22,7 @@
 
 // Microsoft's intrinsics are a major pain in the ass
 // https://stackoverflow.com/a/2945619/1069307
-#if defined(_MSC_VER) || defined(__c2__)
-#if !defined(__MAKEWITH_GNUEFI) || defined(_M_X64)
+#if defined(_MSC_VER) && !defined(__MAKEWITH_GNUEFI)
 #include <stddef.h>		// For size_t
 
 void* memset(void *, int, size_t);
@@ -83,7 +82,6 @@ UINT64 _aullshr(UINT64 a, INTN b)
 	return (b >= 0) ? RShiftU64(a, (UINTN)b) :
 		LShiftU64(a, (UINTN)-b);
 }
-#endif
 #endif
 
 VOID

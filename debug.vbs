@@ -37,6 +37,12 @@ ElseIf (TARGET = "ARM") Then
   QEMU_OPTS = "-M virt -cpu cortex-a15 " & QEMU_OPTS
   PRE_CMD   = "dir "
   FW_BASE   = "QEMU_EFI"
+ElseIf (TARGET = "ARM64") Then
+  UEFI_EXT  = "aa64"
+  QEMU_ARCH = "aarch64"
+  QEMU_OPTS = "-M virt -cpu cortex-a57 " & QEMU_OPTS
+  PRE_CMD   = "dir "
+  FW_BASE   = "QEMU_EFI"
 Else
   MsgBox("Unsupported debug target: " & TARGET)
   Call WScript.Quit(1)
