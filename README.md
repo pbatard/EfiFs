@@ -8,7 +8,8 @@ For additional info as well as precompiled drivers, see http://efi.akeo.ie
 
 ## Requirements
 
-* [Visual Studio 2017](https://www.visualstudio.com/vs/community/) (Windows), MinGW (Windows), gcc (Linux) or
+* [Visual Studio 2017](https://www.visualstudio.com/vs/community/) (Windows) preferably
+  with Update 4 or later for ARM64 compilation support, MinGW (Windows), gcc (Linux) or
   [EDK2](https://github.com/tianocore/edk2).
 * A git client able to initialize/update submodules
 * [QEMU](http://www.qemu.org) __v2.7 or later__ if debugging with Visual Studio
@@ -19,8 +20,9 @@ For additional info as well as precompiled drivers, see http://efi.akeo.ie
 ### Common
 
 * Fetch the git submodules with `git submodule init` and `git submodule update`.
+  __NOTE__ This only works if you cloned the directory using `git`.
 * Apply the included patches to the `grub\` subdirectory. This adds F2FS support, and fixes that
-  are required for Clang and MSVC compilation.
+  are required for MSVC compilation.
 
 ### Visual Studio (non EDK2)
 
@@ -72,17 +74,17 @@ Then boot into the EFI shell and run the following:
 * For logging output, set the `FS_LOGGING` shell variable to 1 or more
 * To unload use the `drivers` command, then `unload` with the driver ID
 
-## Visual Studio 2017 and ARM support
+## Visual Studio 2017 and ARM/ARM64 support
 
-Please be mindful that, to enable ARM compilation support in Visual Studio 2017,
+Please be mindful that, to enable ARM/ARM64 compilation support in Visual Studio 2017,
 you __MUST__ go to the _Individual components_ screen in the setup application
 and select the ARM compilers and libraries there, as they do __NOT__ appear in
 the default _Workloads_ screen:
 
-![VS2017 Individual Components](http://files.akeo.ie/pics/VS2017_Individual_Components.png)
+![VS2017 Individual Components](http://files.akeo.ie/pics/VS2017_Individual_Components2.png)
 
-While in this section, you may also want to select the installation of _Clang/C2
-(experimental)_, so that you can open and compile the Clang solution...
+You also need to ensure that you have Windows SDK 10.0.14393.0 or later installed,
+as this is the minimum version that provides the required ARM64 static libraries.
 
 ## Additional Notes
 
@@ -90,7 +92,7 @@ This is a pure GPLv3+ implementation of EFI drivers. Great care was taken not to
 use any code from non GPLv3 compatible sources, such as rEFInd's `fsw_efi` (GPLv2
 only) or Intel's FAT driver (requires an extra copyright notice).
 
-## Bonus: Commands to compile EfiFs using EDK2 on Debian GNU/Linux 9.1
+## Bonus: Commands to compile EfiFs using EDK2 on a vanilla Debian GNU/Linux 9.1
 
 As root:
 ```

@@ -20,6 +20,7 @@
 
 #include <grub/err.h>
 #include <grub/misc.h>
+#include <grub/crypto.h>
 
 #include "driver.h"
 
@@ -290,3 +291,94 @@ GrubTimeToEfiTime(const INT32 t, EFI_TIME *tp)
 	tp->Month = (UINT8) (y + 1);
 	tp->Day = (UINT8) (days + 1);
 }
+
+/* Need to reimplement a gcrypt compatible CRC32 for latest gzio.c
+ * but heck if I'm going to lose 1 KB of space over it!
+ * TODO: Move this to an EXTRAMODULE?
+ */
+static grub_int32_t *crc32_table;
+
+typedef struct {
+	grub_uint32_t CRC;
+	grub_uint8_t buf[4];
+} CRC_CONTEXT;
+
+static grub_uint32_t
+update_crc32(grub_uint32_t crc, const void *buf_arg, size_t len)
+{
+	const char *buf = buf_arg;
+	size_t n;
+
+	for (n = 0; n < len; n++)
+		crc = crc32_table[(crc ^ buf[n]) & 0xff] ^ (crc >> 8);
+
+	return crc;
+}
+
+static grub_uint32_t
+reflect(grub_uint32_t ref, int len)
+{
+	grub_uint32_t result = 0;
+	int i;
+
+	for (i = 1; i <= len; i++) {
+		if (ref & 1)
+			result |= 1 << (len - i);
+		ref >>= 1;
+	}
+
+	return result;
+}
+
+static void
+crc32_init(void *context)
+{
+	CRC_CONTEXT *ctx = (CRC_CONTEXT *)context;
+	ctx->CRC = 0 ^ 0xffffffffL;
+
+	crc32_table = grub_malloc(256 * sizeof(grub_int32_t));
+	grub_uint32_t polynomial = 0x1edc6f41;
+	int i, j;
+	for (i = 0; i < 256; i++) {
+		crc32_table[i] = reflect(i, 8) << 24;
+		for (j = 0; j < 8; j++)
+			crc32_table[i] = (crc32_table[i] << 1) ^
+			(crc32_table[i] & (1 << 31) ? polynomial : 0);
+		crc32_table[i] = reflect(crc32_table[i], 32);
+	}
+}
+
+static void
+crc32_write(void *context, const void *inbuf, size_t inlen)
+{
+	CRC_CONTEXT *ctx = (CRC_CONTEXT *)context;
+	if (!inbuf)
+		return;
+	ctx->CRC = update_crc32(ctx->CRC, inbuf, inlen);
+}
+
+static grub_uint8_t *
+crc32_read(void *context)
+{
+	CRC_CONTEXT *ctx = (CRC_CONTEXT *)context;
+	return ctx->buf;
+}
+
+static void
+crc32_final(void *context)
+{
+	CRC_CONTEXT *ctx = (CRC_CONTEXT *)context;
+	ctx->CRC ^= 0xffffffffL;
+	ctx->buf[0] = (ctx->CRC >> 24) & 0xFF;
+	ctx->buf[1] = (ctx->CRC >> 16) & 0xFF;
+	ctx->buf[2] = (ctx->CRC >> 8) & 0xFF;
+	ctx->buf[3] = (ctx->CRC) & 0xFF;
+	grub_free(crc32_table);
+}
+
+gcry_md_spec_t _gcry_digest_spec_crc32 =
+{
+	"CRC32", NULL, 0, NULL, 4,
+	crc32_init, crc32_write, crc32_final, crc32_read,
+	sizeof(CRC_CONTEXT)
+};

@@ -58,7 +58,7 @@
 
 #pragma once
 
-#if !defined(_MSC_VER) && !defined(__c2__)
+#if !defined(_MSC_VER)
 #if !defined(__GNUC__) || (__GNUC__ < 4) || (__GNUC__ == 4 && __GNUC_MINOR__ < 7)
 #error gcc 4.7 or later is required for the compilation of this driver.
 #endif
