@@ -44,7 +44,7 @@ For additional info as well as precompiled drivers, see http://efi.akeo.ie
 * From a command prompt, set Grub to target the platform you are compiling for by invoking:
   * (Windows) `set_grub_cpu.cmd <arch>`
   * (Linux) `./set_grub_cpu.sh <arch>`  
-  Where `<arch>` is one of `ia32`, `x64`, `arm` or `aa64`.  
+  Where `<arch>` is one of `ia32`, `x64`, `arm` or `aarch64`.  
   Note that you __MUST__ invoke the `set_grub_cpu` script __every time you switch target__.
 * After having invoked `Edk2Setup.bat` (Windows) or `edksetup.sh` (Linux) run something like:  
   ```
@@ -54,6 +54,14 @@ For additional info as well as precompiled drivers, see http://efi.akeo.ie
   NB: To build an individual driver, such as NTFS, you would can also use something like:  
   ```
   build -a X64 -b RELEASE -t <toolchain> -p EfiFsPkg/EfiFsPkg.dsc -m EfiFsPkg/EfiFsPkg/Ntfs.inf
+  ```
+* Note that you __can__ invoke a `VS2017` toolchain for building with the EDK2, that includes
+  build support for both the `ARM` and `AARCH64` targets (which the default EDK2 still doesn't
+  provide for Visual Studio), by applying the patches from the `edk2` subdirectory.
+
+  For instance, after applying the patches, you will be able to issue the following on Windows:
+  ```
+  build -a AARCH64 -b RELEASE -t VS2017 -p EfiFsPkg/EfiFsPkg.dsc
   ```
 
 ## Testing

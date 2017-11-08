@@ -1,0 +1,575 @@
+From ea34bee976349cb178407e867dab8ca23e7a1fbe Mon Sep 17 00:00:00 2001
+From: Pete Batard <pete@akeo.ie>
+Date: Tue, 7 Nov 2017 18:01:10 +0000
+Subject: [PATCH 2/2] EDK2 - Add VS2017 support, including ARM/ARM64
+
+---
+ .../Library/CompilerIntrinsicsLib/Arm/__rt_div.c   | 202 +++++++++++++++++++++
+ .../CompilerIntrinsicsLib/Arm/__rt_srsh.asm        |  72 ++++++++
+ .../CompilerIntrinsicsLib.inf                      |   8 +-
+ BaseTools/Conf/tools_def.template                  | 172 ++++++++++++++++++
+ BaseTools/set_vsprefix_envs.bat                    |  12 ++
+ MdePkg/Library/BaseLib/BaseLib.inf                 |   8 +-
+ 6 files changed, 470 insertions(+), 4 deletions(-)
+ create mode 100644 ArmPkg/Library/CompilerIntrinsicsLib/Arm/__rt_div.c
+ create mode 100644 ArmPkg/Library/CompilerIntrinsicsLib/Arm/__rt_srsh.asm
+
+diff --git a/ArmPkg/Library/CompilerIntrinsicsLib/Arm/__rt_div.c b/ArmPkg/Library/CompilerIntrinsicsLib/Arm/__rt_div.c
+new file mode 100644
+index 0000000..7640d1a
+--- /dev/null
++++ b/ArmPkg/Library/CompilerIntrinsicsLib/Arm/__rt_div.c
+@@ -0,0 +1,202 @@
++/*
++ * CRT replacement for MSVC/ARM
++ * Modified from ReactOS' sdk/lib/crt/math/arm/... - BSD License
++ */
++
++#include <stdint.h>
++
++int _fltused = 0x9875;
++
++typedef struct {
++	uint32_t quotient;
++	uint32_t modulus;
++} udiv_result_t;
++
++typedef struct {
++	int32_t quotient;
++	int32_t modulus;
++} sdiv_result_t;
++
++typedef struct {
++	uint64_t quotient;
++	uint64_t modulus;
++} udiv64_result_t;
++
++typedef struct {
++	uint64_t quotient;
++	uint64_t modulus;
++} sdiv64_result_t;
++
++/* No inline or standalone assembly for halt on div by 0 -> do it ourselves */
++typedef void(*__brkdiv0_t)(void);
++static const uint32_t ___brkdiv0 = 0xe7f00ff9;	// udf #249
++static __brkdiv0_t __brkdiv0 = (__brkdiv0_t)&___brkdiv0;
++
++__inline void __rt_udiv_internal(udiv_result_t *result, uint32_t divisor, uint32_t dividend)
++{
++	uint32_t shift;
++	uint32_t mask;
++	uint32_t quotient;
++
++	if (divisor == 0) {
++		/* Raise divide by zero error */
++		__brkdiv0();
++	}
++
++	if (divisor > dividend) {
++		result->quotient = 0;
++		result->modulus = dividend;
++		return;
++	}
++
++	/* Get the difference in count of leading zeros between dividend and divisor */
++	shift = _CountLeadingZeros(divisor);
++	shift -= _CountLeadingZeros(dividend);
++
++	/* Shift the divisor to the left, so that it's highest bit is the same as the
++	   highest bit of the dividend */
++	divisor <<= shift;
++
++	mask = 1 << shift;
++
++	quotient = 0;
++	do {
++		if (dividend >= divisor) {
++			quotient |= mask;
++			dividend -= divisor;
++		}
++		divisor >>= 1;
++		mask >>= 1;
++	} while (mask);
++
++	result->quotient = quotient;
++	result->modulus = dividend;
++	return;
++}
++
++uint64_t __rt_sdiv(int32_t divisor, int32_t dividend)
++{
++	sdiv_result_t result;
++	int32_t divisor_sign, dividend_sign;
++
++	dividend_sign = divisor & 0x80000000;
++	if (dividend_sign) {
++		dividend = -dividend;
++	}
++
++	divisor_sign = divisor & 0x80000000;
++	if (divisor_sign) {
++		divisor = -divisor;
++	}
++
++	__rt_udiv_internal((udiv_result_t*)&result, divisor, dividend);
++
++	if (dividend_sign ^ divisor_sign) {
++		result.quotient = -result.quotient;
++	}
++
++	if (dividend_sign) {
++		result.modulus = -result.modulus;
++	}
++
++	return (((uint64_t)result.modulus) << 32) | ((uint32_t)result.quotient);
++}
++
++uint64_t __rt_udiv(uint32_t divisor, uint32_t dividend)
++{
++	udiv_result_t result;
++
++	__rt_udiv_internal(&result, divisor, dividend);
++
++	return (((uint64_t)result.modulus) << 32) | ((uint32_t)result.quotient);
++}
++
++static __inline void __rt_udiv64_internal(udiv64_result_t *result,
++	uint64_t divisor, uint64_t dividend)
++{
++	uint32_t shift;
++	uint64_t mask;
++	uint64_t quotient;
++
++	if (divisor == 0) {
++		/* Raise divide by zero error */
++		__brkdiv0();
++	}
++
++	if (divisor > dividend) {
++		result->quotient = 0;
++		result->modulus = dividend;
++		return;
++	}
++
++	/* Get the difference in count of leading zeros between dividend and divisor */
++	shift = _CountLeadingZeros64(divisor);
++	shift -= _CountLeadingZeros64(dividend);
++
++	/* Shift the divisor to the left, so that it's highest bit is the same as the
++	   highest bit of the dividend */
++	divisor <<= shift;
++
++	mask = 1LL << shift;
++
++	quotient = 0;
++	do {
++		if (dividend >= divisor) {
++			quotient |= mask;
++			dividend -= divisor;
++		}
++		divisor >>= 1;
++		mask >>= 1;
++	} while (mask);
++
++	result->quotient = quotient;
++	result->modulus = dividend;
++	return;
++}
++
++/*
++ * Soooo, what do you do when you have an UNCOOPERATIVE compiler (Microsoft's
++ * crippled version of Clang), compiling into some weird intermediate language
++ * (C2 or LLVM or whatever), with NO FRIGGING ASSEMBLY, be it inline or
++ * standalone, and you want to provide your own version of __rt_udiv64(), that
++ * MUST return the result in ARM registers r0/r1/r2/r3?
++ * Why, you "just" define an (uint64_t, uint64_t) function call, that points
++ * to the binary code for 'mov pc, lr' (i.e. ARM's return from call instruction)
++ * since you can then use this call to set r0/r1 to the first call parameter and
++ * r2/r3 to the second.
++ */
++typedef void(*set_return_registers_t)(uint64_t, uint64_t);
++static const uint32_t _set_return_registers = 0xe1a0f00e;	// mov pc, lr
++static set_return_registers_t set_return_registers = (set_return_registers_t)&_set_return_registers;
++
++void __rt_udiv64(uint64_t divisor, uint64_t dividend)
++{
++	udiv64_result_t result;
++
++	__rt_udiv64_internal(&result, divisor, dividend);
++
++	set_return_registers(result.quotient, result.modulus);
++}
++
++/* Not sure if this one is also needed, but just in case... */
++void __rt_sdiv64(int64_t divisor, int64_t dividend)
++{
++	udiv64_result_t result;
++	int64_t divisor_sign, dividend_sign, quotient, modulus;
++
++	dividend_sign = divisor & 0x8000000000000000LL;
++	if (dividend_sign) {
++		dividend = -dividend;
++	}
++
++	divisor_sign = divisor & 0x8000000000000000LL;
++	if (divisor_sign) {
++		divisor = -divisor;
++	}
++
++	__rt_udiv64_internal(&result, divisor, dividend);
++
++	quotient = (dividend_sign ^ divisor_sign) ? -(int64_t)result.quotient : result.quotient;
++	modulus = (dividend_sign) ? -(int64_t)result.modulus : result.modulus;
++	set_return_registers((uint64_t)quotient, (uint64_t)modulus);
++}
+diff --git a/ArmPkg/Library/CompilerIntrinsicsLib/Arm/__rt_srsh.asm b/ArmPkg/Library/CompilerIntrinsicsLib/Arm/__rt_srsh.asm
+new file mode 100644
+index 0000000..822a48c
+--- /dev/null
++++ b/ArmPkg/Library/CompilerIntrinsicsLib/Arm/__rt_srsh.asm
+@@ -0,0 +1,72 @@
++/*
++ * COPYRIGHT:         BSD
++ * PROJECT:           ReactOS CRT library
++ * PURPOSE:           Implementation of __rt_srsh
++ * PROGRAMMER:        Timo Kreuzer (timo.kreuzer@reactos.org)
++ */
++
++/*
++    __int64
++    __rt_srsh(
++        __int64 value,
++        uint32_t shift);
++
++    R0 = loword of value
++    R1 = hiword of value
++    R2 = shift
++*/
++
++    EXPORT  __rt_srsh
++
++    AREA  Math, CODE, READONLY
++
++__rt_srsh
++
++    /* r3 = 32 - r2 */
++    rsbs r3, r2, #32
++
++    /* Branch if minus (r2 > 32)  */
++    bmi __rt_srsh2
++
++    /* r0 = r0 >> r2 (logical shift!) */
++    lsr r0, r0, r2
++
++    /* r3 = r1 << r3 */
++    lsl r3, r1, r3
++
++    /* r0 |= r1 << (32 - r2) */
++    orr r0, r0, r3
++
++    /* r1 = r1 >> r2 (arithmetic shift!) */
++    asr r1, r1, r2
++
++    bx lr
++
++__rt_srsh2
++
++    /* Check if shift is > 64 */
++    cmp r2, 64
++    bhs __rt_srsh3
++
++    /* r3 = r2 - 32 */
++    sub r3, r2, #32
++
++    /* r0 = r1 >> r3 (arithmetic shift!) */
++    asr r0, r1, r3
++
++    /* r1 = r1 >> 32 (arithmetic shift!) */
++    asr r1, r1, #32
++
++    bx lr
++
++__rt_srsh3
++
++    /* r1 = r1 >> 32 (arithmetic shift!) */
++    asr r1, r1, #32
++
++    /* r0 = r1 */
++    mov r0, r1
++
++    bx lr
++
++    END
+diff --git a/ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf b/ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
+index 4433314..bc55d8e 100644
+--- a/ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
++++ b/ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
+@@ -23,8 +23,10 @@
+   LIBRARY_CLASS                  = CompilerIntrinsicsLib
+ 
+ [Sources]
+-  memcpy.c
+-  memset.c
++  memcpy.c             | RVCT
++  memcpy.c             | GCC
++  memset.c             | RVCT
++  memset.c             | GCC
+ 
+ [Sources.ARM]
+   Arm/mullu.asm        | RVCT
+@@ -94,6 +96,8 @@
+   Arm/llsr.S       | GCC
+   Arm/llsl.S       | GCC
+ 
++  Arm/__rt_div.c    | MSFT
++  Arm/__rt_srsh.asm | MSFT
+ 
+ [Packages]
+   MdePkg/MdePkg.dec
+diff --git a/BaseTools/Conf/tools_def.template b/BaseTools/Conf/tools_def.template
+index aebd7d5..bdea096 100755
+--- a/BaseTools/Conf/tools_def.template
++++ b/BaseTools/Conf/tools_def.template
+@@ -74,6 +74,12 @@ DEFINE VS2015x86_BIN    = ENV(VS2015_PREFIX)Vc\bin
+ DEFINE VS2015x86_DLL    = ENV(VS2015_PREFIX)Common7\IDE;DEF(VS2015x86_BIN)
+ DEFINE VS2015x86_BINX64 = DEF(VS2015x86_BIN)\x86_amd64
+ 
++DEFINE VS2017_BIN         = ENV(VS2017_PREFIX)bin\Hostx64
++DEFINE VS2017_BIN_IA32    = DEF(VS2017_BIN)\x86
++DEFINE VS2017_BIN_X64     = DEF(VS2017_BIN)\x64
++DEFINE VS2017_BIN_ARM     = DEF(VS2017_BIN)\arm
++DEFINE VS2017_BIN_AARCH64 = DEF(VS2017_BIN)\arm64
++
+ DEFINE WINSDK_BIN       = ENV(WINSDK_PREFIX)
+ DEFINE WINSDKx86_BIN    = ENV(WINSDKx86_PREFIX)
+ 
+@@ -93,6 +99,10 @@ DEFINE WINSDK8x86_BIN    = ENV(WINSDK8x86_PREFIX)x64
+ DEFINE WINSDK81_BIN       = ENV(WINSDK81_PREFIX)x86\
+ DEFINE WINSDK81x86_BIN    = ENV(WINSDK81x86_PREFIX)x64
+ 
++# Microsoft Visual Studio 2017 Professional Edition
++DEFINE WINSDK10_BIN       = ENV(WINSDK10_PREFIX)x86\
++DEFINE WINSDK10x86_BIN    = ENV(WINSDK10x86_PREFIX)x64
++
+ # These defines are needed for certain Microsoft Visual Studio tools that
+ # are used by other toolchains.  An example is that ICC on Windows normally
+ # uses Microsoft's nmake.exe.
+@@ -4060,6 +4070,168 @@ NOOPT_VS2015x86xASL_X64_DLINK_FLAGS    = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT
+ *_VS2015x86xASL_EBC_SLINK_FLAGS         = /lib /NOLOGO /MACHINE:EBC
+ *_VS2015x86xASL_EBC_DLINK_FLAGS         = "C:\Program Files (x86)\Intel\EBC\Lib\EbcLib.lib" /NOLOGO /NODEFAULTLIB /MACHINE:EBC /OPT:REF /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /MAP /ALIGN:32 /DRIVER
+ 
++####################################################################################
++#
++# Microsoft Visual Studio 2017
++#
++#   VS2017  - Microsoft Visual Studio 2017 Professional Edition with Intel ASL
++#   ASL     - Intel ACPI Source Language Compiler
++####################################################################################
++#   VS2017           - Microsoft Visual Studio 2017 Professional Edition
++*_VS2017_*_*_FAMILY               = MSFT
++
++*_VS2017_*_MAKE_PATH              = DEF(VS2017_BIN_X64)\nmake.exe
++*_VS2017_*_MAKE_FLAGS             = /nologo
++*_VS2017_*_RC_PATH                = DEF(WINSDK81_BIN)\rc.exe
++
++*_VS2017_*_SLINK_FLAGS            = /NOLOGO /LTCG
++*_VS2017_*_APP_FLAGS              = /nologo /E /TC
++*_VS2017_*_PP_FLAGS               = /nologo /E /TC /FIAutoGen.h
++*_VS2017_*_VFRPP_FLAGS            = /nologo /E /TC /DVFRCOMPILE /FI$(MODULE_NAME)StrDefs.h
++*_VS2017_*_DLINK2_FLAGS           =
++
++*_VS2017_*_ASM16_PATH             = EF(VS2017_BIN_IA32)\ml.exe
++
++##################
++# ASL definitions
++##################
++*_VS2017_*_ASL_PATH               = DEF(DEFAULT_WIN_ASL_BIN)
++*_VS2017_*_ASL_FLAGS              = DEF(DEFAULT_WIN_ASL_FLAGS)
++*_VS2017_*_ASL_OUTFLAGS           = DEF(DEFAULT_WIN_ASL_OUTFLAGS)
++*_VS2017_*_ASLCC_FLAGS            = DEF(MSFT_ASLCC_FLAGS)
++*_VS2017_*_ASLPP_FLAGS            = DEF(MSFT_ASLPP_FLAGS)
++*_VS2017_*_ASLDLINK_FLAGS         = DEF(MSFT_ASLDLINK_FLAGS)
++
++##################
++# IA32 definitions
++##################
++*_VS2017_IA32_*_DLL               = DEF(VS2017_BIN_IA32)
++
++*_VS2017_IA32_CC_PATH             = DEF(VS2017_BIN_IA32)\cl.exe
++*_VS2017_IA32_VFRPP_PATH          = DEF(VS2017_BIN_IA32)\cl.exe
++*_VS2017_IA32_SLINK_PATH          = DEF(VS2017_BIN_IA32)\lib.exe
++*_VS2017_IA32_DLINK_PATH          = DEF(VS2017_BIN_IA32)\link.exe
++*_VS2017_IA32_APP_PATH            = DEF(VS2017_BIN_IA32)\cl.exe
++*_VS2017_IA32_PP_PATH             = DEF(VS2017_BIN_IA32)\cl.exe
++*_VS2017_IA32_ASM_PATH            = DEF(VS2017_BIN_IA32)\ml.exe
++*_VS2017_IA32_ASLCC_PATH          = DEF(VS2017_BIN_IA32)\cl.exe
++*_VS2017_IA32_ASLPP_PATH          = DEF(VS2017_BIN_IA32)\cl.exe
++*_VS2017_IA32_ASLDLINK_PATH       = DEF(VS2017_BIN_IA32)\link.exe
++
++      *_VS2017_IA32_MAKE_FLAGS    = /nologo
++  DEBUG_VS2017_IA32_CC_FLAGS      = /nologo /arch:IA32 /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Zi /Gm /Gw /Oi-
++RELEASE_VS2017_IA32_CC_FLAGS      = /nologo /arch:IA32 /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gw /Oi-
++NOOPT_VS2017_IA32_CC_FLAGS        = /nologo /arch:IA32 /c /WX /GS- /W4 /Gs32768 /D UNICODE /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Zi /Gm /Od /Oi-
++
++  DEBUG_VS2017_IA32_ASM_FLAGS     = /nologo /c /WX /W3 /Cx /coff /Zd /Zi
++RELEASE_VS2017_IA32_ASM_FLAGS     = /nologo /c /WX /W3 /Cx /coff /Zd
++NOOPT_VS2017_IA32_ASM_FLAGS       = /nologo /c /WX /W3 /Cx /coff /Zd /Zi
++
++  DEBUG_VS2017_IA32_NASM_FLAGS    = -Ox -f win32 -g
++RELEASE_VS2017_IA32_NASM_FLAGS    = -Ox -f win32
++NOOPT_VS2017_IA32_NASM_FLAGS      = -O0 -f win32 -g
++
++  DEBUG_VS2017_IA32_DLINK_FLAGS   = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF /OPT:ICF=10 /MAP /ALIGN:32 /SECTION:.xdata,D /SECTION:.pdata,D /MACHINE:X86 /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DRIVER /DEBUG
++RELEASE_VS2017_IA32_DLINK_FLAGS   = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /IGNORE:4254 /OPT:REF /OPT:ICF=10 /MAP /ALIGN:32 /SECTION:.xdata,D /SECTION:.pdata,D /MACHINE:X86 /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DRIVER /MERGE:.rdata=.data
++NOOPT_VS2017_IA32_DLINK_FLAGS     = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF /OPT:ICF=10 /MAP /ALIGN:32 /SECTION:.xdata,D /SECTION:.pdata,D /MACHINE:X86 /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DRIVER /DEBUG
++
++##################
++# X64 definitions
++##################
++*_VS2017_X64_*_DLL         = DEF(VS2017_BIN_X64)
++
++*_VS2017_X64_CC_PATH       = DEF(VS2017_BIN_X64)\cl.exe
++*_VS2017_X64_PP_PATH       = DEF(VS2017_BIN_X64)\cl.exe
++*_VS2017_X64_APP_PATH      = DEF(VS2017_BIN_X64)\cl.exe
++*_VS2017_X64_VFRPP_PATH    = DEF(VS2017_BIN_X64)\cl.exe
++*_VS2017_X64_ASM_PATH      = DEF(VS2017_BIN_X64)\ml64.exe
++*_VS2017_X64_SLINK_PATH    = DEF(VS2017_BIN_X64)\lib.exe
++*_VS2017_X64_DLINK_PATH    = DEF(VS2017_BIN_X64)\link.exe
++*_VS2017_X64_ASLCC_PATH    = DEF(VS2017_BIN_X64)\cl.exe
++*_VS2017_X64_ASLPP_PATH    = DEF(VS2017_BIN_X64)\cl.exe
++*_VS2017_X64_ASLDLINK_PATH = DEF(VS2017_BIN_X64)\link.exe
++
++  DEBUG_VS2017_X64_CC_FLAGS     = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2s /GL /Gy /FIAutoGen.h /EHs-c- /GR- /GF /Zi /Gm /Gw /Oi-
++RELEASE_VS2017_X64_CC_FLAGS     = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2s /GL /Gy /FIAutoGen.h /EHs-c- /GR- /GF /Gw /Oi-
++NOOPT_VS2017_X64_CC_FLAGS       = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /Gy /FIAutoGen.h /EHs-c- /GR- /GF /Zi /Gm /Od /Oi-
++
++  DEBUG_VS2017_X64_ASM_FLAGS    = /nologo /c /WX /W3 /Cx /Zd /Zi
++RELEASE_VS2017_X64_ASM_FLAGS    = /nologo /c /WX /W3 /Cx /Zd
++NOOPT_VS2017_X64_ASM_FLAGS      = /nologo /c /WX /W3 /Cx /Zd /Zi
++
++  DEBUG_VS2017_X64_NASM_FLAGS   = -Ox -f win64 -g
++RELEASE_VS2017_X64_NASM_FLAGS   = -Ox -f win64
++NOOPT_VS2017_X64_NASM_FLAGS     = -O0 -f win64 -g
++
++  DEBUG_VS2017_X64_DLINK_FLAGS  = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF /OPT:ICF=10 /MAP /ALIGN:32 /SECTION:.xdata,D /SECTION:.pdata,D /Machine:X64 /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DRIVER /DEBUG
++RELEASE_VS2017_X64_DLINK_FLAGS  = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /IGNORE:4254 /OPT:REF /OPT:ICF=10 /MAP /ALIGN:32 /SECTION:.xdata,D /SECTION:.pdata,D /Machine:X64 /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DRIVER /MERGE:.rdata=.data
++NOOPT_VS2017_X64_DLINK_FLAGS  = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF /OPT:ICF=10 /MAP /ALIGN:32 /SECTION:.xdata,D /SECTION:.pdata,D /Machine:X64 /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DRIVER /DEBUG
++
++#################
++# ARM definitions
++#################
++*_VS2017_ARM_*_DLL                = DEF(VS2017_BIN_ARM)
++
++*_VS2017_ARM_CC_PATH              = DEF(VS2017_BIN_ARM)\cl.exe
++*_VS2017_ARM_VFRPP_PATH           = DEF(VS2017_BIN_ARM)\cl.exe
++*_VS2017_ARM_SLINK_PATH           = DEF(VS2017_BIN_ARM)\lib.exe
++*_VS2017_ARM_DLINK_PATH           = DEF(VS2017_BIN_ARM)\link.exe
++*_VS2017_ARM_APP_PATH             = DEF(VS2017_BIN_ARM)\cl.exe
++*_VS2017_ARM_PP_PATH              = DEF(VS2017_BIN_ARM)\cl.exe
++*_VS2017_ARM_ASM_PATH             = DEF(VS2017_BIN_ARM)\armasm.exe
++*_VS2017_ARM_ASLCC_PATH           = DEF(VS2017_BIN_ARM)\cl.exe
++*_VS2017_ARM_ASLPP_PATH           = DEF(VS2017_BIN_ARM)\cl.exe
++*_VS2017_ARM_ASLDLINK_PATH        = DEF(VS2017_BIN_ARM)\link.exe
++
++      *_VS2017_ARM_MAKE_FLAGS     = /nologo
++  DEBUG_VS2017_ARM_CC_FLAGS       = /nologo /c /WX /wd4100 /wd4127 /wd4214 /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Zi /Gm /Gw /Oi- /D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
++RELEASE_VS2017_ARM_CC_FLAGS       = /nologo /c /WX /wd4100 /wd4127 /wd4214 /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gw /Oi- /D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
++NOOPT_VS2017_ARM_CC_FLAGS         = /nologo /c /WX /wd4100 /wd4127 /wd4214 /GS- /W4 /Gs32768 /D UNICODE /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Zi /Gm /Od /Oi- /D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
++
++  DEBUG_VS2017_ARM_ASM_FLAGS      = /nologo -g
++RELEASE_VS2017_ARM_ASM_FLAGS      = /nologo
++NOOPT_VS2017_ARM_ASM_FLAGS        = /nologo
++
++  DEBUG_VS2017_ARM_NASM_FLAGS     = -Ox -f win32 -g
++RELEASE_VS2017_ARM_NASM_FLAGS     = -Ox -f win32
++NOOPT_VS2017_ARM_NASM_FLAGS       = -O0 -f win32 -g
++
++  DEBUG_VS2017_ARM_DLINK_FLAGS    = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF /OPT:ICF=10 /MAP /SECTION:.xdata,D /SECTION:.pdata,D /MACHINE:ARM /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DRIVER /DEBUG
++RELEASE_VS2017_ARM_DLINK_FLAGS    = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /IGNORE:4254 /OPT:REF /OPT:ICF=10 /MAP /SECTION:.xdata,D /SECTION:.pdata,D /MACHINE:ARM /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DRIVER /MERGE:.rdata=.data
++NOOPT_VS2017_ARM_DLINK_FLAGS      = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF /OPT:ICF=10 /MAP /SECTION:.xdata,D /SECTION:.pdata,D /MACHINE:ARM /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DRIVER /DEBUG
++
++#####################
++# AARCH64 definitions
++#####################
++*_VS2017_AARCH64_*_DLL            = DEF(VS2017_BIN_AARCH64)
++
++*_VS2017_AARCH64_CC_PATH          = DEF(VS2017_BIN_AARCH64)\cl.exe
++*_VS2017_AARCH64_VFRPP_PATH       = DEF(VS2017_BIN_AARCH64)\cl.exe
++*_VS2017_AARCH64_SLINK_PATH       = DEF(VS2017_BIN_AARCH64)\lib.exe
++*_VS2017_AARCH64_DLINK_PATH       = DEF(VS2017_BIN_AARCH64)\link.exe
++*_VS2017_AARCH64_APP_PATH         = DEF(VS2017_BIN_AARCH64)\cl.exe
++*_VS2017_AARCH64_PP_PATH          = DEF(VS2017_BIN_AARCH64)\cl.exe
++*_VS2017_AARCH64_ASM_PATH         = DEF(VS2017_BIN_AARCH64)\armasm64.exe
++*_VS2017_AARCH64_ASLCC_PATH       = DEF(VS2017_BIN_AARCH64)\cl.exe
++*_VS2017_AARCH64_ASLPP_PATH       = DEF(VS2017_BIN_AARCH64)\cl.exe
++*_VS2017_AARCH64_ASLDLINK_PATH    = DEF(VS2017_BIN_AARCH64)\link.exe
++
++      *_VS2017_AARCH64_MAKE_FLAGS = /nologo
++  DEBUG_VS2017_AARCH64_CC_FLAGS   = /nologo /c /WX /wd4100 /wd4127 /wd4214 /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Zi /Gm /Gw /Oi-
++RELEASE_VS2017_AARCH64_CC_FLAGS   = /nologo /c /WX /wd4100 /wd4127 /wd4214 /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gw /Oi-
++NOOPT_VS2017_AARCH64_CC_FLAGS     = /nologo /c /WX /wd4100 /wd4127 /wd4214 /GS- /W4 /Gs32768 /D UNICODE /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Zi /Gm /Od /Oi-
++
++  DEBUG_VS2017_AARCH64_ASM_FLAGS  = /nologo /c /WX /W3 /Cx /coff /Zd /Zi
++RELEASE_VS2017_AARCH64_ASM_FLAGS  = /nologo /c /WX /W3 /Cx /coff /Zd
++NOOPT_VS2017_AARCH64_ASM_FLAGS    = /nologo /c /WX /W3 /Cx /coff /Zd /Zi
++
++  DEBUG_VS2017_AARCH64_NASM_FLAGS = -Ox -f win64 -g
++RELEASE_VS2017_AARCH64_NASM_FLAGS = -Ox -f win64
++NOOPT_VS2017_AARCH64_NASM_FLAGS   = -O0 -f win64 -g
++
++  DEBUG_VS2017_AARCH64_DLINK_FLAGS = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF /OPT:ICF=10 /MAP /SECTION:.xdata,D /SECTION:.pdata,D /MACHINE:ARM64 /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DRIVER /DEBUG
++RELEASE_VS2017_AARCH64_DLINK_FLAGS = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /IGNORE:4254 /OPT:REF /OPT:ICF=10 /MAP /SECTION:.xdata,D /SECTION:.pdata,D /MACHINE:ARM64 /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DRIVER /MERGE:.rdata=.data
++NOOPT_VS2017_AARCH64_DLINK_FLAGS   = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF /OPT:ICF=10 /MAP /SECTION:.xdata,D /SECTION:.pdata,D /MACHINE:ARM64 /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DRIVER /DEBUG
+ 
+ ####################################################################################
+ #
+diff --git a/BaseTools/set_vsprefix_envs.bat b/BaseTools/set_vsprefix_envs.bat
+index b05b1d2..fcfdbb3 100644
+--- a/BaseTools/set_vsprefix_envs.bat
++++ b/BaseTools/set_vsprefix_envs.bat
+@@ -90,6 +90,18 @@ if defined VS140COMNTOOLS (
+   )
+ )
+ 
++if defined VCToolsInstallDir (
++  if not defined VS2017_PREFIX (
++    set "VS2017_PREFIX=%VCToolsInstallDir%"
++  )
++  if not defined WINSDK10_PREFIX (
++    set "WINSDK10_PREFIX=c:\Program Files\Windows Kits\10\bin\"
++  )
++  if not defined WINSDK10x86_PREFIX (
++    set "WINSDK10x86_PREFIX=c:\Program Files (x86)\Windows Kits\10\bin\"
++  )
++)
++
+ if not defined WINDDK3790_PREFIX (
+   set WINDDK3790_PREFIX=C:\WINDDK\3790.1830\bin\
+ )
+diff --git a/MdePkg/Library/BaseLib/BaseLib.inf b/MdePkg/Library/BaseLib/BaseLib.inf
+index 320ac45..1808752 100644
+--- a/MdePkg/Library/BaseLib/BaseLib.inf
++++ b/MdePkg/Library/BaseLib/BaseLib.inf
+@@ -821,8 +821,9 @@
+ [Sources.ARM]
+   Arm/InternalSwitchStack.c
+   Arm/Unaligned.c
+-  Math64.c                   | RVCT 
+-    
++  Math64.c                   | RVCT
++  Math64.c                   | MSFT
++
+   Arm/SwitchStack.asm        | RVCT
+   Arm/SetJumpLongJump.asm    | RVCT
+   Arm/DisableInterrupts.asm  | RVCT
+@@ -870,3 +871,6 @@
+ 
+ [FeaturePcd]
+   gEfiMdePkgTokenSpaceGuid.PcdVerifyNodeInList  ## CONSUMES
++
++[BuildOptions]
++  MSFT:*_*_ARM_CC_FLAGS = /GL-
+\ No newline at end of file
+-- 
+2.9.3.windows.2
+

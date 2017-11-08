@@ -50,8 +50,12 @@
   MemoryAllocationLib|MdePkg/Library/PeiMemoryAllocationLib/PeiMemoryAllocationLib.inf
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
+!if $(TOOLCHAIN) != "VS2017" || $(ARCH) != "AARCH64" 
   NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
+!endif
+!if $(TOOLCHAIN) != "VS2017"
   NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
+!endif
 
 ###################################################################################################
 #
