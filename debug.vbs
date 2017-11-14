@@ -12,6 +12,10 @@ QEMU_PATH  = "C:\Program Files\qemu\"
 QEMU_OPTS  = "-nodefaults -vga std -serial vc"
 ' Set to True if you need to download a file that might be cached locally
 NO_CACHE   = False
+' Set to True if you want to use drivers from the EDK2 repo instead of the VS ones
+USE_EDK2   = False
+' Path of EDK2 for the above option
+EDK2_BASE  = "D:\edk2"
 
 ' You shouldn't have to mofify anything below this
 CONF       = WScript.Arguments(0)
@@ -24,11 +28,13 @@ If (TARGET = "x86") Then
   QEMU_ARCH = "i386"
   PRE_CMD   = "dir "
   FW_BASE   = "OVMF"
+  EDK_ARCH  = "IA32"
 ElseIf (TARGET = "x64") Then
   UEFI_EXT  = "x64"
   QEMU_ARCH = "x86_64"
   FW_BASE   = "OVMF"
   PRE_CMD   = ""
+  EDK_ARCH  = "X64"
 ElseIf (TARGET = "ARM") Then
   UEFI_EXT  = "arm"
   QEMU_ARCH = "arm"
@@ -37,12 +43,14 @@ ElseIf (TARGET = "ARM") Then
   QEMU_OPTS = "-M virt -cpu cortex-a15 " & QEMU_OPTS
   PRE_CMD   = "dir "
   FW_BASE   = "QEMU_EFI"
+  EDK_ARCH  = "ARM"
 ElseIf (TARGET = "ARM64") Then
   UEFI_EXT  = "aa64"
   QEMU_ARCH = "aarch64"
   QEMU_OPTS = "-M virt -cpu cortex-a57 " & QEMU_OPTS
   PRE_CMD   = "dir "
   FW_BASE   = "QEMU_EFI"
+  EDK_ARCH  = "AARCH64"
 Else
   MsgBox("Unsupported debug target: " & TARGET)
   Call WScript.Quit(1)
@@ -176,7 +184,11 @@ End If
 ' Copy the files where required, and start QEMU
 ' Note: Linaro's QEMU-EFI.fd firmware is very sensitive about '/' vs '\'
 Call shell.Run("%COMSPEC% /c mkdir ""image\efi\boot""", 0, True)
-Call fso.CopyFile(BIN, "image\" & DRV, True)
+If USE_EDK2 Then
+  Call fso.CopyFile(EDK2_BASE & "\Build\EfiFs\RELEASE_VS2017\" & EDK_ARCH & "\" & FS & ".efi", "image\" & DRV, True)
+Else
+  Call fso.CopyFile(BIN, "image\" & DRV, True)
+End If
 ' Create a startup.nsh that: sets logging, loads the driver and executes an "Hello World" app from the disk
 Set file = fso.CreateTextFile("image\efi\boot\startup.nsh", True)
 Call file.Write("set FS_LOGGING " & LOG_LEVEL & vbCrLf &_

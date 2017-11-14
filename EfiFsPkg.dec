@@ -10,7 +10,7 @@
   PACKAGE_NAME                   = EfiFsPkg
   PACKAGE_UNI_FILE               = EfiFsPkg.uni
   PACKAGE_GUID                   = D65E40B8-BC4B-4625-9E5C-17C5726C39C3
-  PACKAGE_VERSION                = 1.1
+  PACKAGE_VERSION                = 1.2
 
 [UserExtensions.TianoCore."ExtraFiles"]
   EfiFsPkgExtra.uni

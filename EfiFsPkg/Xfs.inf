@@ -8,7 +8,7 @@
   BASE_NAME                  = xfs
   FILE_GUID                  = 8F56A526-1566-442F-9D7F-3E704772B75A
   MODULE_TYPE                = UEFI_DRIVER
-  VERSION_STRING             = 1.1
+  VERSION_STRING             = 1.2
   EDK_RELEASE_VERSION        = 0x00020000
   EFI_SPECIFICATION_VERSION  = 0x00020000
   ENTRY_POINT                = FSDriverInstall
@@ -70,5 +70,4 @@
   *_*_IA32_CC_FLAGS    = -DFORMAT=efi-app-ia32
   *_*_X64_CC_FLAGS     = -DFORMAT=efi-app-x64
   *_*_*_CC_FLAGS       = -Os -DCPU_$(ARCH) -DGRUB_FILE=__FILE__ -DDRIVERNAME=$(BASE_NAME) -DDRIVERNAME_STR=\"XFS\"
-  # On MSFT compilers, we must force-disable the default /GL option in order to replace the memset() intrinsic
-  MSFT:*_*_*_CC_FLAGS  = /GL- /wd4028 /wd4068 /wd4133 /wd4146 /wd4201 /wd4204 /wd4244 /wd4245 /wd4267 /wd4311 /wd4312 /wd4334 /wd4706
+  MSFT:*_*_*_CC_FLAGS  = /wd4028 /wd4068 /wd4133 /wd4146 /wd4201 /wd4204 /wd4244 /wd4245 /wd4267 /wd4311 /wd4312 /wd4334 /wd4706

@@ -1,6 +1,11 @@
 For detailed information about the changes below, please see the git log or
 visit: https://github.com/pbatard/efifs
 
+v1.2 (2017.11.14)
+* Add EDK2 compilation support
+* Add Visual Studio 2017 ARM64 compilation support
+* Update GRUB and gnu-efi to latest
+
 v1.1 (2016.12.28)
 * Add ARM64 platform support
 * Add F2FS support (EXPERIMENTAL)

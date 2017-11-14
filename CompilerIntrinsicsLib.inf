@@ -1,0 +1,51 @@
+#/*++
+#
+#  Copyright (c) 2017, Pete Batard. All rights reserved.<BR>
+#  This program and the accompanying materials
+#  are licensed and made available under the terms and conditions of the BSD License
+#  which accompanies this distribution.  The full text of the license may be found at
+#  http://opensource.org/licenses/bsd-license.php
+#
+#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#
+#   Abstract:
+#
+#     Intrinsics required to compile EfiFs with MSFT.
+#
+#--*/
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = CompilerIntrinsicsLib
+  FILE_GUID                      = B11194CC-A4AA-4886-8241-101F3DAD8BEF
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = CompilerIntrinsicsLib
+
+#
+#  VALID_ARCHITECTURES           = IA32
+#
+
+[Sources.IA32]
+  # Compiler helper (C RunTime) functions
+  ../StdLib/LibC/CRT/Ia32/llmul.c          | MSFT    # __allmul
+  ../StdLib/LibC/CRT/Ia32/llshl.c          | MSFT    # __allshl
+  ../StdLib/LibC/CRT/Ia32/llshr.c          | MSFT    # __allshr
+  ../StdLib/LibC/CRT/Ia32/ulldiv.c         | MSFT    # __aulldiv
+  ../StdLib/LibC/CRT/Ia32/ullrem.c         | MSFT    # __aullrem
+  ../StdLib/LibC/CRT/Ia32/ullshr.c         | MSFT    # __aullshr
+  ../StdLib/LibC/CRT/Ia32/lldiv.c          | MSFT    # __alldiv
+  ../StdLib/LibC/CRT/Ia32/llrem.c          | MSFT    # __allrem
+  ../StdLib/LibC/CRT/Ia32/lldvrm.c         | MSFT    # __alldvrm
+  ../StdLib/LibC/CRT/Ia32/ulldvrm.c        | MSFT    # __aulldvrm
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ArmPkg/ArmPkg.dec
+
+[LibraryClasses]
+
+[BuildOptions]
+  MSFT:*_*_IA32_CC_FLAGS = /GL-
+  MSFT:*_*_IA32_DLINK_FLAGS = /INCLUDE:_MultS64x64

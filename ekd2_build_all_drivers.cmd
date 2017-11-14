@@ -1,3 +1,7 @@
+@rem This script builds all the drivers using the EDK2.
+@rem Requires an EDK2 that has been updated for VS2017 support,
+@rem such as the one from https://github.com/pbatard/edk2/commits/vs2017
+
 @echo off
 setlocal enabledelayedexpansion
 cd /d "%~dp0"

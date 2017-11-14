@@ -8,7 +8,7 @@
 [Defines]
   PLATFORM_NAME                  = EfiFs
   PLATFORM_GUID                  = 700d6096-1578-409e-a6c7-9acdf9f565b3
-  PLATFORM_VERSION               = 1.1
+  PLATFORM_VERSION               = 1.2
   DSC_SPECIFICATION              = 0x00010005
   SUPPORTED_ARCHITECTURES        = IA32|X64|EBC|ARM|AARCH64
   OUTPUT_DIRECTORY               = Build/EfiFs
@@ -42,19 +42,16 @@
   DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf  
   DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
 
-[LibraryClasses.common.PEIM]
-  PeimEntryPoint|MdePkg/Library/PeimEntryPoint/PeimEntryPoint.inf
-  PeiServicesLib|MdePkg/Library/PeiServicesLib/PeiServicesLib.inf
-  PeiServicesTablePointerLib|MdePkg/Library/PeiServicesTablePointerLib/PeiServicesTablePointerLib.inf
-  HobLib|MdePkg/Library/PeiHobLib/PeiHobLib.inf
-  MemoryAllocationLib|MdePkg/Library/PeiMemoryAllocationLib/PeiMemoryAllocationLib.inf
-
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
-!if $(TOOLCHAIN) != "VS2017" || $(ARCH) != "AARCH64" 
   NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
-!endif
-!if $(TOOLCHAIN) != "VS2017"
   NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
+
+[LibraryClasses.IA32, LibraryClasses.X64]
+  NULL|EdkCompatibilityPkg/Foundation/Library/CompilerStub/CompilerStubLib.inf
+
+[LibraryClasses.IA32]
+!if $(TOOLCHAIN) == "VS2017"
+  NULL|EfiFsPkg/CompilerIntrinsicsLib.inf
 !endif
 
 ###################################################################################################

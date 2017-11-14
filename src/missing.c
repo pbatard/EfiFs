@@ -20,32 +20,16 @@
 
 #include "driver.h"
 
+// EDK2 specifics
+#if !defined(__MAKEWITH_GNUEFI)
+
+#if defined(_M_IX86)
+#pragma comment(linker, "/INCLUDE:_MultS64x64")
+#endif
+
 // Microsoft's intrinsics are a major pain in the ass
-// https://stackoverflow.com/a/2945619/1069307
-#if defined(_MSC_VER) && !defined(__MAKEWITH_GNUEFI)
+#if defined(_MSC_VER)
 #include <stddef.h>		// For size_t
-
-void* memset(void *, int, size_t);
-#pragma intrinsic(memset)
-#pragma function(memset)
-void* memset(void *s, int c, size_t n)
-{
-	SetMem(s, (UINTN)n, (UINT8)c);
-	return s;
-}
-
-void* memcpy(void *, const void *, size_t);
-#pragma intrinsic(memcpy)
-#pragma function(memcpy)
-void* memcpy(void *s1, const void *s2, size_t n)
-{
-	CopyMem(s1, s2, (UINTN)n);
-	return s1;
-}
-
-int memcmp(const void*, const void *, size_t);
-#pragma intrinsic(memcmp)
-#pragma function(memcmp)
 int memcmp(const void *s1, const void *s2, size_t n)
 {
 	return (int)CompareMem(s1, s2, (UINTN)n);
@@ -56,32 +40,8 @@ void* memmove(void *s1, const void *s2, size_t n)
 	CopyMem(s1, s2, n);
 	return s1;
 }
+#endif
 
-INT64 _allmul(INT64 a, INT64 b)
-{
-	INT64 _a = (a>=0)?a:-a, _b = (b>=0)?b:-b;
-	if (((a > 0) & (b < 0)) || ((a < 0) && (b > 0)))
-		return -1LL * MultU64x32(_a, (UINTN)_b);
-	return MultU64x32(_a, (UINTN)_b);
-}
-
-INT64 _allshl(INT64 a, INTN b)
-{
-	return (b >= 0) ? (INT64)LShiftU64((UINT64)a, (UINTN)b) :
-		(INT64)RShiftU64((UINT64)a, (UINTN)-b);
-}
-
-INT64 _allshr(INT64 a, INTN b)
-{
-	return (b >= 0) ? (INT64)RShiftU64((UINT64)a, (UINTN)b) :
-		(INT64)LShiftU64((UINT64)a, (UINTN)-b);
-}
-
-UINT64 _aullshr(UINT64 a, INTN b)
-{
-	return (b >= 0) ? RShiftU64(a, (UINTN)b) :
-		LShiftU64(a, (UINTN)-b);
-}
 #endif
 
 VOID
