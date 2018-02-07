@@ -24,8 +24,6 @@
   ../src/path.c
   ../src/utf8.c
   ../grub/grub-core/io/gzio.c
-  ../grub/grub-core/lib/crypto.c
-  ../grub/grub-core/lib/pbkdf2.c
   ../grub/grub-core/kern/err.c
   ../grub/grub-core/kern/misc.c
   ../grub/grub-core/kern/list.c
@@ -35,7 +33,6 @@
   ../grub/grub-core/fs/zfs/zfs_lz4.c
   ../grub/grub-core/fs/zfs/zfs_lzjb.c
   ../grub/grub-core/fs/zfs/zfs_sha256.c
-  ../grub/grub-core/fs/zfs/zfscrypt.c
 
 [Packages]
   EfiFsPkg/EfiFsPkg.dec
@@ -79,4 +76,4 @@
   *_*_*_CC_FLAGS       = -Os -DCPU_$(ARCH) -DGRUB_FILE=__FILE__ -DDRIVERNAME=$(BASE_NAME) -DDRIVERNAME_STR=\"ZFS\"
   # ZFS has an extra module
   *_*_*_CC_FLAGS       = -DEXTRAMODULE=gzio
-  MSFT:*_*_*_CC_FLAGS  = /wd4028 /wd4068 /wd4133 /wd4146 /wd4201 /wd4204 /wd4244 /wd4245 /wd4267 /wd4311 /wd4312 /wd4334 /wd4706
+  MSFT:*_*_*_CC_FLAGS  = /wd4028 /wd4068 /wd4133 /wd4146 /wd4201 /wd4204 /wd4244 /wd4245 /wd4267 /wd4311 /wd4312 /wd4334 /wd4706 /D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE

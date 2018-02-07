@@ -1,12 +1,11 @@
 @rem This script builds all the drivers using the EDK2.
 @rem Requires an EDK2 that has been updated for VS2017 support,
-@rem such as the one from https://github.com/pbatard/edk2/commits/vs2017
 
 @echo off
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
-if not exist Edk2Setup.bat (
+if not exist edksetup.bat (
   echo ERROR: This script must be run from the EDK2 directory
   pause
   exit 1
@@ -29,7 +28,7 @@ if not exist EfiFsPkg\set_grub_cpu.cmd (
 
 if exist "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsamd64_arm.bat" (
   call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsamd64_arm.bat"
-  call edk2setup.bat
+  call edksetup.bat
   call EfiFsPkg\set_grub_cpu.cmd ARM
   build -a ARM -b RELEASE -t VS2017 -p EfiFsPkg/EfiFsPkg.dsc
 )
