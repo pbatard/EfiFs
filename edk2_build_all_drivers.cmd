@@ -35,21 +35,21 @@ if exist "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxil
 
 if exist "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsamd64_arm64.bat" (
   call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsamd64_arm64.bat"
-  call edk2setup.bat
+  call edksetup.bat
   call EfiFsPkg\set_grub_cpu.cmd AARCH64
   build -a AARCH64 -b RELEASE -t VS2017 -p EfiFsPkg/EfiFsPkg.dsc
 )
 
 if exist "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat" (
   call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat"
-  call edk2setup.bat
+  call edksetup.bat
   call EfiFsPkg\set_grub_cpu.cmd IA32
   build -a IA32 -b RELEASE -t VS2017 -p EfiFsPkg/EfiFsPkg.dsc
 )
 
 if exist "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat" (
   call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
-  call edk2setup.bat
+  call edksetup.bat
   call EfiFsPkg\set_grub_cpu.cmd X64
   build -a X64 -b RELEASE -t VS2017 -p EfiFsPkg/EfiFsPkg.dsc
 )
