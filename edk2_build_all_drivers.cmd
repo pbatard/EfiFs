@@ -1,30 +1,34 @@
-@rem This script builds all the drivers using the EDK2.
-@rem Requires an EDK2 that has been updated for VS2017 support,
-
+@rem This script builds all the drivers using EDK2 and VS2017.
 @echo off
 setlocal enabledelayedexpansion
-cd /d "%~dp0"
 
-if not exist edksetup.bat (
-  echo ERROR: This script must be run from the EDK2 directory
+set EDK2_PATH=C:\edk2
+set EFIFS_PATH=%~dp0
+
+rem cd /d "%~dp0"
+
+if not exist "%EDK2_PATH%\edksetup.bat" (
+  echo ERROR: Please edit the script and make sure EDK2_PATH is set to your EDK2 directory
   pause
   exit 1
 )
 
-if not exist BaseTools\Bin\Win32\nasm.exe (
+if not exist "%EDK2_PATH%\BaseTools\Bin\Win32\nasm.exe" (
   echo ERROR: You must have nasm.exe in BaseTools\Bin\Win32
   pause
   exit 1
 )
 
-if not exist EfiFsPkg\set_grub_cpu.cmd (
-  mklink /D EfiFsPkg C:\efifs
+if not exist "%EDK2_PATH%\EfiFsPkg\set_grub_cpu.cmd" (
+  mklink /D "%EDK2_PATH%\EfiFsPkg" "%~dp0"
   if not !ERRORLEVEL! equ 0 (
     echo ERROR: Could not create EfiFsPkg link - Are you running this script as Administrator?
     pause
     exit 1
   )
 )
+
+cd /d "%EDK2_PATH%"
 
 if exist "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsamd64_arm.bat" (
   call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsamd64_arm.bat"

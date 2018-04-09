@@ -57,7 +57,7 @@ Else
 End If
 BOOT_NAME  = "boot" & UEFI_EXT & ".efi"
 FW_ARCH    = UCase(UEFI_EXT)
-FW_DIR     = "http://efi.akeo.ie/" & FW_BASE & "/"
+FW_DIR     = "https://efi.akeo.ie/" & FW_BASE & "/"
 FW_ZIP     = FW_BASE & "-" & FW_ARCH & ".zip"
 FW_FILE    = FW_BASE & "_" & FW_ARCH & ".fd"
 FW_URL     = FW_DIR & FW_ZIP
@@ -75,7 +75,7 @@ ElseIf ((FS = "ntfs") Or (FS = "exfat")) Then
 End If
 IMG        = FS & IMG_EXT
 IMG_ZIP    = FS & ".zip"
-IMG_URL    = "http://efi.akeo.ie/test/" & IMG_ZIP
+IMG_URL    = "https://efi.akeo.ie/test/" & IMG_ZIP
 DRV        = FS & "_" & UEFI_EXT & ".efi"
 MNT        = "fs1:"
 If (FS = "zfs") Then
