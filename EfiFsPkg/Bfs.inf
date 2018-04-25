@@ -8,7 +8,7 @@
   BASE_NAME                  = bfs
   FILE_GUID                  = 7686EACB-461E-417F-BB6B-0C5DBA8B4087
   MODULE_TYPE                = UEFI_DRIVER
-  VERSION_STRING             = 1.2
+  VERSION_STRING             = 1.3
   EDK_RELEASE_VERSION        = 0x00020000
   EFI_SPECIFICATION_VERSION  = 0x00020000
   ENTRY_POINT                = FSDriverInstall

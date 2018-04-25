@@ -8,7 +8,7 @@
   BASE_NAME                  = minix3
   FILE_GUID                  = 8DE9E73E-B120-49AA-960B-FC18FCEAAB3A
   MODULE_TYPE                = UEFI_DRIVER
-  VERSION_STRING             = 1.2
+  VERSION_STRING             = 1.3
   EDK_RELEASE_VERSION        = 0x00020000
   EFI_SPECIFICATION_VERSION  = 0x00020000
   ENTRY_POINT                = FSDriverInstall

@@ -1,7 +1,7 @@
 ## @file
 #  EfiFs Package
 #
-#  Copyright (c) 2017, Pete Batard <pete@akeo.ie>
+#  Copyright (c) 2017-2018, Pete Batard <pete@akeo.ie>
 #
 ##
 
@@ -10,7 +10,7 @@
   PACKAGE_NAME                   = EfiFsPkg
   PACKAGE_UNI_FILE               = EfiFsPkg.uni
   PACKAGE_GUID                   = D65E40B8-BC4B-4625-9E5C-17C5726C39C3
-  PACKAGE_VERSION                = 1.2
+  PACKAGE_VERSION                = 1.3
 
 [UserExtensions.TianoCore."ExtraFiles"]
   EfiFsPkgExtra.uni

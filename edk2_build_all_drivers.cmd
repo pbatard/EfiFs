@@ -2,7 +2,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
-set EDK2_PATH=C:\edk2
+set EDK2_PATH=D:\edk2
 set EFIFS_PATH=%~dp0
 
 rem cd /d "%~dp0"

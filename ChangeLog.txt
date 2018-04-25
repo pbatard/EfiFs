@@ -1,6 +1,12 @@
 For detailed information about the changes below, please see the git log or
 visit: https://github.com/pbatard/efifs
 
+v1.3 (2018.04.25)
+* Fix F2FS driver bug (MSVC only) that was introduced in v1.2
+* Remove custom EDK2 patches for VS2017 and ARM/ARM64 support (now integrated upstream)
+* Remove custom GRUB patches for F2FS support (now integrated upstream)
+* Update GRUB and gnu-efi to latest
+
 v1.2 (2017.11.14)
 * Add EDK2 compilation support
 * Add Visual Studio 2017 ARM64 compilation support

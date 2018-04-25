@@ -1,14 +1,14 @@
 ## @file
 #  EfiFs Driver Modules
 #
-#  Copyright (c) 2017, Pete Batard <pete@akeo.ie>
+#  Copyright (c) 2017-2018, Pete Batard <pete@akeo.ie>
 #
 ##
 
 [Defines]
   PLATFORM_NAME                  = EfiFs
   PLATFORM_GUID                  = 700d6096-1578-409e-a6c7-9acdf9f565b3
-  PLATFORM_VERSION               = 1.2
+  PLATFORM_VERSION               = 1.3
   DSC_SPECIFICATION              = 0x00010005
   SUPPORTED_ARCHITECTURES        = IA32|X64|EBC|ARM|AARCH64
   OUTPUT_DIRECTORY               = Build/EfiFs

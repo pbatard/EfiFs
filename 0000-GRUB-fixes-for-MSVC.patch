@@ -1,40 +1,45 @@
-From 4be36971af43b4ce24d73338deecb6b8508745d0 Mon Sep 17 00:00:00 2001
+From aa95de270929a8932884cff75d54f9347bdd76bd Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Wed, 11 Apr 2018 11:22:40 +1000
+Date: Tue, 24 Apr 2018 00:55:25 +0100
 Subject: [PATCH] GRUB fixes for MSVC
 
 ---
  grub-core/fs/affs.c             |  2 ++
  grub-core/fs/bfs.c              |  2 ++
- grub-core/fs/btrfs.c            | 16 ++++++++++-----
- grub-core/fs/fat.c              |  8 ++++++--
+ grub-core/fs/btrfs.c            | 16 +++++++++-----
+ grub-core/fs/f2fs.c             |  2 ++
+ grub-core/fs/fat.c              |  8 +++++--
  grub-core/fs/hfs.c              |  6 ++++++
  grub-core/fs/hfsplus.c          |  2 ++
  grub-core/fs/hfspluscomp.c      |  5 +++++
- grub-core/fs/iso9660.c          | 36 ++++++++++++++++++++++-----------
+ grub-core/fs/iso9660.c          | 36 ++++++++++++++++++++-----------
  grub-core/fs/jfs.c              |  2 ++
  grub-core/fs/nilfs2.c           |  4 +++-
  grub-core/fs/ntfs.c             |  2 ++
- grub-core/fs/reiserfs.c         | 16 ++++++++++++++-
+ grub-core/fs/reiserfs.c         | 16 +++++++++++++-
  grub-core/fs/sfs.c              |  4 +++-
  grub-core/fs/udf.c              |  2 ++
  grub-core/fs/ufs.c              |  2 ++
- grub-core/fs/xfs.c              |  3 +++
+ grub-core/fs/xfs.c              |  2 ++
  grub-core/fs/zfs/zfs.c          |  4 ++--
+ grub-core/fs/zfs/zfs_lz4.c      |  2 ++
  grub-core/kern/misc.c           |  6 +++---
  grub-core/lib/minilzo/lzodefs.h |  3 +++
  include/grub/arm64/types.h      |  4 ++++
  include/grub/btrfs.h            |  3 +++
+ include/grub/exfat.h            |  2 ++
+ include/grub/fat.h              |  2 ++
  include/grub/hfs.h              |  2 ++
  include/grub/hfsplus.h          |  6 ++++++
  include/grub/misc.h             | 10 +++++++++
  include/grub/ntfs.h             |  2 ++
  include/grub/term.h             |  4 ++--
- include/grub/types.h            | 36 +++++++++++++++++++++++----------
+ include/grub/types.h            | 38 +++++++++++++++++++++++----------
+ include/grub/unicode.h          |  2 ++
  include/grub/x86_64/types.h     |  2 +-
- include/grub/zfs/zap_leaf.h     | 17 +++++++++++++---
+ include/grub/zfs/zap_leaf.h     | 17 ++++++++++++---
  include/grub/zfs/zio.h          |  2 ++
- 30 files changed, 169 insertions(+), 44 deletions(-)
+ 35 files changed, 180 insertions(+), 44 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
 index f673897e0..84247ca9f 100644
@@ -77,7 +82,7 @@ index d2b490bce..8d78fd6c2 100644
  struct grub_bfs_data
  {
 diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
-index be195448d..ba8c3c77d 100644
+index be195448d..65ceda7da 100644
 --- a/grub-core/fs/btrfs.c
 +++ b/grub-core/fs/btrfs.c
 @@ -48,6 +48,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
@@ -112,14 +117,14 @@ index be195448d..ba8c3c77d 100644
  
  struct grub_btrfs_leaf_descriptor
  {
-@@ -177,6 +181,7 @@ struct grub_btrfs_time
-   grub_uint32_t nanosec;
- } GRUB_PACKED;
+@@ -171,6 +175,7 @@ struct grub_btrfs_leaf_descriptor
+   } *data;
+ };
  
 +PRAGMA_BEGIN_PACKED
- struct grub_btrfs_inode
+ struct grub_btrfs_time
  {
-   grub_uint8_t dummy1[0x10];
+   grub_int64_t sec;
 @@ -205,6 +210,7 @@ struct grub_btrfs_extent_data
      };
    };
@@ -164,6 +169,26 @@ index be195448d..ba8c3c77d 100644
  				    &stripen);
  	      stripen *= nsubstripes;
  	      redundancy = nsubstripes;
+diff --git a/grub-core/fs/f2fs.c b/grub-core/fs/f2fs.c
+index 1cad2615f..35c822ce0 100644
+--- a/grub-core/fs/f2fs.c
++++ b/grub-core/fs/f2fs.c
+@@ -131,6 +131,7 @@ enum FILE_TYPE
+   F2FS_FT_SYMLINK                 = 7
+ };
+ 
++PRAGMA_BEGIN_PACKED
+ struct grub_f2fs_superblock
+ {
+   grub_uint32_t                   magic;
+@@ -281,6 +282,7 @@ struct grub_f2fs_node
+   };
+   grub_uint8_t                    dummy[40];
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ struct grub_fshelp_node
+ {
 diff --git a/grub-core/fs/fat.c b/grub-core/fs/fat.c
 index 8d8dc35ce..f3b571760 100644
 --- a/grub-core/fs/fat.c
@@ -623,18 +648,10 @@ index 293f027aa..3babbce5f 100644
  /* Information about a "mounted" ufs filesystem.  */
  struct grub_ufs_data
 diff --git a/grub-core/fs/xfs.c b/grub-core/fs/xfs.c
-index c6031bd3f..98bd44d07 100644
+index c6031bd3f..373deb146 100644
 --- a/grub-core/fs/xfs.c
 +++ b/grub-core/fs/xfs.c
-@@ -59,6 +59,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
- 	 XFS_SB_VERSION_DIRV2BIT | \
- 	 XFS_SB_VERSION_MOREBITSBIT)
- 
-+PRAGMA_BEGIN_PACKED
- /* Recognized xfs format versions */
- #define XFS_SB_VERSION_4		4	/* Good old XFS filesystem */
- #define XFS_SB_VERSION_5		5	/* CRC enabled filesystem */
-@@ -84,6 +85,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
+@@ -84,6 +84,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
  	(XFS_SB_FEAT_INCOMPAT_FTYPE | \
  	 XFS_SB_FEAT_INCOMPAT_META_UUID)
  
@@ -642,7 +659,7 @@ index c6031bd3f..98bd44d07 100644
  struct grub_xfs_sblock
  {
    grub_uint8_t magic[4];
-@@ -200,6 +202,7 @@ struct grub_xfs_dirblock_tail
+@@ -200,6 +201,7 @@ struct grub_xfs_dirblock_tail
    grub_uint32_t leaf_count;
    grub_uint32_t leaf_stale;
  } GRUB_PACKED;
@@ -672,6 +689,26 @@ index 6e1fff9e9..b1589a031 100644
         chunk != CHAIN_END; chunk = grub_zfs_to_cpu16 (le->le_next, endian))
      {
  
+diff --git a/grub-core/fs/zfs/zfs_lz4.c b/grub-core/fs/zfs/zfs_lz4.c
+index 5453822d0..873445803 100644
+--- a/grub-core/fs/zfs/zfs_lz4.c
++++ b/grub-core/fs/zfs/zfs_lz4.c
+@@ -74,6 +74,7 @@ static int LZ4_uncompress_unknownOutputSize(const char *source, char *dest,
+ #define	S32	grub_int32_t
+ #define	U64	grub_uint64_t
+ 
++PRAGMA_BEGIN_PACKED
+ typedef struct _U16_S {
+ 	U16 v;
+ } GRUB_PACKED U16_S;
+@@ -83,6 +84,7 @@ typedef struct _U32_S {
+ typedef struct _U64_S {
+ 	U64 v;
+ } GRUB_PACKED U64_S;
++PRAGMA_END_PACKED
+ 
+ #define	A64(x)	(((U64_S *)(x))->v)
+ #define	A32(x)	(((U32_S *)(x))->v)
 diff --git a/grub-core/kern/misc.c b/grub-core/kern/misc.c
 index 3b633d51f..1eed48883 100644
 --- a/grub-core/kern/misc.c
@@ -760,6 +797,46 @@ index 9d93fb6c1..f62312c04 100644
  
  
  struct grub_btrfs_root_backref
+diff --git a/include/grub/exfat.h b/include/grub/exfat.h
+index 2b8009cee..b7654d0aa 100644
+--- a/include/grub/exfat.h
++++ b/include/grub/exfat.h
+@@ -21,6 +21,7 @@
+ 
+ #include <grub/types.h>
+ 
++PRAGMA_BEGIN_PACKED
+ struct grub_exfat_bpb
+ {
+   grub_uint8_t jmp_boot[3];
+@@ -42,6 +43,7 @@ struct grub_exfat_bpb
+   grub_uint8_t num_ph_drive;
+   grub_uint8_t reserved[8];
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ #ifdef GRUB_UTIL
+ #include <grub/disk.h>
+diff --git a/include/grub/fat.h b/include/grub/fat.h
+index 8d7e4a1e5..bf4441479 100644
+--- a/include/grub/fat.h
++++ b/include/grub/fat.h
+@@ -21,6 +21,7 @@
+ 
+ #include <grub/types.h>
+ 
++PRAGMA_BEGIN_PACKED
+ struct grub_fat_bpb
+ {
+   grub_uint8_t jmp_boot[3];
+@@ -66,6 +67,7 @@ struct grub_fat_bpb
+     } GRUB_PACKED fat32;
+   } GRUB_PACKED version_specific;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ #ifdef GRUB_UTIL
+ #include <grub/disk.h>
 diff --git a/include/grub/hfs.h b/include/grub/hfs.h
 index d935f5005..beeca5df5 100644
 --- a/include/grub/hfs.h
@@ -898,7 +975,7 @@ index 8117e2a24..f87c0d022 100644
  
  static inline struct grub_term_coordinate
 diff --git a/include/grub/types.h b/include/grub/types.h
-index b93e48201..395a3bf0d 100644
+index b93e48201..63ba96426 100644
 --- a/include/grub/types.h
 +++ b/include/grub/types.h
 @@ -26,10 +26,20 @@
@@ -974,6 +1051,39 @@ index b93e48201..395a3bf0d 100644
  
  typedef struct grub_unaligned_uint16 grub_unaligned_uint16_t;
  typedef struct grub_unaligned_uint32 grub_unaligned_uint32_t;
+@@ -306,10 +320,12 @@ static inline grub_uint64_t grub_get_unaligned64 (const void *ptr)
+ 
+ static inline void grub_set_unaligned64 (void *ptr, grub_uint64_t val)
+ {
++  PRAGMA_BEGIN_PACKED
+   struct grub_unaligned_uint64_t
+   {
+     grub_uint64_t d;
+   } GRUB_PACKED;
++  PRAGMA_END_PACKED
+   struct grub_unaligned_uint64_t *dd = (struct grub_unaligned_uint64_t *) ptr;
+   dd->d = val;
+ }
+diff --git a/include/grub/unicode.h b/include/grub/unicode.h
+index a0403e91f..5984982fe 100644
+--- a/include/grub/unicode.h
++++ b/include/grub/unicode.h
+@@ -29,6 +29,7 @@ struct grub_unicode_bidi_pair
+   grub_uint32_t replace;
+ };
+ 
++PRAGMA_BEGIN_PACKED
+ struct grub_unicode_compact_range
+ {
+   unsigned start:21;
+@@ -38,6 +39,7 @@ struct grub_unicode_compact_range
+   unsigned bidi_mirror:1;
+   unsigned join_type:3;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ /* Old-style Arabic shaping. Used for "visual UTF-8" and
+    in grub-mkfont to find variant glyphs in absence of GPOS tables.  */
 diff --git a/include/grub/x86_64/types.h b/include/grub/x86_64/types.h
 index 0bbdc6d01..eefa80847 100644
 --- a/include/grub/x86_64/types.h
