@@ -164,7 +164,7 @@ grub_disk_read(grub_disk_t disk, grub_disk_addr_t sector,
 
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"Could not read block at address %08x", sector);
-		return GRUB_ERR_READ_ERROR;
+		return grub_error (GRUB_ERR_READ_ERROR, N_("Could not read block"));
 	}
 
 	return 0;
