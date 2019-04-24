@@ -72,8 +72,12 @@ FSGetControllerName2(EFI_COMPONENT_NAME2_PROTOCOL *This,
 
 static VOID
 FreeFsInstance(EFI_FS *Instance) {
-	FreePool(Instance->DevicePathString);
-	FreePool(Instance->RootFile);
+	if(Instance->DevicePathString != NULL)
+		FreePool(Instance->DevicePathString);
+
+	if(Instance->RootFile != NULL)
+		FreePool(Instance->RootFile);
+
 	FreePool(Instance);
 }
 
