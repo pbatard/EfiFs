@@ -21,11 +21,11 @@ For additional info as well as precompiled drivers, see https://efi.akeo.ie
 
 * Fetch the git submodules with `git submodule init` and `git submodule update`.
   __NOTE__ This only works if you cloned the directory using `git`.
+* Apply `0000-GRUB-fixes.patch` to the `grub\` subdirectory. This applies the
+  changes that are required for successful compilation of GRUB.
 
 ### Visual Studio (non EDK2)
 
-* Apply `0000-GRUB-fixes-for-MSVC.patch` to the `grub\` subdirectory. This
-  applies changes that are required for successful MSVC compilation.
 * Open the solution file and hit `F5` to compile and debug the default driver.
 
 ### gcc (non EDK2)
@@ -39,8 +39,6 @@ For additional info as well as precompiled drivers, see https://efi.akeo.ie
 
 ### EDK2
 
-* If using Visual Studio, apply `0000-GRUB-fixes-for-MSVC.patch` to the `grub\`
-  subdirectory.
 * Open an elevated command prompt and create a symbolic link called `EfiFsPkg`,
   inside your EDK2 directory, to the EfiFs source. On Windows, from an elevated
   prompt, you could run something like `mklink /D EfiFsPkg C:\efifs`, and on
@@ -64,7 +62,7 @@ For additional info as well as precompiled drivers, see https://efi.akeo.ie
   build -a X64 -b RELEASE -t <toolchain> -p EfiFsPkg/EfiFsPkg.dsc -m EfiFsPkg/EfiFsPkg/Ntfs.inf
   ```
 * Note that, provided that you cloned a recent EDK2 from git, you should be able
-  to use `VS2017` as your EDK2 toolchain, including for buidling the ARM or 
+  to use `VS2017` as your EDK2 toolchain, including for buidling the ARM or
   ARM64 drivers, with something like:
   ```
   build -a AARCH64 -b RELEASE -t VS2017 -p EfiFsPkg/EfiFsPkg.dsc

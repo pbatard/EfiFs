@@ -49,7 +49,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{628E3F58-0AA9-40BB-8E49-D8CC513AAD63}</ProjectGuid>
     <RootNamespace>grub</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup>

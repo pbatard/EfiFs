@@ -84,7 +84,7 @@ grub_file_read (grub_file_t file, void *buf, grub_size_t len)
 		file->read_hook_data = file;
 		file->progress_offset = file->offset;
 	}
-	res = (file->fs->read) (file, buf, len);
+	res = (file->fs->fs_read) (file, buf, len);
 	file->read_hook = read_hook;
 	file->read_hook_data = read_hook_data;
 	if (res > 0)
@@ -96,8 +96,8 @@ grub_file_read (grub_file_t file, void *buf, grub_size_t len)
 grub_err_t
 grub_file_close(grub_file_t file)
 {
-	if (file->fs->close)
-		(file->fs->close) (file);
+	if (file->fs->fs_close)
+		(file->fs->fs_close) (file);
 
 	if (file->device)
 		grub_device_close (file->device);
@@ -357,7 +357,7 @@ GrubDir(EFI_GRUB_FILE *File, const CHAR8 *path,
 	grub_err_t rc;
 
 	grub_errno = 0;
-	rc = p->dir(f->device, path, (grub_fs_dir_hook_t) Hook, HookData);
+	rc = p->fs_dir(f->device, path, (grub_fs_dir_hook_t) Hook, HookData);
 	return GrubErrToEFIStatus(rc);
 }
 
@@ -369,7 +369,7 @@ GrubOpen(EFI_GRUB_FILE *File)
 	grub_err_t rc;
 
 	grub_errno = 0;
-	rc = p->open(f, File->path);
+	rc = p->fs_open(f, File->path);
 	return GrubErrToEFIStatus(rc);
 }
 
@@ -380,7 +380,7 @@ GrubClose(EFI_GRUB_FILE *File)
 	grub_file_t f = (grub_file_t) File->GrubFile;
 
 	grub_errno = 0;
-	p->close(f);
+	p->fs_close(f);
 }
 
 EFI_STATUS
@@ -398,7 +398,7 @@ GrubRead(EFI_GRUB_FILE *File, VOID *Data, UINTN *Len)
 		*Len = Remaining;
 
 	grub_errno = 0;
-	len = p->read(f, (char *) Data, (grub_size_t) *Len);
+	len = p->fs_read(f, (char *) Data, (grub_size_t) *Len);
 
 	if (len < 0) {
 		*Len = 0;
@@ -420,7 +420,7 @@ GrubLabel(EFI_GRUB_FILE *File, CHAR8 **label)
 	grub_err_t rc;
 
 	grub_errno = 0;
-	rc = p->label(f->device, (char **) label);
+	rc = p->fs_label(f->device, (char **) label);
 	return GrubErrToEFIStatus(rc);
 }
 
@@ -445,7 +445,7 @@ GrubFSProbe(EFI_FS *FileSystem)
 	}
 
 	grub_errno = 0;
-	(p->dir)(device, "/", probe_dummy_iter, NULL);
+	(p->fs_dir)(device, "/", probe_dummy_iter, NULL);
 	if (grub_errno != 0) {
 		if (LogLevel >= FS_LOGLEVEL_INFO)
 			grub_print_error();	/* NB: this call will reset grub_errno */
@@ -463,7 +463,7 @@ GrubGetUuid(EFI_FS* FileSystem)
 	static CHAR16 Uuid[36];
 	char* uuid;
 
-	if (p->uuid(device, &uuid) || (uuid == NULL))
+	if (p->fs_uuid(device, &uuid) || (uuid == NULL))
 		return NULL;
 
 	Status = Utf8ToUtf16NoAlloc(uuid, Uuid, ARRAYSIZE(Uuid));

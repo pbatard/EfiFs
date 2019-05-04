@@ -1,48 +1,48 @@
-From aa95de270929a8932884cff75d54f9347bdd76bd Mon Sep 17 00:00:00 2001
+From b0459a06d51d3f32cff896f0a19cf3579708e0d4 Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Tue, 24 Apr 2018 00:55:25 +0100
-Subject: [PATCH] GRUB fixes for MSVC
+Date: Sat, 4 May 2019 14:54:36 +0100
+Subject: [PATCH] GRUB fixes
 
 ---
- grub-core/fs/affs.c             |  2 ++
- grub-core/fs/bfs.c              |  2 ++
- grub-core/fs/btrfs.c            | 16 +++++++++-----
- grub-core/fs/f2fs.c             |  2 ++
- grub-core/fs/fat.c              |  8 +++++--
- grub-core/fs/hfs.c              |  6 ++++++
- grub-core/fs/hfsplus.c          |  2 ++
- grub-core/fs/hfspluscomp.c      |  5 +++++
- grub-core/fs/iso9660.c          | 36 ++++++++++++++++++++-----------
- grub-core/fs/jfs.c              |  2 ++
- grub-core/fs/nilfs2.c           |  4 +++-
- grub-core/fs/ntfs.c             |  2 ++
- grub-core/fs/reiserfs.c         | 16 +++++++++++++-
- grub-core/fs/sfs.c              |  4 +++-
- grub-core/fs/udf.c              |  2 ++
- grub-core/fs/ufs.c              |  2 ++
- grub-core/fs/xfs.c              |  2 ++
- grub-core/fs/zfs/zfs.c          |  4 ++--
- grub-core/fs/zfs/zfs_lz4.c      |  2 ++
- grub-core/kern/misc.c           |  6 +++---
- grub-core/lib/minilzo/lzodefs.h |  3 +++
- include/grub/arm64/types.h      |  4 ++++
- include/grub/btrfs.h            |  3 +++
- include/grub/exfat.h            |  2 ++
- include/grub/fat.h              |  2 ++
- include/grub/hfs.h              |  2 ++
- include/grub/hfsplus.h          |  6 ++++++
- include/grub/misc.h             | 10 +++++++++
- include/grub/ntfs.h             |  2 ++
- include/grub/term.h             |  4 ++--
- include/grub/types.h            | 38 +++++++++++++++++++++++----------
- include/grub/unicode.h          |  2 ++
- include/grub/x86_64/types.h     |  2 +-
- include/grub/zfs/zap_leaf.h     | 17 ++++++++++++---
- include/grub/zfs/zio.h          |  2 ++
- 35 files changed, 180 insertions(+), 44 deletions(-)
+ grub-core/fs/affs.c             |   2 +
+ grub-core/fs/bfs.c              |   2 +
+ grub-core/fs/btrfs.c            | 151 ++++----------------------------
+ grub-core/fs/f2fs.c             |   2 +
+ grub-core/fs/fat.c              |   8 +-
+ grub-core/fs/hfs.c              |   6 ++
+ grub-core/fs/hfsplus.c          |   2 +
+ grub-core/fs/hfspluscomp.c      |   5 ++
+ grub-core/fs/iso9660.c          |  36 +++++---
+ grub-core/fs/jfs.c              |   2 +
+ grub-core/fs/nilfs2.c           |   4 +-
+ grub-core/fs/ntfs.c             |   2 +
+ grub-core/fs/reiserfs.c         |  16 +++-
+ grub-core/fs/sfs.c              |   4 +-
+ grub-core/fs/udf.c              |   2 +
+ grub-core/fs/ufs.c              |   2 +
+ grub-core/fs/xfs.c              |   2 +
+ grub-core/fs/zfs/zfs.c          |   6 +-
+ grub-core/fs/zfs/zfs_lz4.c      |   2 +
+ grub-core/kern/misc.c           |   6 +-
+ grub-core/lib/minilzo/lzodefs.h |   3 +
+ include/grub/arm64/types.h      |   4 +
+ include/grub/btrfs.h            |   3 +
+ include/grub/exfat.h            |   2 +
+ include/grub/fat.h              |   2 +
+ include/grub/hfs.h              |   2 +
+ include/grub/hfsplus.h          |   6 ++
+ include/grub/misc.h             |  10 +++
+ include/grub/ntfs.h             |   2 +
+ include/grub/term.h             |   4 +-
+ include/grub/types.h            |  38 +++++---
+ include/grub/unicode.h          |   2 +
+ include/grub/x86_64/types.h     |   2 +-
+ include/grub/zfs/zap_leaf.h     |  17 +++-
+ include/grub/zfs/zio.h          |   2 +
+ 35 files changed, 189 insertions(+), 172 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
-index f673897e0..84247ca9f 100644
+index 6b6a2bc91..90d02ce0c 100644
 --- a/grub-core/fs/affs.c
 +++ b/grub-core/fs/affs.c
 @@ -30,6 +30,7 @@
@@ -62,7 +62,7 @@ index f673897e0..84247ca9f 100644
  /* The location of `struct grub_affs_file' relative to the end of a
     file header block.  */
 diff --git a/grub-core/fs/bfs.c b/grub-core/fs/bfs.c
-index d2b490bce..8d78fd6c2 100644
+index 47dbe2011..236aa0b9f 100644
 --- a/grub-core/fs/bfs.c
 +++ b/grub-core/fs/bfs.c
 @@ -69,6 +69,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
@@ -82,10 +82,39 @@ index d2b490bce..8d78fd6c2 100644
  struct grub_bfs_data
  {
 diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
-index be195448d..65ceda7da 100644
+index 48bd3d04a..83aeec4af 100644
 --- a/grub-core/fs/btrfs.c
 +++ b/grub-core/fs/btrfs.c
-@@ -48,6 +48,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
+@@ -17,14 +17,6 @@
+  *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
+  */
+ 
+-/*
+- * Tell zstd to expose functions that aren't part of the stable API, which
+- * aren't safe to use when linking against a dynamic library. We vendor in a
+- * specific zstd version, so we know what we're getting. We need these unstable
+- * functions to provide our own allocator, which uses grub_malloc(), to zstd.
+- */
+-#define ZSTD_STATIC_LINKING_ONLY
+-
+ #include <grub/err.h>
+ #include <grub/file.h>
+ #include <grub/mm.h>
+@@ -35,7 +27,6 @@
+ #include <grub/lib/crc.h>
+ #include <grub/deflate.h>
+ #include <minilzo.h>
+-#include <zstd.h>
+ #include <grub/i18n.h>
+ #include <grub/btrfs.h>
+ #include <grub/crypto.h>
+@@ -56,12 +47,10 @@ GRUB_MOD_LICENSE ("GPLv3+");
+ #define GRUB_BTRFS_LZO_BLOCK_MAX_CSIZE (GRUB_BTRFS_LZO_BLOCK_SIZE + \
+ 				     (GRUB_BTRFS_LZO_BLOCK_SIZE / 16) + 64 + 3)
+ 
+-#define ZSTD_BTRFS_MAX_WINDOWLOG 17
+-#define ZSTD_BTRFS_MAX_INPUT     (1 << ZSTD_BTRFS_MAX_WINDOWLOG)
+-
  typedef grub_uint8_t grub_btrfs_checksum_t[0x20];
  typedef grub_uint16_t grub_btrfs_uuid_t[8];
  
@@ -93,7 +122,7 @@ index be195448d..65ceda7da 100644
  struct grub_btrfs_device
  {
    grub_uint64_t device_id;
-@@ -81,6 +82,7 @@ struct btrfs_header
+@@ -96,6 +85,7 @@ struct btrfs_header
    grub_uint32_t nitems;
    grub_uint8_t level;
  } GRUB_PACKED;
@@ -101,7 +130,7 @@ index be195448d..65ceda7da 100644
  
  struct grub_btrfs_device_desc
  {
-@@ -107,6 +109,7 @@ struct grub_btrfs_data
+@@ -122,6 +112,7 @@ struct grub_btrfs_data
    struct grub_btrfs_extent_data *extent;
  };
  
@@ -109,7 +138,7 @@ index be195448d..65ceda7da 100644
  struct grub_btrfs_chunk_item
  {
    grub_uint64_t size;
-@@ -157,6 +160,7 @@ struct grub_btrfs_dir_item
+@@ -174,6 +165,7 @@ struct grub_btrfs_dir_item
    grub_uint8_t type;
    char name[0];
  } GRUB_PACKED;
@@ -117,7 +146,7 @@ index be195448d..65ceda7da 100644
  
  struct grub_btrfs_leaf_descriptor
  {
-@@ -171,6 +175,7 @@ struct grub_btrfs_leaf_descriptor
+@@ -188,6 +180,7 @@ struct grub_btrfs_leaf_descriptor
    } *data;
  };
  
@@ -125,7 +154,7 @@ index be195448d..65ceda7da 100644
  struct grub_btrfs_time
  {
    grub_int64_t sec;
-@@ -205,6 +210,7 @@ struct grub_btrfs_extent_data
+@@ -222,6 +215,7 @@ struct grub_btrfs_extent_data
      };
    };
  } GRUB_PACKED;
@@ -133,7 +162,15 @@ index be195448d..65ceda7da 100644
  
  #define GRUB_BTRFS_EXTENT_INLINE 0
  #define GRUB_BTRFS_EXTENT_REGULAR 1
-@@ -227,7 +233,7 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data,
+@@ -229,7 +223,6 @@ struct grub_btrfs_extent_data
+ #define GRUB_BTRFS_COMPRESSION_NONE 0
+ #define GRUB_BTRFS_COMPRESSION_ZLIB 1
+ #define GRUB_BTRFS_COMPRESSION_LZO  2
+-#define GRUB_BTRFS_COMPRESSION_ZSTD 3
+ 
+ #define GRUB_BTRFS_OBJECT_ID_CHUNK 0x100
+ 
+@@ -245,7 +238,7 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data,
  static grub_err_t
  read_sblock (grub_disk_t disk, struct grub_btrfs_superblock *sb)
  {
@@ -142,7 +179,31 @@ index be195448d..65ceda7da 100644
    unsigned i;
    grub_err_t err = GRUB_ERR_NONE;
    for (i = 0; i < ARRAY_SIZE (superblock_sectors); i++)
-@@ -692,8 +698,8 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
+@@ -825,17 +818,13 @@ raid56_read_retry (struct grub_btrfs_data *data,
+       goto cleanup;
+     }
+   else
+-    grub_dprintf ("btrfs", "enough disks for RAID 5: total %"
+-		  PRIuGRUB_UINT64_T ", missing %" PRIuGRUB_UINT64_T "\n",
+-		  nstripes, failed_devices);
+-
+-  /* We have enough disks. So, rebuild the data. */
+-  if (chunk_type & GRUB_BTRFS_CHUNK_TYPE_RAID5)
+-    rebuild_raid5 (buf, buffers, nstripes, csize);
+-  else
+-    rebuild_raid6 (buffers, nstripes, csize, parities_pos, buf, stripen);
++    {
++      /* EfiFs - Remove support for RAID rebuild */
++      grub_dprintf ("btrfs", "RAID rebuild is not supported by this driver\n");
++      ret = GRUB_ERR_READ_ERROR;
++      goto cleanup;
++    }
+ 
+-  ret = GRUB_ERR_NONE;
+  cleanup:
+   if (buffers)
+     for (i = 0; i < nstripes; i++)
+@@ -936,8 +925,8 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
  			       "couldn't find the chunk descriptor");
  	  }
  
@@ -153,7 +214,7 @@ index be195448d..65ceda7da 100644
  	grub_dprintf ("btrfs", "chunk 0x%" PRIxGRUB_UINT64_T
  		      "+0x%" PRIxGRUB_UINT64_T
  		      " (%d stripes (%d substripes) of %"
-@@ -751,13 +757,13 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
+@@ -995,13 +984,13 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
  	      grub_uint64_t middle, high;
  	      grub_uint64_t low;
  	      grub_uint16_t nsubstripes;
@@ -169,8 +230,142 @@ index be195448d..65ceda7da 100644
  				    &stripen);
  	      stripen *= nsubstripes;
  	      redundancy = nsubstripes;
+@@ -1229,96 +1218,6 @@ grub_btrfs_read_inode (struct grub_btrfs_data *data,
+   return grub_btrfs_read_logical (data, elemaddr, inode, sizeof (*inode), 0);
+ }
+ 
+-static void *grub_zstd_malloc (void *state __attribute__((unused)), size_t size)
+-{
+-  return grub_malloc (size);
+-}
+-
+-static void grub_zstd_free (void *state __attribute__((unused)), void *address)
+-{
+-  return grub_free (address);
+-}
+-
+-static ZSTD_customMem grub_zstd_allocator (void)
+-{
+-  ZSTD_customMem allocator;
+-
+-  allocator.customAlloc = &grub_zstd_malloc;
+-  allocator.customFree = &grub_zstd_free;
+-  allocator.opaque = NULL;
+-
+-  return allocator;
+-}
+-
+-static grub_ssize_t
+-grub_btrfs_zstd_decompress (char *ibuf, grub_size_t isize, grub_off_t off,
+-			    char *obuf, grub_size_t osize)
+-{
+-  void *allocated = NULL;
+-  char *otmpbuf = obuf;
+-  grub_size_t otmpsize = osize;
+-  ZSTD_DCtx *dctx = NULL;
+-  grub_size_t zstd_ret;
+-  grub_ssize_t ret = -1;
+-
+-  /*
+-   * Zstd will fail if it can't fit the entire output in the destination
+-   * buffer, so if osize isn't large enough, allocate a temporary buffer.
+-   */
+-  if (otmpsize < ZSTD_BTRFS_MAX_INPUT)
+-    {
+-      allocated = grub_malloc (ZSTD_BTRFS_MAX_INPUT);
+-      if (!allocated)
+-	{
+-	  grub_error (GRUB_ERR_OUT_OF_MEMORY, "failed allocate a zstd buffer");
+-	  goto err;
+-	}
+-      otmpbuf = (char *) allocated;
+-      otmpsize = ZSTD_BTRFS_MAX_INPUT;
+-    }
+-
+-  /* Create the ZSTD_DCtx. */
+-  dctx = ZSTD_createDCtx_advanced (grub_zstd_allocator ());
+-  if (!dctx)
+-    {
+-      /* ZSTD_createDCtx_advanced() only fails if it is out of memory. */
+-      grub_error (GRUB_ERR_OUT_OF_MEMORY, "failed to create a zstd context");
+-      goto err;
+-    }
+-
+-  /*
+-   * Get the real input size, there may be junk at the
+-   * end of the frame.
+-   */
+-  isize = ZSTD_findFrameCompressedSize (ibuf, isize);
+-  if (ZSTD_isError (isize))
+-    {
+-      grub_error (GRUB_ERR_BAD_COMPRESSED_DATA, "zstd data corrupted");
+-      goto err;
+-    }
+-
+-  /* Decompress and check for errors. */
+-  zstd_ret = ZSTD_decompressDCtx (dctx, otmpbuf, otmpsize, ibuf, isize);
+-  if (ZSTD_isError (zstd_ret))
+-    {
+-      grub_error (GRUB_ERR_BAD_COMPRESSED_DATA, "zstd data corrupted");
+-      goto err;
+-    }
+-
+-  /*
+-   * Move the requested data into the obuf. obuf may be equal
+-   * to otmpbuf, which is why grub_memmove() is required.
+-   */
+-  grub_memmove (obuf, otmpbuf + off, osize);
+-  ret = osize;
+-
+-err:
+-  grub_free (allocated);
+-  ZSTD_freeDCtx (dctx);
+-
+-  return ret;
+-}
+-
+ static grub_ssize_t
+ grub_btrfs_lzo_decompress(char *ibuf, grub_size_t isize, grub_off_t off,
+ 			  char *obuf, grub_size_t osize)
+@@ -1494,8 +1393,7 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
+ 
+       if (data->extent->compression != GRUB_BTRFS_COMPRESSION_NONE
+ 	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_ZLIB
+-	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_LZO
+-	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_ZSTD)
++	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_LZO)
+ 	{
+ 	  grub_error (GRUB_ERR_NOT_IMPLEMENTED_YET,
+ 		      "compression type 0x%x not supported",
+@@ -1535,15 +1433,6 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
+ 		  != (grub_ssize_t) csize)
+ 		return -1;
+ 	    }
+-	  else if (data->extent->compression == GRUB_BTRFS_COMPRESSION_ZSTD)
+-	    {
+-	      if (grub_btrfs_zstd_decompress (data->extent->inl, data->extsize -
+-					      ((grub_uint8_t *) data->extent->inl
+-					       - (grub_uint8_t *) data->extent),
+-					      extoff, buf, csize)
+-		  != (grub_ssize_t) csize)
+-		return -1;
+-	    }
+ 	  else
+ 	    grub_memcpy (buf, data->extent->inl + extoff, csize);
+ 	  break;
+@@ -1581,10 +1470,6 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
+ 		ret = grub_btrfs_lzo_decompress (tmp, zsize, extoff
+ 				    + grub_le_to_cpu64 (data->extent->offset),
+ 				    buf, csize);
+-	      else if (data->extent->compression == GRUB_BTRFS_COMPRESSION_ZSTD)
+-		ret = grub_btrfs_zstd_decompress (tmp, zsize, extoff
+-				    + grub_le_to_cpu64 (data->extent->offset),
+-				    buf, csize);
+ 	      else
+ 		ret = -1;
+ 
 diff --git a/grub-core/fs/f2fs.c b/grub-core/fs/f2fs.c
-index 1cad2615f..35c822ce0 100644
+index 644653dbe..e4d08e031 100644
 --- a/grub-core/fs/f2fs.c
 +++ b/grub-core/fs/f2fs.c
 @@ -131,6 +131,7 @@ enum FILE_TYPE
@@ -190,7 +385,7 @@ index 1cad2615f..35c822ce0 100644
  struct grub_fshelp_node
  {
 diff --git a/grub-core/fs/fat.c b/grub-core/fs/fat.c
-index 8d8dc35ce..f3b571760 100644
+index d544e0af1..95040bbaa 100644
 --- a/grub-core/fs/fat.c
 +++ b/grub-core/fs/fat.c
 @@ -75,6 +75,7 @@ enum
@@ -244,7 +439,7 @@ index 8d8dc35ce..f3b571760 100644
  
  #endif
 diff --git a/grub-core/fs/hfs.c b/grub-core/fs/hfs.c
-index fc3683178..65fe14b22 100644
+index ac0a40990..573102d22 100644
 --- a/grub-core/fs/hfs.c
 +++ b/grub-core/fs/hfs.c
 @@ -58,6 +58,7 @@ enum grub_hfs_cnid_type
@@ -294,7 +489,7 @@ index fc3683178..65fe14b22 100644
  	  if (off > nodesize - sizeof(*pnt))
  	    continue;
 diff --git a/grub-core/fs/hfsplus.c b/grub-core/fs/hfsplus.c
-index 21159e858..bd8d70962 100644
+index 54786bb1c..b945c7469 100644
 --- a/grub-core/fs/hfsplus.c
 +++ b/grub-core/fs/hfsplus.c
 @@ -44,6 +44,7 @@ enum grub_hfsplus_btnode_type
@@ -355,7 +550,7 @@ index d76f3f137..28c586d87 100644
  enum
    {
 diff --git a/grub-core/fs/iso9660.c b/grub-core/fs/iso9660.c
-index c9c8374bf..7d1fe4383 100644
+index 49c0c632b..7ff140ef8 100644
 --- a/grub-core/fs/iso9660.c
 +++ b/grub-core/fs/iso9660.c
 @@ -49,6 +49,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
@@ -466,7 +661,7 @@ index c9c8374bf..7d1fe4383 100644
  
        /* Check if `grub_realloc' failed.  */
 diff --git a/grub-core/fs/jfs.c b/grub-core/fs/jfs.c
-index aab3e8c7b..4ec849a48 100644
+index d5a6d6527..55ff31e31 100644
 --- a/grub-core/fs/jfs.c
 +++ b/grub-core/fs/jfs.c
 @@ -61,6 +61,7 @@ struct grub_jfs_sblock
@@ -486,7 +681,7 @@ index aab3e8c7b..4ec849a48 100644
  
  static grub_dl_t my_mod;
 diff --git a/grub-core/fs/nilfs2.c b/grub-core/fs/nilfs2.c
-index 598a2a55b..a56636166 100644
+index 7ed148d3b..a56cf7f8c 100644
 --- a/grub-core/fs/nilfs2.c
 +++ b/grub-core/fs/nilfs2.c
 @@ -132,6 +132,7 @@ struct grub_nilfs2_super_block
@@ -515,7 +710,7 @@ index 598a2a55b..a56636166 100644
    int valid[2];
    int swp = 0;
 diff --git a/grub-core/fs/ntfs.c b/grub-core/fs/ntfs.c
-index 6f8468862..4fa140e34 100644
+index fc4e1f678..684478727 100644
 --- a/grub-core/fs/ntfs.c
 +++ b/grub-core/fs/ntfs.c
 @@ -638,6 +638,7 @@ list_file (struct grub_ntfs_file *diro, grub_uint8_t *pos,
@@ -535,7 +730,7 @@ index 6f8468862..4fa140e34 100644
  static char *
  grub_ntfs_read_symlink (grub_fshelp_node_t node)
 diff --git a/grub-core/fs/reiserfs.c b/grub-core/fs/reiserfs.c
-index 39736f63c..c3c65f2d4 100644
+index af6a226a7..b76141fee 100644
 --- a/grub-core/fs/reiserfs.c
 +++ b/grub-core/fs/reiserfs.c
 @@ -42,15 +42,27 @@
@@ -584,7 +779,7 @@ index 39736f63c..c3c65f2d4 100644
  struct grub_fshelp_node
  {
 diff --git a/grub-core/fs/sfs.c b/grub-core/fs/sfs.c
-index 57b8d8da6..a69eae608 100644
+index 50c1fe72f..355313d5e 100644
 --- a/grub-core/fs/sfs.c
 +++ b/grub-core/fs/sfs.c
 @@ -30,6 +30,7 @@
@@ -608,7 +803,7 @@ index 57b8d8da6..a69eae608 100644
  {
    grub_uint32_t off;
 diff --git a/grub-core/fs/udf.c b/grub-core/fs/udf.c
-index 00a16098b..e918267c2 100644
+index dc8b6e2d1..8f95e3f76 100644
 --- a/grub-core/fs/udf.c
 +++ b/grub-core/fs/udf.c
 @@ -113,6 +113,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
@@ -628,7 +823,7 @@ index 00a16098b..e918267c2 100644
  struct grub_udf_data
  {
 diff --git a/grub-core/fs/ufs.c b/grub-core/fs/ufs.c
-index 293f027aa..3babbce5f 100644
+index fca46baa1..7b3fb63f6 100644
 --- a/grub-core/fs/ufs.c
 +++ b/grub-core/fs/ufs.c
 @@ -152,6 +152,7 @@ struct grub_ufs_sblock
@@ -648,18 +843,18 @@ index 293f027aa..3babbce5f 100644
  /* Information about a "mounted" ufs filesystem.  */
  struct grub_ufs_data
 diff --git a/grub-core/fs/xfs.c b/grub-core/fs/xfs.c
-index c6031bd3f..373deb146 100644
+index 96ffecbfc..e8138090e 100644
 --- a/grub-core/fs/xfs.c
 +++ b/grub-core/fs/xfs.c
-@@ -84,6 +84,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
- 	(XFS_SB_FEAT_INCOMPAT_FTYPE | \
+@@ -93,6 +93,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
+ 	 XFS_SB_FEAT_INCOMPAT_SPINODES | \
  	 XFS_SB_FEAT_INCOMPAT_META_UUID)
  
 +PRAGMA_BEGIN_PACKED
  struct grub_xfs_sblock
  {
    grub_uint8_t magic[4];
-@@ -200,6 +201,7 @@ struct grub_xfs_dirblock_tail
+@@ -209,6 +210,7 @@ struct grub_xfs_dirblock_tail
    grub_uint32_t leaf_count;
    grub_uint32_t leaf_stale;
  } GRUB_PACKED;
@@ -668,7 +863,7 @@ index c6031bd3f..373deb146 100644
  struct grub_fshelp_node
  {
 diff --git a/grub-core/fs/zfs/zfs.c b/grub-core/fs/zfs/zfs.c
-index 6e1fff9e9..b1589a031 100644
+index 2f72e42bf..c10235f53 100644
 --- a/grub-core/fs/zfs/zfs.c
 +++ b/grub-core/fs/zfs/zfs.c
 @@ -141,7 +141,7 @@ ZAP_LEAF_NUMCHUNKS (int bs)
@@ -689,6 +884,16 @@ index 6e1fff9e9..b1589a031 100644
         chunk != CHAIN_END; chunk = grub_zfs_to_cpu16 (le->le_next, endian))
      {
  
+@@ -2709,7 +2709,9 @@ dnode_get (dnode_end_t * mdn, grub_uint64_t objnum, grub_uint8_t type,
+   return GRUB_ERR_NONE;
+ }
+ 
++#ifdef __GNUC__
+ #pragma GCC diagnostic ignored "-Wstrict-aliasing"
++#endif
+ 
+ /*
+  * Get the file dnode for a given file name where mdn is the meta dnode
 diff --git a/grub-core/fs/zfs/zfs_lz4.c b/grub-core/fs/zfs/zfs_lz4.c
 index 5453822d0..873445803 100644
 --- a/grub-core/fs/zfs/zfs_lz4.c
@@ -838,7 +1043,7 @@ index 8d7e4a1e5..bf4441479 100644
  #ifdef GRUB_UTIL
  #include <grub/disk.h>
 diff --git a/include/grub/hfs.h b/include/grub/hfs.h
-index d935f5005..beeca5df5 100644
+index e27993c42..1a1943d67 100644
 --- a/include/grub/hfs.h
 +++ b/include/grub/hfs.h
 @@ -36,6 +36,7 @@ typedef struct grub_hfs_extent grub_hfs_datarecord_t[3];
@@ -909,7 +1114,7 @@ index 117740ae2..5a8caf59f 100644
  /* Return the offset of the record with the index INDEX, in the node
     NODE which is part of the B+ tree BTREE.  */
 diff --git a/include/grub/misc.h b/include/grub/misc.h
-index 372f009e8..050dcdea1 100644
+index ee48eb7a7..d1c5e7eee 100644
 --- a/include/grub/misc.h
 +++ b/include/grub/misc.h
 @@ -27,12 +27,22 @@
@@ -975,7 +1180,7 @@ index 8117e2a24..f87c0d022 100644
  
  static inline struct grub_term_coordinate
 diff --git a/include/grub/types.h b/include/grub/types.h
-index b93e48201..63ba96426 100644
+index 035a4b528..1fb923e92 100644
 --- a/include/grub/types.h
 +++ b/include/grub/types.h
 @@ -26,10 +26,20 @@
@@ -999,7 +1204,7 @@ index b93e48201..63ba96426 100644
  #ifdef GRUB_BUILD
  # define GRUB_CPU_SIZEOF_VOID_P	BUILD_SIZEOF_VOID_P
  # define GRUB_CPU_SIZEOF_LONG	BUILD_SIZEOF_LONG
-@@ -167,17 +177,15 @@ static inline grub_uint16_t grub_swap_bytes16(grub_uint16_t _x)
+@@ -170,17 +180,15 @@ static inline grub_uint16_t grub_swap_bytes16(grub_uint16_t _x)
  #define grub_swap_bytes16_compile_time(x) ((((x) & 0xff) << 8) | (((x) & 0xff00) >> 8))
  #define grub_swap_bytes32_compile_time(x) ((((x) & 0xff) << 24) | (((x) & 0xff00) << 8) | (((x) & 0xff0000) >> 8) | (((x) & 0xff000000UL) >> 24))
  #define grub_swap_bytes64_compile_time(x)	\
@@ -1026,7 +1231,7 @@ index b93e48201..63ba96426 100644
  
  #if (defined(__GNUC__) && (__GNUC__ > 3) && (__GNUC__ > 4 || __GNUC_MINOR__ >= 3)) || defined(__clang__)
  static inline grub_uint32_t grub_swap_bytes32(grub_uint32_t x)
-@@ -254,18 +262,24 @@ static inline grub_uint64_t grub_swap_bytes64(grub_uint64_t _x)
+@@ -257,18 +265,24 @@ static inline grub_uint64_t grub_swap_bytes64(grub_uint64_t _x)
  
  #endif /* ! WORDS_BIGENDIAN */
  
@@ -1051,7 +1256,7 @@ index b93e48201..63ba96426 100644
  
  typedef struct grub_unaligned_uint16 grub_unaligned_uint16_t;
  typedef struct grub_unaligned_uint32 grub_unaligned_uint32_t;
-@@ -306,10 +320,12 @@ static inline grub_uint64_t grub_get_unaligned64 (const void *ptr)
+@@ -309,10 +323,12 @@ static inline grub_uint64_t grub_get_unaligned64 (const void *ptr)
  
  static inline void grub_set_unaligned64 (void *ptr, grub_uint64_t val)
  {
@@ -1155,5 +1360,5 @@ index 19ce136bb..11ee51b61 100644
  /*
   * Gang block headers are self-checksumming and contain an array
 -- 
-2.17.0.windows.1
+2.21.0.windows.1
 

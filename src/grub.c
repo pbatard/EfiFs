@@ -20,9 +20,12 @@
 
 #include <grub/err.h>
 #include <grub/misc.h>
+#include <grub/file.h>
 #include <grub/crypto.h>
 
 #include "driver.h"
+
+grub_file_filter_t EXPORT_VAR(grub_file_filters)[GRUB_FILE_FILTER_MAX];
 
 void
 grub_exit(void)
