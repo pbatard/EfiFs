@@ -229,7 +229,8 @@ FileClose(EFI_FILE_HANDLE This)
 		if (!File->IsDir)
 			GrubClose(File);
 		/* NB: basename points into File->path and does not need to be freed */
-		FreePool(File->path);
+		if (File->path != NULL)
+			FreePool(File->path);
 		GrubDestroyFile(File);
 	}
 

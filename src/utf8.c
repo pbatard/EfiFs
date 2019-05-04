@@ -611,7 +611,8 @@ CHAR16
 	return Dst;
 
 error:
-	FreePool(Dst);
+	if (Dst != NULL)
+		FreePool(Dst);
 	return NULL;
 }
 
@@ -683,7 +684,8 @@ CHAR8
 	return dst;
 
 error:
-	FreePool(dst);
+	if (dst != NULL)
+		FreePool(dst);
 	return NULL;
 }
 

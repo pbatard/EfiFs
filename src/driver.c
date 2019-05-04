@@ -72,8 +72,12 @@ FSGetControllerName2(EFI_COMPONENT_NAME2_PROTOCOL *This,
 
 static VOID
 FreeFsInstance(EFI_FS *Instance) {
-	FreePool(Instance->DevicePathString);
-	FreePool(Instance->RootFile);
+	if (Instance == NULL)
+		return;
+	if (Instance->DevicePathString != NULL)
+		FreePool(Instance->DevicePathString);
+	if (Instance->RootFile != NULL)
+		FreePool(Instance->RootFile);
 	FreePool(Instance);
 }
 
@@ -355,7 +359,7 @@ FSDriverUninstall(EFI_HANDLE ImageHandle)
 {
 	EFI_STATUS Status;
 	UINTN NumHandles;
-	EFI_HANDLE *Handles;
+	EFI_HANDLE *Handles = NULL;
 	UINTN i;
 
 	/* Enumerate all handles */
@@ -372,7 +376,8 @@ FSDriverUninstall(EFI_HANDLE ImageHandle)
 	} else {
 		PrintStatusError(Status, L"Unable to enumerate handles");
 	}
-	BS->FreePool(Handles);
+	if (Handles != NULL)
+		BS->FreePool(Handles);
 
 	/* Now that all controllers are disconnected, we can safely remove our protocols */
 	BS->UninstallMultipleProtocolInterfaces(ImageHandle,

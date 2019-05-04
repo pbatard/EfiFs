@@ -321,7 +321,10 @@ GrubCreateFile(EFI_GRUB_FILE **File, EFI_FS *FileSystem)
 VOID
 GrubDestroyFile(EFI_GRUB_FILE *File)
 {
-	FreePool(File->GrubFile);
+	if (File == NULL)
+		return;
+	if (File->GrubFile != NULL)
+		FreePool(File->GrubFile);
 	FreePool(File);
 }
 
