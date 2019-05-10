@@ -47,11 +47,8 @@
   NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
 
 [LibraryClasses.IA32, LibraryClasses.X64]
-  NULL|EdkCompatibilityPkg/Foundation/Library/CompilerStub/CompilerStubLib.inf
-
-[LibraryClasses.IA32]
 !if $(TOOLCHAIN) == "VS2017"
-  NULL|EfiFsPkg/CompilerIntrinsicsLib.inf
+  NULL|EfiFsPkg/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
 !endif
 
 ###################################################################################################

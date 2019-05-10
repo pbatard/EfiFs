@@ -50,7 +50,7 @@ For additional info as well as precompiled drivers, see https://efi.akeo.ie
   Where `<arch>` is one of `ia32`, `x64`, `arm` or `aarch64`.  
   Note that you __MUST__ invoke the `set_grub_cpu` script __every time you
   switch target__.
-* After having invoked `Edk2Setup.bat` (Windows) or `edksetup.sh` (Linux) run
+* After having invoked `edksetup.bat` (Windows) or `edksetup.sh` (Linux) run
   something like:  
   ```
   build -a X64 -b RELEASE -t <toolchain> -p EfiFsPkg/EfiFsPkg.dsc
@@ -67,8 +67,8 @@ For additional info as well as precompiled drivers, see https://efi.akeo.ie
   ```
   build -a AARCH64 -b RELEASE -t VS2017 -p EfiFsPkg/EfiFsPkg.dsc
   ```
-* A Windows script to build all the drivers for all architectures, using EDK2 +
-  VS2017 is also provided as `edk2_build_all_drivers.cmd`.
+* A Windows script to build the drivers, using EDK2 with VS2017 is also provided
+  as `edk2_build_drivers.cmd`.
 
 ## Testing
 
@@ -118,7 +118,9 @@ git clone https://github.com/pbatard/efifs.git
 cd efifs
 git submodule init
 git submodule update
-cd edk2
+cd grub
+patch -Np1 -i ../0000-GRUB-fixes.patch
+cd ../../edk2
 ln -s ../efifs EfiFsPkg
 make -C /usr/src/edk2/BaseTools/Source/C
 export GCC5_ARM_PREFIX=arm-linux-gnueabihf-

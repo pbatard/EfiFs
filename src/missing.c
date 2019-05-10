@@ -20,28 +20,9 @@
 
 #include "driver.h"
 
-// EDK2 specifics
-#if !defined(__MAKEWITH_GNUEFI)
-
-#if defined(_M_IX86)
+// Needed to avoid a LNK2043 error with EDK2/MSVC/IA32
+#if !defined(__MAKEWITH_GNUEFI) && defined(_M_IX86)
 #pragma comment(linker, "/INCLUDE:_MultS64x64")
-#endif
-
-// Microsoft's intrinsics are a major pain in the ass
-#if defined(_MSC_VER)
-#include <stddef.h>		// For size_t
-int memcmp(const void *s1, const void *s2, size_t n)
-{
-	return (int)CompareMem(s1, s2, (UINTN)n);
-}
-
-void* memmove(void *s1, const void *s2, size_t n)
-{
-	CopyMem(s1, s2, n);
-	return s1;
-}
-#endif
-
 #endif
 
 VOID

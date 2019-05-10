@@ -12,7 +12,7 @@ if /I "%1"=="aa64" set ARCH=arm64
 if /I "%1"=="aarch64" set ARCH=arm64
 if "%ARCH%"=="" (
   echo Unsupported arch %1
-  exit 1
+  goto out
 )
 echo Setting GRUB for %ARCH%...
 
@@ -22,3 +22,5 @@ if not exist "%~dp0\grub\include\grub\cpu\%ARCH%" (
   xcopy "%~dp0\grub\include\grub\%ARCH%" "%~dp0\grub\include\grub\cpu" /i /q /s /y /z
   echo %ARCH% > "%~dp0\grub\include\grub\cpu\%ARCH%"
 )
+
+:out
