@@ -8,9 +8,8 @@ For additional info as well as precompiled drivers, see https://efi.akeo.ie
 
 ## Requirements
 
-* [Visual Studio 2017](https://www.visualstudio.com/vs/community/) (Windows)
-  preferably with Update 4 or later for ARM64 compilation support, MinGW
-  (Windows), gcc (Linux) or [EDK2](https://github.com/tianocore/edk2).
+* [Visual Studio 2019](https://www.visualstudio.com/vs/community/) (Windows)
+  MinGW (Windows), gcc (Linux) or [EDK2](https://github.com/tianocore/edk2).
 * A git client able to initialize/update submodules
 * [QEMU](http://www.qemu.org) __v2.7 or later__ if debugging with Visual Studio
   (NB: You can find QEMU Windows binaries [here](https://qemu.weilnetz.de/w64/))
@@ -62,12 +61,12 @@ For additional info as well as precompiled drivers, see https://efi.akeo.ie
   build -a X64 -b RELEASE -t <toolchain> -p EfiFsPkg/EfiFsPkg.dsc -m EfiFsPkg/EfiFsPkg/Ntfs.inf
   ```
 * Note that, provided that you cloned a recent EDK2 from git, you should be able
-  to use `VS2017` as your EDK2 toolchain, including for buidling the ARM or
+  to use `VS2019` as your EDK2 toolchain, including for buidling the ARM or
   ARM64 drivers, with something like:
   ```
-  build -a AARCH64 -b RELEASE -t VS2017 -p EfiFsPkg/EfiFsPkg.dsc
+  build -a AARCH64 -b RELEASE -t VS2019 -p EfiFsPkg/EfiFsPkg.dsc
   ```
-* A Windows script to build the drivers, using EDK2 with VS2017 is also provided
+* A Windows script to build the drivers, using EDK2 with VS2019 is also provided
   as `edk2_build_drivers.cmd`.
 
 ## Testing
@@ -88,18 +87,14 @@ Then boot into the EFI shell and run the following:
 * For logging output, set the `FS_LOGGING` shell variable to 1 or more
 * To unload use the `drivers` command, then `unload` with the driver ID
 
-## Visual Studio 2017 and ARM/ARM64 support
+## Visual Studio 2019 and ARM/ARM64 support
 
 Please be mindful that, to enable ARM/ARM64 compilation support in Visual
-Studio 2017, you __MUST__ go to the _Individual components_ screen in the setup
+Studio 2019, you __MUST__ go to the _Individual components_ screen in the setup
 application and select the ARM compilers and libraries there, as they do __NOT__
 appear in the default _Workloads_ screen:
 
-![VS2017 Individual Components](http://files.akeo.ie/pics/VS2017_Individual_Components2.png)
-
-You also need to ensure that you have Windows SDK 10.0.14393.0 or later
-installed, as this is the minimum version that provides the required ARM64
-static libraries.
+![VS2019 Individual Components](https://files.akeo.ie/pics/VS2019_Individual_Components.png)
 
 ## Additional Notes
 
@@ -107,7 +102,7 @@ This is a pure GPLv3+ implementation of EFI drivers. Great care was taken not to
 use any code from non GPLv3 compatible sources, such as rEFInd's `fsw_efi`
 (GPLv2 only) or Intel's FAT driver (requires an extra copyright notice).
 
-## Bonus: Commands to compile EfiFs using EDK2 on a vanilla Debian GNU/Linux 9.1
+## Bonus: Commands to compile EfiFs using EDK2 on a vanilla Debian GNU/Linux 10.1
 
 As root:
 ```
@@ -122,10 +117,10 @@ cd grub
 patch -Np1 -i ../0000-GRUB-fixes.patch
 cd ../../edk2
 ln -s ../efifs EfiFsPkg
-make -C /usr/src/edk2/BaseTools/Source/C
+make -C BaseTools
 export GCC5_ARM_PREFIX=arm-linux-gnueabihf-
 export GCC5_AARCH64_PREFIX=aarch64-linux-gnu-
-source edksetup.sh
+source edksetup.sh --reconfig
 ./EfiFsPkg/set_grub_cpu.sh X64
 build -a X64 -b RELEASE -t GCC5 -p EfiFsPkg/EfiFsPkg.dsc
 ./EfiFsPkg/set_grub_cpu.sh IA32
