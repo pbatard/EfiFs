@@ -1,7 +1,7 @@
 ## @file
 #  EfiFs Driver Modules
 #
-#  Copyright (c) 2017-2018, Pete Batard <pete@akeo.ie>
+#  Copyright (c) 2017-2019, Pete Batard <pete@akeo.ie>
 #
 ##
 
@@ -47,7 +47,7 @@
   NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
 
 [LibraryClasses.IA32, LibraryClasses.X64]
-!if $(TOOLCHAIN) == "VS2017"
+!if $(TOOLCHAIN) == "VS2019"
   NULL|EfiFsPkg/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
 !endif
 

@@ -35,7 +35,6 @@
   EfiFsPkg/EfiFsPkg.dec
   MdePkg/MdePkg.dec
   ShellPkg/ShellPkg.dec
-  IntelFrameworkModulePkg/IntelFrameworkModulePkg.dec
 
 [LibraryClasses]
   UefiRuntimeServicesTableLib
