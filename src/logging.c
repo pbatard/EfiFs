@@ -25,7 +25,7 @@
 extern EFI_GUID gShellVariableGuid;
 EFI_GUID ShellVariable = SHELL_VARIABLE_GUID;
 
-static UINTN PrintNone(IN CONST CHAR16 *fmt, ... ) { return 0; }
+static UINTN EFIAPI PrintNone(IN CONST CHAR16 *fmt, ... ) { return 0; }
 Print_t PrintError = PrintNone;
 Print_t PrintWarning = PrintNone;
 Print_t PrintInfo = PrintNone;

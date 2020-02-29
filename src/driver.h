@@ -129,7 +129,7 @@
 #define FS_LOGLEVEL_DEBUG       4
 #define FS_LOGLEVEL_EXTRA       5
 
-typedef UINTN (*Print_t)        (IN CONST CHAR16 *fmt, ... );
+typedef UINTN (EFIAPI *Print_t)        (IN CONST CHAR16 *fmt, ... );
 extern Print_t PrintError;
 extern Print_t PrintWarning;
 extern Print_t PrintInfo;
