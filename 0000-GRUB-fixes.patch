@@ -1,45 +1,49 @@
-From b0459a06d51d3f32cff896f0a19cf3579708e0d4 Mon Sep 17 00:00:00 2001
+From ab903da4c43c68bccc278cb3fa0f928412661f9a Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Sat, 4 May 2019 14:54:36 +0100
+Date: Sun, 1 Mar 2020 15:54:36 +0000
 Subject: [PATCH] GRUB fixes
 
 ---
- grub-core/fs/affs.c             |   2 +
- grub-core/fs/bfs.c              |   2 +
- grub-core/fs/btrfs.c            | 151 ++++----------------------------
- grub-core/fs/f2fs.c             |   2 +
- grub-core/fs/fat.c              |   8 +-
- grub-core/fs/hfs.c              |   6 ++
- grub-core/fs/hfsplus.c          |   2 +
- grub-core/fs/hfspluscomp.c      |   5 ++
- grub-core/fs/iso9660.c          |  36 +++++---
- grub-core/fs/jfs.c              |   2 +
- grub-core/fs/nilfs2.c           |   4 +-
- grub-core/fs/ntfs.c             |   2 +
- grub-core/fs/reiserfs.c         |  16 +++-
- grub-core/fs/sfs.c              |   4 +-
- grub-core/fs/udf.c              |   2 +
- grub-core/fs/ufs.c              |   2 +
- grub-core/fs/xfs.c              |   2 +
- grub-core/fs/zfs/zfs.c          |   6 +-
- grub-core/fs/zfs/zfs_lz4.c      |   2 +
- grub-core/kern/misc.c           |   6 +-
- grub-core/lib/minilzo/lzodefs.h |   3 +
- include/grub/arm64/types.h      |   4 +
- include/grub/btrfs.h            |   3 +
- include/grub/exfat.h            |   2 +
- include/grub/fat.h              |   2 +
- include/grub/hfs.h              |   2 +
- include/grub/hfsplus.h          |   6 ++
- include/grub/misc.h             |  10 +++
- include/grub/ntfs.h             |   2 +
- include/grub/term.h             |   4 +-
- include/grub/types.h            |  38 +++++---
- include/grub/unicode.h          |   2 +
- include/grub/x86_64/types.h     |   2 +-
- include/grub/zfs/zap_leaf.h     |  17 +++-
- include/grub/zfs/zio.h          |   2 +
- 35 files changed, 189 insertions(+), 172 deletions(-)
+ grub-core/fs/affs.c                  |   2 +
+ grub-core/fs/bfs.c                   |   2 +
+ grub-core/fs/btrfs.c                 | 151 ++++-----------------------
+ grub-core/fs/f2fs.c                  |   2 +
+ grub-core/fs/fat.c                   |   8 +-
+ grub-core/fs/hfs.c                   |   6 ++
+ grub-core/fs/hfsplus.c               |   2 +
+ grub-core/fs/hfspluscomp.c           |   5 +
+ grub-core/fs/iso9660.c               |  36 ++++---
+ grub-core/fs/jfs.c                   |   2 +
+ grub-core/fs/nilfs2.c                |   4 +-
+ grub-core/fs/ntfs.c                  |   2 +
+ grub-core/fs/reiserfs.c              |  16 ++-
+ grub-core/fs/sfs.c                   |   4 +-
+ grub-core/fs/squash4.c               |  10 +-
+ grub-core/fs/udf.c                   |   2 +
+ grub-core/fs/ufs.c                   |   2 +
+ grub-core/fs/xfs.c                   |   2 +
+ grub-core/fs/zfs/zfs.c               |   6 +-
+ grub-core/fs/zfs/zfs_lz4.c           |   2 +
+ grub-core/kern/misc.c                |   6 +-
+ grub-core/lib/minilzo/lzodefs.h      |   3 +
+ grub-core/lib/xzembed/xz_config.h    |  14 ++-
+ grub-core/lib/xzembed/xz_dec_lzma2.c |   4 +-
+ grub-core/lib/xzembed/xz_stream.h    |   2 +-
+ include/grub/arm64/types.h           |   4 +
+ include/grub/btrfs.h                 |   3 +
+ include/grub/exfat.h                 |   2 +
+ include/grub/fat.h                   |   2 +
+ include/grub/hfs.h                   |   2 +
+ include/grub/hfsplus.h               |   6 ++
+ include/grub/misc.h                  |  10 ++
+ include/grub/ntfs.h                  |   2 +
+ include/grub/term.h                  |   4 +-
+ include/grub/types.h                 |  38 +++++--
+ include/grub/unicode.h               |   2 +
+ include/grub/x86_64/types.h          |   2 +-
+ include/grub/zfs/zap_leaf.h          |  17 ++-
+ include/grub/zfs/zio.h               |   2 +
+ 39 files changed, 210 insertions(+), 181 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
 index 6b6a2bc91..90d02ce0c 100644
@@ -802,6 +806,65 @@ index 50c1fe72f..355313d5e 100644
  struct cache_entry
  {
    grub_uint32_t off;
+diff --git a/grub-core/fs/squash4.c b/grub-core/fs/squash4.c
+index 95d5c1e1f..5eca27aa1 100644
+--- a/grub-core/fs/squash4.c
++++ b/grub-core/fs/squash4.c
+@@ -50,6 +50,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
+   unk2 containts one uint64_t
+ */
+ 
++PRAGMA_BEGIN_PACKED
+ struct grub_squash_super
+ {
+   grub_uint32_t magic;
+@@ -88,7 +89,7 @@ struct grub_squash_inode
+       grub_uint32_t fragment;
+       grub_uint32_t offset;
+       grub_uint32_t size;
+-      grub_uint32_t block_size[0];
++      grub_uint32_t block_size[1];
+     }  GRUB_PACKED file;
+     struct {
+       grub_uint64_t chunk;
+@@ -97,7 +98,7 @@ struct grub_squash_inode
+       grub_uint32_t fragment;
+       grub_uint32_t offset;
+       grub_uint32_t dummy3;
+-      grub_uint32_t block_size[0];
++      grub_uint32_t block_size[1];
+     }  GRUB_PACKED long_file;
+     struct {
+       grub_uint32_t chunk;
+@@ -116,10 +117,11 @@ struct grub_squash_inode
+     struct {
+       grub_uint32_t dummy;
+       grub_uint32_t namelen;
+-      char name[0];
++      char name[1];
+     } GRUB_PACKED symlink;
+   }  GRUB_PACKED;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ struct grub_squash_cache_inode
+ {
+@@ -130,6 +132,7 @@ struct grub_squash_cache_inode
+   grub_disk_addr_t *cumulated_block_sizes;
+ };
+ 
++PRAGMA_BEGIN_PACKED
+ /* Chunk-based.  */
+ struct grub_squash_dirent_header
+ {
+@@ -165,6 +168,7 @@ struct grub_squash_frag_desc
+   grub_uint32_t size;
+   grub_uint32_t dummy;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ enum
+   {
 diff --git a/grub-core/fs/udf.c b/grub-core/fs/udf.c
 index dc8b6e2d1..8f95e3f76 100644
 --- a/grub-core/fs/udf.c
@@ -959,6 +1022,71 @@ index 0e40e332a..eea56b170 100644
  #elif defined(__alpha__) || defined(__alpha) || defined(_M_ALPHA)
  #  define LZO_ARCH_ALPHA            1
  #  define LZO_INFO_ARCH             "alpha"
+diff --git a/grub-core/lib/xzembed/xz_config.h b/grub-core/lib/xzembed/xz_config.h
+index 24d570f2b..570579a9f 100644
+--- a/grub-core/lib/xzembed/xz_config.h
++++ b/grub-core/lib/xzembed/xz_config.h
+@@ -65,14 +65,20 @@
+ #include "xz.h"
+ #include <stdlib.h>
+ 
+-#define kmalloc(size, flags) malloc(size)
+-#define kfree(ptr) free(ptr)
+-#define vmalloc(size) malloc(size)
+-#define vfree(ptr) free(ptr)
++extern void grub_free(void* p);
++extern void* grub_malloc(grub_size_t size);
++extern void* grub_realloc(void* p, grub_size_t new_size);
++
++#define kmalloc(size, flags) grub_malloc(size)
++#define kfree(ptr) grub_free(ptr)
++#define vmalloc(size) grub_malloc(size)
++#define vfree(ptr) grub_free(ptr)
+ 
+ #define memeq(a, b, size) (memcmp(a, b, size) == 0)
+ #define memzero(buf, size) memset(buf, 0, size)
+ 
++#undef min
++#undef min_t
+ #define min(x, y) ((x) < (y) ? (x) : (y))
+ #define min_t(type, x, y) min(x, y)
+ 
+diff --git a/grub-core/lib/xzembed/xz_dec_lzma2.c b/grub-core/lib/xzembed/xz_dec_lzma2.c
+index af7b77079..f5215ab0f 100644
+--- a/grub-core/lib/xzembed/xz_dec_lzma2.c
++++ b/grub-core/lib/xzembed/xz_dec_lzma2.c
+@@ -24,7 +24,9 @@
+ #include "xz_private.h"
+ #include "xz_lzma2.h"
+ 
++#ifdef __GNUC__
+ #pragma GCC diagnostic warning "-Wattributes"
++#endif
+ 
+ /*
+  * Range decoder initialization eats the first five bytes of each LZMA chunk.
+@@ -1156,7 +1158,7 @@ enum xz_ret xz_dec_lzma2_reset(
+ 	if (s->dict.allocated > 0 && s->dict.allocated < s->dict.size)
+ 	{
+ 		/* enlarge dictionary buffer */
+-		uint8_t * newdict = realloc(s->dict.buf,s->dict.size);
++		uint8_t * newdict = grub_realloc(s->dict.buf,s->dict.size);
+ 
+ 		if (! newdict)
+ 			return XZ_MEMLIMIT_ERROR;
+diff --git a/grub-core/lib/xzembed/xz_stream.h b/grub-core/lib/xzembed/xz_stream.h
+index f58397a15..2a64d1c8d 100644
+--- a/grub-core/lib/xzembed/xz_stream.h
++++ b/grub-core/lib/xzembed/xz_stream.h
+@@ -32,7 +32,7 @@
+ 
+ #define STREAM_HEADER_SIZE 12
+ 
+-#define HEADER_MAGIC "\3757zXZ\0"
++#define HEADER_MAGIC "\xFD" "7zXZ\0"
+ #define HEADER_MAGIC_SIZE 6
+ 
+ #define FOOTER_MAGIC "YZ"
 diff --git a/include/grub/arm64/types.h b/include/grub/arm64/types.h
 index d132c5eab..54b5e6398 100644
 --- a/include/grub/arm64/types.h

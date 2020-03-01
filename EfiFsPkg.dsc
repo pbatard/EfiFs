@@ -88,7 +88,7 @@
   EfiFsPkg/EfiFsPkg/ReiserFs.inf
   EfiFsPkg/EfiFsPkg/RomFs.inf
   EfiFsPkg/EfiFsPkg/Sfs.inf
-#  EfiFsPkg/EfiFsPkg/SquashFs.inf
+  EfiFsPkg/EfiFsPkg/SquashFs.inf
   EfiFsPkg/EfiFsPkg/Tar.inf
   EfiFsPkg/EfiFsPkg/Udf.inf
   EfiFsPkg/EfiFsPkg/Ufs.inf
