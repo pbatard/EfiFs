@@ -1,6 +1,6 @@
-From ab903da4c43c68bccc278cb3fa0f928412661f9a Mon Sep 17 00:00:00 2001
+From 925c83917f82cd50849e4b257453396ecfb2da58 Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Sun, 1 Mar 2020 15:54:36 +0000
+Date: Wed, 4 Mar 2020 17:37:52 +0000
 Subject: [PATCH] GRUB fixes
 
 ---
@@ -25,7 +25,7 @@ Subject: [PATCH] GRUB fixes
  grub-core/fs/zfs/zfs.c               |   6 +-
  grub-core/fs/zfs/zfs_lz4.c           |   2 +
  grub-core/kern/misc.c                |   6 +-
- grub-core/lib/minilzo/lzodefs.h      |   3 +
+ grub-core/lib/minilzo/lzodefs.h      |   2 +-
  grub-core/lib/xzembed/xz_config.h    |  14 ++-
  grub-core/lib/xzembed/xz_dec_lzma2.c |   4 +-
  grub-core/lib/xzembed/xz_stream.h    |   2 +-
@@ -35,7 +35,7 @@ Subject: [PATCH] GRUB fixes
  include/grub/fat.h                   |   2 +
  include/grub/hfs.h                   |   2 +
  include/grub/hfsplus.h               |   6 ++
- include/grub/misc.h                  |  10 ++
+ include/grub/misc.h                  |  13 +++
  include/grub/ntfs.h                  |   2 +
  include/grub/term.h                  |   4 +-
  include/grub/types.h                 |  38 +++++--
@@ -43,7 +43,7 @@ Subject: [PATCH] GRUB fixes
  include/grub/x86_64/types.h          |   2 +-
  include/grub/zfs/zap_leaf.h          |  17 ++-
  include/grub/zfs/zio.h               |   2 +
- 39 files changed, 210 insertions(+), 181 deletions(-)
+ 39 files changed, 211 insertions(+), 182 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
 index 6b6a2bc91..90d02ce0c 100644
@@ -86,7 +86,7 @@ index 47dbe2011..236aa0b9f 100644
  struct grub_bfs_data
  {
 diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
-index 48bd3d04a..83aeec4af 100644
+index 63f9657a6..7847c036c 100644
 --- a/grub-core/fs/btrfs.c
 +++ b/grub-core/fs/btrfs.c
 @@ -17,14 +17,6 @@
@@ -142,7 +142,7 @@ index 48bd3d04a..83aeec4af 100644
  struct grub_btrfs_chunk_item
  {
    grub_uint64_t size;
-@@ -174,6 +165,7 @@ struct grub_btrfs_dir_item
+@@ -176,6 +167,7 @@ struct grub_btrfs_dir_item
    grub_uint8_t type;
    char name[0];
  } GRUB_PACKED;
@@ -150,7 +150,7 @@ index 48bd3d04a..83aeec4af 100644
  
  struct grub_btrfs_leaf_descriptor
  {
-@@ -188,6 +180,7 @@ struct grub_btrfs_leaf_descriptor
+@@ -190,6 +182,7 @@ struct grub_btrfs_leaf_descriptor
    } *data;
  };
  
@@ -158,7 +158,7 @@ index 48bd3d04a..83aeec4af 100644
  struct grub_btrfs_time
  {
    grub_int64_t sec;
-@@ -222,6 +215,7 @@ struct grub_btrfs_extent_data
+@@ -224,6 +217,7 @@ struct grub_btrfs_extent_data
      };
    };
  } GRUB_PACKED;
@@ -166,7 +166,7 @@ index 48bd3d04a..83aeec4af 100644
  
  #define GRUB_BTRFS_EXTENT_INLINE 0
  #define GRUB_BTRFS_EXTENT_REGULAR 1
-@@ -229,7 +223,6 @@ struct grub_btrfs_extent_data
+@@ -231,7 +225,6 @@ struct grub_btrfs_extent_data
  #define GRUB_BTRFS_COMPRESSION_NONE 0
  #define GRUB_BTRFS_COMPRESSION_ZLIB 1
  #define GRUB_BTRFS_COMPRESSION_LZO  2
@@ -174,7 +174,7 @@ index 48bd3d04a..83aeec4af 100644
  
  #define GRUB_BTRFS_OBJECT_ID_CHUNK 0x100
  
-@@ -245,7 +238,7 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data,
+@@ -247,7 +240,7 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data,
  static grub_err_t
  read_sblock (grub_disk_t disk, struct grub_btrfs_superblock *sb)
  {
@@ -183,7 +183,7 @@ index 48bd3d04a..83aeec4af 100644
    unsigned i;
    grub_err_t err = GRUB_ERR_NONE;
    for (i = 0; i < ARRAY_SIZE (superblock_sectors); i++)
-@@ -825,17 +818,13 @@ raid56_read_retry (struct grub_btrfs_data *data,
+@@ -827,17 +820,13 @@ raid56_read_retry (struct grub_btrfs_data *data,
        goto cleanup;
      }
    else
@@ -207,7 +207,7 @@ index 48bd3d04a..83aeec4af 100644
   cleanup:
    if (buffers)
      for (i = 0; i < nstripes; i++)
-@@ -936,8 +925,8 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
+@@ -938,8 +927,8 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
  			       "couldn't find the chunk descriptor");
  	  }
  
@@ -218,7 +218,7 @@ index 48bd3d04a..83aeec4af 100644
  	grub_dprintf ("btrfs", "chunk 0x%" PRIxGRUB_UINT64_T
  		      "+0x%" PRIxGRUB_UINT64_T
  		      " (%d stripes (%d substripes) of %"
-@@ -995,13 +984,13 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
+@@ -1002,13 +991,13 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
  	      grub_uint64_t middle, high;
  	      grub_uint64_t low;
  	      grub_uint16_t nsubstripes;
@@ -234,7 +234,7 @@ index 48bd3d04a..83aeec4af 100644
  				    &stripen);
  	      stripen *= nsubstripes;
  	      redundancy = nsubstripes;
-@@ -1229,96 +1218,6 @@ grub_btrfs_read_inode (struct grub_btrfs_data *data,
+@@ -1236,96 +1225,6 @@ grub_btrfs_read_inode (struct grub_btrfs_data *data,
    return grub_btrfs_read_logical (data, elemaddr, inode, sizeof (*inode), 0);
  }
  
@@ -331,7 +331,7 @@ index 48bd3d04a..83aeec4af 100644
  static grub_ssize_t
  grub_btrfs_lzo_decompress(char *ibuf, grub_size_t isize, grub_off_t off,
  			  char *obuf, grub_size_t osize)
-@@ -1494,8 +1393,7 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
+@@ -1501,8 +1400,7 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
  
        if (data->extent->compression != GRUB_BTRFS_COMPRESSION_NONE
  	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_ZLIB
@@ -341,7 +341,7 @@ index 48bd3d04a..83aeec4af 100644
  	{
  	  grub_error (GRUB_ERR_NOT_IMPLEMENTED_YET,
  		      "compression type 0x%x not supported",
-@@ -1535,15 +1433,6 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
+@@ -1542,15 +1440,6 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
  		  != (grub_ssize_t) csize)
  		return -1;
  	    }
@@ -357,7 +357,7 @@ index 48bd3d04a..83aeec4af 100644
  	  else
  	    grub_memcpy (buf, data->extent->inl + extoff, csize);
  	  break;
-@@ -1581,10 +1470,6 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
+@@ -1588,10 +1477,6 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
  		ret = grub_btrfs_lzo_decompress (tmp, zsize, extoff
  				    + grub_le_to_cpu64 (data->extent->offset),
  				    buf, csize);
@@ -369,7 +369,7 @@ index 48bd3d04a..83aeec4af 100644
  		ret = -1;
  
 diff --git a/grub-core/fs/f2fs.c b/grub-core/fs/f2fs.c
-index 644653dbe..e4d08e031 100644
+index 8a9992ca9..c40379b25 100644
 --- a/grub-core/fs/f2fs.c
 +++ b/grub-core/fs/f2fs.c
 @@ -131,6 +131,7 @@ enum FILE_TYPE
@@ -807,7 +807,7 @@ index 50c1fe72f..355313d5e 100644
  {
    grub_uint32_t off;
 diff --git a/grub-core/fs/squash4.c b/grub-core/fs/squash4.c
-index 95d5c1e1f..5eca27aa1 100644
+index 82704f966..557b37e94 100644
 --- a/grub-core/fs/squash4.c
 +++ b/grub-core/fs/squash4.c
 @@ -50,6 +50,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
@@ -978,7 +978,7 @@ index 5453822d0..873445803 100644
  #define	A64(x)	(((U64_S *)(x))->v)
  #define	A32(x)	(((U32_S *)(x))->v)
 diff --git a/grub-core/kern/misc.c b/grub-core/kern/misc.c
-index 3b633d51f..1eed48883 100644
+index b714c97b9..9aa05dbb3 100644
 --- a/grub-core/kern/misc.c
 +++ b/grub-core/kern/misc.c
 @@ -138,7 +138,7 @@ grub_puts_ (const char *s)
@@ -999,7 +999,7 @@ index 3b633d51f..1eed48883 100644
  int grub_err_printf (const char *fmt, ...)
  __attribute__ ((alias("grub_printf")));
  #endif
-@@ -969,7 +969,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
+@@ -974,7 +974,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0,
  	  {
  	    grub_size_t len = 0;
  	    grub_size_t fill;
@@ -1009,19 +1009,18 @@ index 3b633d51f..1eed48883 100644
  
  	    while (len < format2 && p[len])
 diff --git a/grub-core/lib/minilzo/lzodefs.h b/grub-core/lib/minilzo/lzodefs.h
-index 0e40e332a..eea56b170 100644
+index f4ae9487e..feee5cdf3 100644
 --- a/grub-core/lib/minilzo/lzodefs.h
 +++ b/grub-core/lib/minilzo/lzodefs.h
-@@ -670,6 +670,9 @@
+@@ -770,7 +770,7 @@
+ #elif (LZO_OS_DOS16 || LZO_OS_OS216 || LZO_OS_WIN16)
  #  define LZO_ARCH_I086             1
- #  define LZO_ARCH_IA16             1
  #  define LZO_INFO_ARCH             "i086"
+-#elif defined(__aarch64__)
 +#elif defined(__aarch64__) || defined(_M_ARM64)
-+#  define LZO_ARCH_ARM64            1
-+#  define LZO_INFO_ARCH             "arm64"
+ #  define LZO_ARCH_ARM64            1
+ #  define LZO_INFO_ARCH             "arm64"
  #elif defined(__alpha__) || defined(__alpha) || defined(_M_ALPHA)
- #  define LZO_ARCH_ALPHA            1
- #  define LZO_INFO_ARCH             "alpha"
 diff --git a/grub-core/lib/xzembed/xz_config.h b/grub-core/lib/xzembed/xz_config.h
 index 24d570f2b..570579a9f 100644
 --- a/grub-core/lib/xzembed/xz_config.h
@@ -1242,7 +1241,7 @@ index 117740ae2..5a8caf59f 100644
  /* Return the offset of the record with the index INDEX, in the node
     NODE which is part of the B+ tree BTREE.  */
 diff --git a/include/grub/misc.h b/include/grub/misc.h
-index ee48eb7a7..d1c5e7eee 100644
+index cd5a8b4ae..dd1138d03 100644
 --- a/include/grub/misc.h
 +++ b/include/grub/misc.h
 @@ -27,12 +27,22 @@
@@ -1268,6 +1267,16 @@ index ee48eb7a7..d1c5e7eee 100644
  #define COMPILE_TIME_ASSERT(cond) switch (0) { case 1: case !(cond): ; }
  
  #define grub_dprintf(condition, ...) grub_real_dprintf(GRUB_FILE, __LINE__, condition, __VA_ARGS__)
+@@ -261,6 +271,9 @@ grub_strncasecmp (const char *s1, const char *s2, grub_size_t n)
+  *  ... or ...
+  *  l = grub_strtoul(s, (const char ** const)&end, 10);
+  */
++#ifdef _MSC_VER
++#define restrict
++#endif
+ unsigned long EXPORT_FUNC(grub_strtoul) (const char * restrict str, const char ** const restrict end, int base);
+ unsigned long long EXPORT_FUNC(grub_strtoull) (const char * restrict str, const char ** const restrict end, int base);
+ 
 diff --git a/include/grub/ntfs.h b/include/grub/ntfs.h
 index d1a6af696..203e0141e 100644
 --- a/include/grub/ntfs.h

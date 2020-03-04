@@ -20,7 +20,7 @@ For additional info as well as precompiled drivers, see https://efi.akeo.ie
 
 * Fetch the git submodules with `git submodule init` and `git submodule update`.
   __NOTE__ This only works if you cloned the directory using `git`.
-* Apply `0000-GRUB-fixes.patch` to the `grub\` subdirectory. This applies the
+* Apply `0001-GRUB-fixes.patch` to the `grub\` subdirectory. This applies the
   changes that are required for successful compilation of GRUB.
 
 ### Visual Studio (non EDK2)
@@ -114,7 +114,7 @@ cd efifs
 git submodule init
 git submodule update
 cd grub
-patch -Np1 -i ../0000-GRUB-fixes.patch
+patch -Np1 -i ../0001-GRUB-fixes.patch
 cd ../../edk2
 ln -s ../efifs EfiFsPkg
 make -C BaseTools
