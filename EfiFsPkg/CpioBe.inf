@@ -8,7 +8,7 @@
   BASE_NAME                  = cpio_be
   FILE_GUID                  = A3853AE0-E77D-405E-8A75-16333DE1632C
   MODULE_TYPE                = UEFI_DRIVER
-  VERSION_STRING             = 1.3
+  VERSION_STRING             = 1.4
   EDK_RELEASE_VERSION        = 0x00020000
   EFI_SPECIFICATION_VERSION  = 0x00020000
   ENTRY_POINT                = FSDriverInstall

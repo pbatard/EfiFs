@@ -1,6 +1,14 @@
 For detailed information about the changes below, please see the git log or
 visit: https://github.com/pbatard/efifs
 
+v1.4 (2020.03.04)
+* Add SquashFS driver
+* Fix unable to switch drive on recent UEFI Shells
+* Fix DEBUG warnings on FreePool()
+* Fix grub_errno not being set on error
+* Fix calling convention for Print() calls
+* Update GRUB and gnu-efi to latest
+
 v1.3 (2018.04.25)
 * Fix F2FS driver bug (MSVC only) that was introduced in v1.2
 * Remove custom EDK2 patches for VS2017 and ARM/ARM64 support (now integrated upstream)
