@@ -1,6 +1,6 @@
 /* utf8.c - UTF-8 conversion routines */
 /*
- *  Copyright © 2014 Pete Batard <pete@akeo.ie>
+ *  Copyright © 2014-2020 Pete Batard <pete@akeo.ie>
  *  Based on Netscape security libraries:
  *  Copyright © 1994-2000 Netscape Communications Corporation.
  *
@@ -583,29 +583,38 @@ ConvertIso88591ToUtf8(const UINT8 *inBuf, UINTN inBufLen,
 /**
  * Convert an UTF-8 string to an allocated UTF-16 string
  *
- * @v src               A NUL terminated UTF-8 input string
+ * @v Src               A NUL terminated UTF-8 input string
  * @ret String          A NUL terminated UTF-16 string, or NULL on error.
  *                      The caller needs to free the returned string.
  */
 CHAR16
-*Utf8ToUtf16Alloc(CHAR8 *src)
+*Utf8ToUtf16Alloc(CHAR8 *Src)
 {
-	UINTN DstLen = 0, srcLen = strlena(src);
+	UINTN DstLen = 0, SrcLen;
 	static CHAR16 *Dst = NULL;
 
-	if (srcLen++ == 0)	/* +1 for NUL terminator */
-		return L"";
+	if (Src == NULL)
+		return NULL;
+
+	SrcLen = strlena(Src);
+
+	if (SrcLen == 0) {	/* Empty string */
+		Dst = (CHAR16 *)AllocateZeroPool(sizeof(CHAR16));
+		return Dst;
+	}
+
+	SrcLen++;	/* +1 for NUL terminator */
 
 	/* Failure is expected on this call, since we only want the length */
-	ConvertUcs2Utf8(TRUE, (UINT8 *) src, srcLen, NULL, 0, &DstLen);
+	ConvertUcs2Utf8(TRUE, (UINT8 *)Src, SrcLen, NULL, 0, &DstLen);
 	if (DstLen == 0)
 		goto error;
 
-	Dst = (CHAR16 *) AllocatePool(DstLen);
+	Dst = (CHAR16 *)AllocateZeroPool(DstLen);
 	if (Dst == NULL)
 		goto error;
 
-	if (!ConvertUcs2Utf8(TRUE, (UINT8 *) src, srcLen, (UINT8 *) Dst, DstLen, &DstLen))
+	if (!ConvertUcs2Utf8(TRUE, (UINT8 *)Src, SrcLen, (UINT8 *)Dst, DstLen, &DstLen))
 		goto error;
 
 	return Dst;
@@ -619,73 +628,89 @@ error:
 /**
  * Convert an UTF-8 string to UTF-16, using an user supplied buffer
  *
- * @v src               A NUL terminated UTF-8 input string
+ * @v Src               A NUL terminated UTF-8 input string
  * @v Dst               A pointer an UTF-16 string buffer
  * @v Len               The length of the target UTF-16 string buffer, in BYTES
  * @ret Status          EFI_SUCCESS if the conversion was successful, and EFI error code on error
  */
 EFI_STATUS
-Utf8ToUtf16NoAllocUpdateLen(CHAR8 *src, CHAR16 *Dst, UINTN *Len)
+Utf8ToUtf16NoAllocUpdateLen(CHAR8 *Src, CHAR16 *Dst, UINTN *Len)
 {
-	UINTN orgLen = *Len, srcLen = strlena(src);
+	UINTN OrgLen = *Len, SrcLen;
 
-	if ((Dst == NULL) || (*Len < 1))
+	if ((Src == NULL) || (Dst == NULL) || (Len == NULL))
 		return EFI_INVALID_PARAMETER;
 
-	if (srcLen++ == 0) {	/* +1 for NUL terminator */
+	SrcLen = strlena(Src);
+
+	if (SrcLen == 0) {	/* Empty string */
+		*Len = sizeof(CHAR16);
+		if (*Len > OrgLen)
+			return EFI_BUFFER_TOO_SMALL;
 		*Dst = 0;
 		return EFI_SUCCESS;
 	}
 
-	if (!ConvertUcs2Utf8(TRUE, (UINT8 *) src, srcLen, (UINT8 *) Dst, *Len, Len))
+	SrcLen++;	/* +1 for NUL terminator */
+
+	if (!ConvertUcs2Utf8(TRUE, (UINT8 *)Src, SrcLen, (UINT8 *)Dst, *Len, Len))
 		return EFI_NO_MAPPING;
 
-	if (*Len > orgLen)
+	if (*Len > OrgLen)
 		return EFI_BUFFER_TOO_SMALL;
 
 	return EFI_SUCCESS;
 }
 
 EFI_STATUS
-Utf8ToUtf16NoAlloc(CHAR8 *src, CHAR16 *Dst, UINTN Len)
+Utf8ToUtf16NoAlloc(CHAR8 *Src, CHAR16 *Dst, UINTN Len)
 {
-	UINTN tmpLen = Len;
-	return Utf8ToUtf16NoAllocUpdateLen(src, Dst, &tmpLen);
+	UINTN TmpLen = Len;
+	return Utf8ToUtf16NoAllocUpdateLen(Src, Dst, &TmpLen);
 }
 
 /**
  * Convert an UTF-16 string to an allocated UTF-8 string
  *
  * @v Src               A NUL terminated UTF-16 input string
- * @ret string          A NUL terminated UTF-8 string, or NULL on error.
+ * @ret String          A NUL terminated UTF-8 string, or NULL on error.
  *                      The caller needs to free the returned string.
  */
 CHAR8
 *Utf16ToUtf8Alloc(CHAR16 *Src)
 {
-	UINTN dstLen = 0, SrcLen = StrLen(Src);
-	static CHAR8 *dst = NULL;
+	UINTN DstLen = 0, SrcLen;
+	static CHAR8 *Dst = NULL;
 
-	if (SrcLen++ == 0)	/* +1 for NUL terminator */
-		return "";
+	if (Src == NULL)
+		return NULL;
+
+	SrcLen = StrLen(Src);
+
+	if (SrcLen == 0) {	/* Empty string */
+		Dst = (CHAR8 *)AllocateZeroPool(sizeof(CHAR8));
+		return Dst;
+	}
+
+	SrcLen++;	/* +1 for NUL terminator */
 
 	/* Failure is expected on this call, since we want the length */
-	ConvertUcs2Utf8(FALSE, (UINT8 *) Src, SrcLen * sizeof(CHAR16), NULL, 0, &dstLen);
-	if (dstLen == 0)
+	ConvertUcs2Utf8(FALSE, (UINT8 *)Src, SrcLen * sizeof(CHAR16), NULL, 0, &DstLen);
+	if (DstLen == 0)
 		goto error;
 
-	dst = (CHAR8 *) AllocatePool(dstLen);
-	if (dst == NULL)
+	Dst = (CHAR8 *)AllocateZeroPool(DstLen);
+	if (Dst == NULL)
 		goto error;
 
-	if (!ConvertUcs2Utf8(FALSE, (UINT8 *) Src, SrcLen * sizeof(CHAR16), (UINT8 *) dst, dstLen, &dstLen))
+	if (!ConvertUcs2Utf8(FALSE, (UINT8 *)Src, SrcLen * sizeof(CHAR16), (UINT8 *)Dst, DstLen, &DstLen))
 		goto error;
 
-	return dst;
+	return Dst;
 
 error:
-	if (dst != NULL)
-		FreePool(dst);
+	if (Dst != NULL)
+		FreePool(Dst);
 	return NULL;
 }
 
@@ -693,36 +718,42 @@ error:
  * Convert an UTF-16 string to UTF-8, using an user supplied buffer
  *
  * @v Src               A NUL terminated UTF-16 input string
- * @v dst               A pointer an UTF-8 string buffer
- * @v len               The length of the target UTF-8 string buffer, in BYTES
+ * @v Dst               A pointer an UTF-8 string buffer
+ * @v Len               The length of the target UTF-8 string buffer, in BYTES
  * @ret Status          EFI_SUCCESS if the conversion was successful, and EFI error code on error
  */
 EFI_STATUS
-Utf16ToUtf8NoAllocUpdateLen(CHAR16 *Src, CHAR8 *dst, UINTN *len)
+Utf16ToUtf8NoAllocUpdateLen(CHAR16 *Src, CHAR8 *Dst, UINTN *Len)
 {
-	UINTN orglen = *len, SrcLen = StrLen(Src);
+	UINTN OrgLen = *Len, SrcLen;
 
-	if ((dst == NULL) || (*len < 1))
+	if ((Src == NULL) || (Dst == NULL) || (Len == NULL))
 		return EFI_INVALID_PARAMETER;
 
-	if (SrcLen++ == 0) {	/* +1 for NUL terminator */
-		*dst = 0;
+	SrcLen = StrLen(Src);
+
+	if (SrcLen == 0) { /* Empty string */
+		*Len = sizeof(CHAR16);
+		if (*Len < OrgLen)
+			return EFI_BUFFER_TOO_SMALL;
+		*Dst = 0;
 		return EFI_SUCCESS;
 	}
 
-	if (!ConvertUcs2Utf8(FALSE, (UINT8 *) Src, SrcLen * sizeof(CHAR16), (UINT8 *) dst, *len, len))
+	SrcLen++;	/* +1 for NUL terminator */
+
+	if (!ConvertUcs2Utf8(FALSE, (UINT8 *)Src, SrcLen * sizeof(CHAR16), (UINT8 *)Dst, *Len, Len))
 		return EFI_NO_MAPPING;
 
-	if (*len > orglen)
+	if (*Len > OrgLen)
 		return EFI_BUFFER_TOO_SMALL;
 
 	return EFI_SUCCESS;
 }
 
 EFI_STATUS
-Utf16ToUtf8NoAlloc(CHAR16 *Src, CHAR8 *dst, UINTN len)
+Utf16ToUtf8NoAlloc(CHAR16 *Src, CHAR8 *Dst, UINTN Len)
 {
-	UINTN tmplen = len;
-	return Utf16ToUtf8NoAllocUpdateLen(Src, dst, &tmplen);
+	UINTN TmpLen = Len;
+	return Utf16ToUtf8NoAllocUpdateLen(Src, Dst, &TmpLen);
 }
-
