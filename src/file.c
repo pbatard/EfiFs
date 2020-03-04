@@ -1,6 +1,6 @@
 /* file.c - SimpleFileIo Interface */
 /*
- *  Copyright © 2014-2017 Pete Batard <pete@akeo.ie>
+ *  Copyright © 2014-2020 Pete Batard <pete@akeo.ie>
  *  Based on iPXE's efi_driver.c and efi_file.c:
  *  Copyright © 2011,2013 Michael Brown <mbrown@fensystems.co.uk>.
  *
@@ -545,7 +545,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 		}
 
 		ZeroMem(Data, sizeof(EFI_FILE_INFO));
-
+		Info->Size = *Len;
 		Info->Attribute = EFI_FILE_READ_ONLY;
 		GrubTimeToEfiTime(File->Mtime, &Time);
 		CopyMem(&Info->CreateTime, &Time, sizeof(Time));
@@ -559,7 +559,8 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 			Info->PhysicalSize = GrubGetFileSize(File);
 		}
 
-		tmpLen = (UINTN)(Info->Size - sizeof(EFI_FILE_INFO) - 1);
+		/* The Info struct size accounts for the NUL string terminator */
+		tmpLen = (UINTN)(Info->Size - sizeof(EFI_FILE_INFO));
 		Status = Utf8ToUtf16NoAllocUpdateLen(File->basename, Info->FileName, &tmpLen);
 		if (EFI_ERROR(Status)) {
 			if (Status != EFI_BUFFER_TOO_SMALL)
@@ -567,7 +568,6 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 			return Status;
 		}
 
-		/* The Info struct size already accounts for the extra NUL */
 		Info->Size = sizeof(EFI_FILE_INFO) + tmpLen;
 		*Len = (INTN)Info->Size;
 		return EFI_SUCCESS;
@@ -610,14 +610,15 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 			FSInfo->VolumeLabel[0] = 0;
 			*Len = sizeof(EFI_FILE_SYSTEM_INFO);
 		} else {
-			tmpLen = (INTN)(FSInfo->Size - sizeof(EFI_FILE_SYSTEM_INFO) - 1);
+			/* The Info struct size accounts for the NUL string terminator */
+			tmpLen = (INTN)(FSInfo->Size - sizeof(EFI_FILE_SYSTEM_INFO));
 			Status = Utf8ToUtf16NoAllocUpdateLen(label, FSInfo->VolumeLabel, &tmpLen);
 			if (EFI_ERROR(Status)) {
 				if (Status != EFI_BUFFER_TOO_SMALL)
 					PrintStatusError(Status, L"Could not convert label to UTF-16");
 				return Status;
 			}
-			FSInfo->Size = sizeof(EFI_FILE_SYSTEM_INFO) - 1 + tmpLen;
+			FSInfo->Size = sizeof(EFI_FILE_SYSTEM_INFO) + tmpLen;
 			*Len = (INTN)FSInfo->Size;
 		}
 		return EFI_SUCCESS;
