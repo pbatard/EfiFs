@@ -186,7 +186,7 @@ End If
 ' Note: Linaro's QEMU-EFI.fd firmware is very sensitive about '/' vs '\'
 Call shell.Run("%COMSPEC% /c mkdir ""image\efi\boot""", 0, True)
 If USE_EDK2 Then
-  Call fso.CopyFile(EDK2_BASE & "\Build\EfiFs\RELEASE_VS2017\" & EDK_ARCH & "\" & FS & ".efi", "image\" & DRV, True)
+  Call fso.CopyFile(EDK2_BASE & "\Build\EfiFs\RELEASE_VS2019\" & EDK_ARCH & "\" & FS & ".efi", "image\" & DRV, True)
 Else
   Call fso.CopyFile(BIN, "image\" & DRV, True)
 End If
