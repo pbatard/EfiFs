@@ -1,6 +1,6 @@
 /* driver.c - Wrapper for standalone EFI filesystem drivers */
 /*
- *  Copyright © 2014-2017 Pete Batard <pete@akeo.ie>
+ *  Copyright © 2014-2020 Pete Batard <pete@akeo.ie>
  *  Based on iPXE's efi_driver.c and efi_file.c:
  *  Copyright © 2011,2013 Michael Brown <mbrown@fensystems.co.uk>.
  *
@@ -143,8 +143,15 @@ FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 		PrintStatusError(Status, L"Could not allocate a new file system instance");
 		return Status;
 	}
+	/* Allocate the root file structure */
+	Instance->RootFile = AllocateZeroPool(sizeof(EFI_GRUB_FILE));
+	if (Instance->RootFile == NULL) {
+		Status = EFI_OUT_OF_RESOURCES;
+		PrintStatusError(Status, L"Could not allocate root file");
+		goto error;
+	}
 	Instance->FileIoInterface.Revision = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_REVISION;
-	Instance->FileIoInterface.OpenVolume = FileOpenVolume,
+	Instance->FileIoInterface.OpenVolume = FileOpenVolume;
 
 	/* Fill the device path for our instance */
 	DevicePath = DevicePathFromHandle(ControllerHandle);

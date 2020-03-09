@@ -1,6 +1,6 @@
 /* grub_file.c - GRUB file handling interface */
 /*
- *  Copyright © 2014-2017 Pete Batard <pete@akeo.ie>
+ *  Copyright © 2014-2020 Pete Batard <pete@akeo.ie>
  *  Based on GRUB  --  GRand Unified Bootloader
  *  Copyright © 2001-2014 Free Software Foundation, Inc.
  *
@@ -308,6 +308,7 @@ GrubCreateFile(EFI_GRUB_FILE **File, EFI_FS *FileSystem)
 
 	/* Initialize the attributes */
 	NewFile->FileSystem = FileSystem;
+	ASSERT(FileSystem->RootFile != NULL)
 	CopyMem(&NewFile->EfiFile, &FileSystem->RootFile->EfiFile, sizeof(EFI_FILE));
 
 	f = (grub_file_t) NewFile->GrubFile;
@@ -342,7 +343,8 @@ GrubGetFileOffset(EFI_GRUB_FILE *File)
 	return (UINT64) f->offset;
 }
 
-VOID GrubSetFileOffset(EFI_GRUB_FILE *File, UINT64 Offset)
+VOID
+GrubSetFileOffset(EFI_GRUB_FILE *File, UINT64 Offset)
 {
 	grub_file_t f = (grub_file_t) File->GrubFile;
 	f->offset = (grub_off_t) Offset;
