@@ -8,7 +8,7 @@
   BASE_NAME                  = zfs
   FILE_GUID                  = 0F6A96E7-0F76-4947-90DB-D4FD7A7E6147
   MODULE_TYPE                = UEFI_DRIVER
-  VERSION_STRING             = 1.4
+  VERSION_STRING             = 1.5
   EDK_RELEASE_VERSION        = 0x00020000
   EFI_SPECIFICATION_VERSION  = 0x00020000
   ENTRY_POINT                = FSDriverInstall

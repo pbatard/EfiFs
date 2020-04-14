@@ -8,7 +8,7 @@
   BASE_NAME                  = squash4
   FILE_GUID                  = F85516B3-FEAD-4D5B-9E4A-9A476ABA65CA
   MODULE_TYPE                = UEFI_DRIVER
-  VERSION_STRING             = 1.4
+  VERSION_STRING             = 1.5
   EDK_RELEASE_VERSION        = 0x00020000
   EFI_SPECIFICATION_VERSION  = 0x00020000
   ENTRY_POINT                = FSDriverInstall

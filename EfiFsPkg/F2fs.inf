@@ -8,7 +8,7 @@
   BASE_NAME                  = f2fs
   FILE_GUID                  = 3D1F4906-3509-4DD4-8850-70033DE336E4
   MODULE_TYPE                = UEFI_DRIVER
-  VERSION_STRING             = 1.4
+  VERSION_STRING             = 1.5
   EDK_RELEASE_VERSION        = 0x00020000
   EFI_SPECIFICATION_VERSION  = 0x00020000
   ENTRY_POINT                = FSDriverInstall

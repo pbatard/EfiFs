@@ -1,6 +1,10 @@
 For detailed information about the changes below, please see the git log or
 visit: https://github.com/pbatard/efifs
 
+v1.5 (2020.04.14)
+* Fix a crash with recent QEMU AARCH64 firmwares
+* Update GRUB to latest
+
 v1.4 (2020.03.04)
 * Add SquashFS driver
 * Fix unable to switch drive on recent UEFI Shells

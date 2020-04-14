@@ -8,7 +8,7 @@
   BASE_NAME                  = romfs
   FILE_GUID                  = A57C00D8-2766-4DDF-AC8D-BAC89472F255
   MODULE_TYPE                = UEFI_DRIVER
-  VERSION_STRING             = 1.4
+  VERSION_STRING             = 1.5
   EDK_RELEASE_VERSION        = 0x00020000
   EFI_SPECIFICATION_VERSION  = 0x00020000
   ENTRY_POINT                = FSDriverInstall

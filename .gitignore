@@ -4,7 +4,11 @@
 *.img
 *.ipch
 *.iso
+*.log
+*.new
+*.nope
 *.o
+*.old
 *.opendb
 *.opensdf
 *.sdf
