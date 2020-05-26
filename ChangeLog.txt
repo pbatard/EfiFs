@@ -1,6 +1,10 @@
 For detailed information about the changes below, please see the git log or
 visit: https://github.com/pbatard/efifs
 
+*v1.6 (2020.05.26)
+* Improve compatibility by removing reliance on Device Path to Text protocol
+* Update GRUB and gnu-efi to latest
+
 v1.5 (2020.04.14)
 * Fix a crash with recent QEMU AARCH64 firmwares
 * Update GRUB to latest
