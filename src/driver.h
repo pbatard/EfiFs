@@ -172,12 +172,12 @@ typedef struct _EFI_FS {
 	EFI_BLOCK_IO_PROTOCOL           *BlockIo;
 	EFI_BLOCK_IO2_PROTOCOL          *BlockIo2;
 	EFI_BLOCK_IO2_TOKEN             BlockIo2Token;
+	EFI_DEVICE_PATH                 *DevicePath;
 	EFI_DISK_IO_PROTOCOL            *DiskIo;
 	EFI_DISK_IO2_PROTOCOL           *DiskIo2;
 	EFI_DISK_IO2_TOKEN              DiskIo2Token;
 	EFI_GRUB_FILE                   *RootFile;
 	VOID                            *GrubDevice;
-	CHAR16                          *DevicePathString;
 } EFI_FS;
 
 /* Mirrors a similar construct from GRUB, while EFI-zing it */
@@ -239,5 +239,6 @@ extern EFI_STATUS EFIAPI FileOpenVolume(EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *This,
 		EFI_FILE_HANDLE *Root);
 extern EFI_GUID *GetFSGuid(VOID);
 extern EFI_STATUS PrintGuid (EFI_GUID *Guid);
+extern INTN CompareDevicePaths(CONST EFI_DEVICE_PATH* dp1, CONST EFI_DEVICE_PATH* dp2);
 extern EFI_STATUS EFIAPI FSDriverInstall(EFI_HANDLE ImageHandle,
 		EFI_SYSTEM_TABLE* SystemTable);

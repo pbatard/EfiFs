@@ -212,23 +212,17 @@ grub_disk_dev_unregister(grub_disk_dev_t dev)
 grub_device_t
 grub_device_open(const char *name)
 {
-	CHAR16 *Name = Utf8ToUtf16Alloc((CHAR8 *) name);
-	struct grub_device* device;
+	EFI_DEVICE_PATH* DevicePath = (EFI_DEVICE_PATH*)name;
 	EFI_FS *FileSystem;
+	struct grub_device* device;
 
-	ASSERT(name != NULL);
+	ASSERT(DevicePath != NULL);
 
-	if (Name == NULL) {
-		if (LogLevel > FS_LOGLEVEL_ERROR)
-			grub_printf("Could not convert device '%s' to UTF-16\n", name);
-		return NULL;
-	}
 	for (FileSystem = (EFI_FS *) FORWARD_LINK_REF(FsListHead); FileSystem != (EFI_FS *) &FsListHead;
 			FileSystem = (EFI_FS *) FileSystem->Flink) {
-		if (StrCmp(FileSystem->DevicePathString, Name) == 0)
+		if (CompareDevicePaths(FileSystem->DevicePath, DevicePath) == 0)
 			break;
 	}
-	FreePool(Name);
 	if (FileSystem == (EFI_FS *) &FsListHead)
 		return NULL;
 
@@ -263,16 +257,12 @@ grub_device_close(grub_device_t device)
 EFI_STATUS
 GrubDeviceInit(EFI_FS *FileSystem)
 {
-	CHAR8 *name = Utf16ToUtf8Alloc(FileSystem->DevicePathString);
-
-	if (name == NULL)
-		return EFI_OUT_OF_RESOURCES;
+	ASSERT(FileSystem->DevicePath != NULL);
 
 	/* Insert this filesystem in our list */
 	InsertTailList(&FsListHead, (LIST_ENTRY *) FileSystem);
 
-	FileSystem->GrubDevice = (VOID *) grub_device_open((const char *) name);
-	FreePool(name);
+	FileSystem->GrubDevice = (VOID *) grub_device_open((const char *)FileSystem->DevicePath);
 
 	if (FileSystem->GrubDevice == NULL) {
 		RemoveEntryList((LIST_ENTRY *)FileSystem);

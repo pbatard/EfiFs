@@ -74,8 +74,8 @@ static VOID
 FreeFsInstance(EFI_FS *Instance) {
 	if (Instance == NULL)
 		return;
-	if (Instance->DevicePathString != NULL)
-		FreePool(Instance->DevicePathString);
+	if (Instance->DevicePath != NULL)
+		FreePool(Instance->DevicePath);
 	if (Instance->RootFile != NULL)
 		FreePool(Instance->RootFile);
 	FreePool(Instance);
@@ -131,9 +131,6 @@ FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 {
 	EFI_STATUS Status;
 	EFI_FS *Instance;
-	EFI_DEVICE_PATH_PROTOCOL *DevicePath;
-	EFI_DEVICE_PATH_TO_TEXT_PROTOCOL *DevicePathToText;
-
 	PrintDebug(L"FSBindingStart\n");
 
 	/* Allocate a new instance of a filesystem */
@@ -154,26 +151,10 @@ FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 	Instance->FileIoInterface.OpenVolume = FileOpenVolume;
 
 	/* Fill the device path for our instance */
-	DevicePath = DevicePathFromHandle(ControllerHandle);
-	if (DevicePath == NULL) {
+	Instance->DevicePath = DevicePathFromHandle(ControllerHandle);
+	if (Instance->DevicePath == NULL) {
 		Status = EFI_NO_MAPPING;
 		PrintStatusError(Status, L"Could not get Device Path");
-		goto error;
-	}
-
-	/* Prefer UEFI 2.0 conversion protocols if available */
-	Instance->DevicePathString = NULL;
-	Status = BS->LocateProtocol(&gEfiDevicePathToTextProtocolGuid, NULL, (VOID**) &DevicePathToText);
-	if (Status == EFI_SUCCESS)
-		Instance->DevicePathString = DevicePathToText->ConvertDevicePathToText(DevicePath, FALSE, FALSE);
-#if defined(_GNU_EFI)
-	else
-		Instance->DevicePathString = DevicePathToStr(DevicePath);
-#endif
-
-	if (Instance->DevicePathString == NULL) {
-		Status = EFI_OUT_OF_RESOURCES;
-		PrintStatusError(Status, L"Could not allocate Device Path string");
 		goto error;
 	}
 

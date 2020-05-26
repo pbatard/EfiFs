@@ -81,3 +81,46 @@ PrintGuid(EFI_GUID *Guid)
 	);
 	return EFI_SUCCESS;
 }
+
+INTN
+CompareDevicePaths(CONST EFI_DEVICE_PATH* dp1, CONST EFI_DEVICE_PATH* dp2)
+{
+	if (dp1 == NULL || dp2 == NULL)
+		return -1;
+
+	while (1) {
+		UINT8 type1, type2;
+		UINT8 subtype1, subtype2;
+		UINT16 len1, len2;
+		INTN ret;
+
+		type1 = DevicePathType(dp1);
+		type2 = DevicePathType(dp2);
+
+		if (type1 != type2)
+			return (int)type2 - (int)type1;
+
+		subtype1 = DevicePathSubType(dp1);
+		subtype2 = DevicePathSubType(dp2);
+
+		if (subtype1 != subtype2)
+			return (int)subtype1 - (int)subtype2;
+
+		len1 = DevicePathNodeLength(dp1);
+		len2 = DevicePathNodeLength(dp2);
+		if (len1 != len2)
+			return (int)len1 - (int)len2;
+
+		ret = CompareMem(dp1, dp2, len1);
+		if (ret != 0)
+			return ret;
+
+		if (IsDevicePathEnd(dp1))
+			break;
+
+		dp1 = (EFI_DEVICE_PATH*)((char*)dp1 + len1);
+		dp2 = (EFI_DEVICE_PATH*)((char*)dp2 + len2);
+	}
+
+	return 0;
+}
