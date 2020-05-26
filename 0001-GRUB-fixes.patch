@@ -1,6 +1,6 @@
-From 1376a447969e260c5c0afc66bb9c6d5acdf07616 Mon Sep 17 00:00:00 2001
+From 6041f610106827ec43183b0b4b07556217a27d7d Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Tue, 14 Apr 2020 00:23:29 +0100
+Date: Tue, 26 May 2020 12:36:07 +0100
 Subject: [PATCH] GRUB fixes
 
 ---
@@ -26,7 +26,7 @@ Subject: [PATCH] GRUB fixes
  grub-core/fs/zfs/zfs_lz4.c           |   2 +
  grub-core/kern/misc.c                |   6 +-
  grub-core/lib/minilzo/lzodefs.h      |   2 +-
- grub-core/lib/xzembed/xz_config.h    |  14 ++-
+ grub-core/lib/xzembed/xz_config.h    |  20 +++-
  grub-core/lib/xzembed/xz_dec_lzma2.c |   4 +-
  grub-core/lib/xzembed/xz_stream.h    |   2 +-
  include/grub/arm64/types.h           |   4 +
@@ -43,7 +43,7 @@ Subject: [PATCH] GRUB fixes
  include/grub/x86_64/types.h          |   2 +-
  include/grub/zfs/zap_leaf.h          |   2 +
  include/grub/zfs/zio.h               |   2 +
- 39 files changed, 197 insertions(+), 177 deletions(-)
+ 39 files changed, 202 insertions(+), 178 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
 index 6b6a2bc91..90d02ce0c 100644
@@ -1004,10 +1004,10 @@ index f4ae9487e..feee5cdf3 100644
  #  define LZO_INFO_ARCH             "arm64"
  #elif defined(__alpha__) || defined(__alpha) || defined(_M_ALPHA)
 diff --git a/grub-core/lib/xzembed/xz_config.h b/grub-core/lib/xzembed/xz_config.h
-index 24d570f2b..570579a9f 100644
+index 24d570f2b..e7ce86a7e 100644
 --- a/grub-core/lib/xzembed/xz_config.h
 +++ b/grub-core/lib/xzembed/xz_config.h
-@@ -65,14 +65,20 @@
+@@ -65,14 +65,24 @@
  #include "xz.h"
  #include <stdlib.h>
  
@@ -1015,6 +1015,7 @@ index 24d570f2b..570579a9f 100644
 -#define kfree(ptr) free(ptr)
 -#define vmalloc(size) malloc(size)
 -#define vfree(ptr) free(ptr)
+-
 +extern void grub_free(void* p);
 +extern void* grub_malloc(grub_size_t size);
 +extern void* grub_realloc(void* p, grub_size_t new_size);
@@ -1023,7 +1024,11 @@ index 24d570f2b..570579a9f 100644
 +#define kfree(ptr) grub_free(ptr)
 +#define vmalloc(size) grub_malloc(size)
 +#define vfree(ptr) grub_free(ptr)
- 
++
++#define memcmp grub_memcmp
++#define memcpy grub_memcpy
++#define memmove grub_memmove
++#define memset grub_memset
  #define memeq(a, b, size) (memcmp(a, b, size) == 0)
  #define memzero(buf, size) memset(buf, 0, size)
  
@@ -1280,10 +1285,10 @@ index d1a6af696..203e0141e 100644
  struct grub_ntfs_attr
  {
 diff --git a/include/grub/term.h b/include/grub/term.h
-index 8117e2a24..f87c0d022 100644
+index 3387cb052..940d4c7c9 100644
 --- a/include/grub/term.h
 +++ b/include/grub/term.h
-@@ -335,12 +335,12 @@ void grub_term_restore_pos (struct grub_term_coordinate *pos);
+@@ -339,12 +339,12 @@ void grub_term_restore_pos (struct grub_term_coordinate *pos);
  
  static inline unsigned grub_term_width (struct grub_term_output *term)
  {

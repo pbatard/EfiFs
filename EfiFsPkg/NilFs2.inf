@@ -8,7 +8,7 @@
   BASE_NAME                  = nilfs2
   FILE_GUID                  = E6BCED0B-96E0-4BD7-AF96-65467ABAAC6E
   MODULE_TYPE                = UEFI_DRIVER
-  VERSION_STRING             = 1.5
+  VERSION_STRING             = 1.6
   EDK_RELEASE_VERSION        = 0x00020000
   EFI_SPECIFICATION_VERSION  = 0x00020000
   ENTRY_POINT                = FSDriverInstall

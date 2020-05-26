@@ -21,7 +21,9 @@
 #error Usupported architecture
 #endif
 
+#if !defined(_LARGEFILE_SOURCE)
 #define _LARGEFILE_SOURCE
+#endif
 #define _FILE_OFFSET_BITS 64
 #define PACKAGE_STRING "GRUB 2.0"
 

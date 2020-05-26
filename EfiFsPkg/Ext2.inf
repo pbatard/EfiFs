@@ -8,7 +8,7 @@
   BASE_NAME                  = ext2
   FILE_GUID                  = 7DDA7772-B8F5-4859-9DBA-0D6F2DBA4AF1
   MODULE_TYPE                = UEFI_DRIVER
-  VERSION_STRING             = 1.5
+  VERSION_STRING             = 1.6
   EDK_RELEASE_VERSION        = 0x00020000
   EFI_SPECIFICATION_VERSION  = 0x00020000
   ENTRY_POINT                = FSDriverInstall

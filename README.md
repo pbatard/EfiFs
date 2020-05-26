@@ -18,7 +18,7 @@ For additional info as well as precompiled drivers, see https://efi.akeo.ie
 
 ### Common
 
-* Fetch the git submodules with `git submodule init` and `git submodule update`.
+* Fetch the git submodules with `git submodule init` and `git submodule update`.  
   __NOTE__ This only works if you cloned the directory using `git`.
 * Apply `0001-GRUB-fixes.patch` to the `grub\` subdirectory. This applies the
   changes that are required for successful compilation of GRUB.
@@ -102,20 +102,20 @@ This is a pure GPLv3+ implementation of EFI drivers. Great care was taken not to
 use any code from non GPLv3 compatible sources, such as rEFInd's `fsw_efi`
 (GPLv2 only) or Intel's FAT driver (requires an extra copyright notice).
 
-## Bonus: Commands to compile EfiFs using EDK2 on a vanilla Debian GNU/Linux 10.1
+## Bonus: Commands to compile EfiFs using EDK2 on a vanilla Debian GNU/Linux 10.x
 
 As root:
 ```
-apt-get install nasm uuid-dev gcc-arm-linux-gnueabihf gcc-aarch64-linux-gnu
+apt-get install nasm uuid-dev gcc-multilib gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf
 cd /usr/src
 git clone https://github.com/tianocore/edk2.git
 git clone https://github.com/pbatard/efifs.git
 cd efifs
-git submodule init
-git submodule update
+git submodule update --init
 cd grub
 patch -Np1 -i ../0001-GRUB-fixes.patch
 cd ../../edk2
+git submodule update --init
 ln -s ../efifs EfiFsPkg
 make -C BaseTools
 export GCC5_ARM_PREFIX=arm-linux-gnueabihf-
@@ -125,8 +125,8 @@ source edksetup.sh --reconfig
 build -a X64 -b RELEASE -t GCC5 -p EfiFsPkg/EfiFsPkg.dsc
 ./EfiFsPkg/set_grub_cpu.sh IA32
 build -a IA32 -b RELEASE -t GCC5 -p EfiFsPkg/EfiFsPkg.dsc
-./EfiFsPkg/set_grub_cpu.sh ARM
-build -a ARM -b RELEASE -t GCC5 -p EfiFsPkg/EfiFsPkg.dsc
 ./EfiFsPkg/set_grub_cpu.sh AARCH64
 build -a AARCH64 -b RELEASE -t GCC5 -p EfiFsPkg/EfiFsPkg.dsc
+./EfiFsPkg/set_grub_cpu.sh ARM
+build -a ARM -b RELEASE -t GCC5 -p EfiFsPkg/EfiFsPkg.dsc
 ```
