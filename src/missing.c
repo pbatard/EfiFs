@@ -124,3 +124,33 @@ CompareDevicePaths(CONST EFI_DEVICE_PATH* dp1, CONST EFI_DEVICE_PATH* dp2)
 
 	return 0;
 }
+
+CHAR16*
+StrDup(CONST CHAR16* Src)
+{
+	UINTN Size = StrSize(Src);
+	CHAR16* Dest = AllocatePool(Size);
+	if (Dest != NULL)
+		CopyMem (Dest, Src, Size);
+	return Dest;
+}
+
+/* Convert a Device Path to a string. Must be freed with FreePool(). */
+CHAR16 *
+ToDevicePathString(CONST EFI_DEVICE_PATH* DevicePath)
+{
+	CHAR16* DevicePathString = NULL;
+	EFI_STATUS Status;
+	EFI_DEVICE_PATH_TO_TEXT_PROTOCOL* DevicePathToText;
+
+	Status = BS->LocateProtocol(&gEfiDevicePathToTextProtocolGuid, NULL, (VOID**)&DevicePathToText);
+	if (Status == EFI_SUCCESS)
+		DevicePathString = DevicePathToText->ConvertDevicePathToText(DevicePath, FALSE, FALSE);
+	else
+#if defined(_GNU_EFI)
+		DevicePathString = DevicePathToStr((EFI_DEVICE_PATH *)DevicePath);
+#else
+		DevicePathString = StrDup(L"N/A (This platform is missing the DevicePathToText Protocol)");
+#endif
+	return DevicePathString;
+}

@@ -240,5 +240,7 @@ extern EFI_STATUS EFIAPI FileOpenVolume(EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *This,
 extern EFI_GUID *GetFSGuid(VOID);
 extern EFI_STATUS PrintGuid (EFI_GUID *Guid);
 extern INTN CompareDevicePaths(CONST EFI_DEVICE_PATH* dp1, CONST EFI_DEVICE_PATH* dp2);
+extern CHAR16* StrDup(CONST CHAR16* Src);
+extern CHAR16* ToDevicePathString(CONST EFI_DEVICE_PATH* DevicePath);
 extern EFI_STATUS EFIAPI FSDriverInstall(EFI_HANDLE ImageHandle,
 		EFI_SYSTEM_TABLE* SystemTable);

@@ -725,12 +725,15 @@ EFI_STATUS
 FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 {
 	EFI_STATUS Status;
+	CHAR16* DevicePathString;
 
 	/* Check if it's a filesystem we can handle */
 	if (!GrubFSProbe(This))
 		return EFI_UNSUPPORTED;
 
-	PrintInfo(L"FSInstall: %D\n", This->DevicePath);
+	DevicePathString = ToDevicePathString(This->DevicePath);
+	PrintInfo(L"FSInstall: %s\n", DevicePathString);
+	FreePool(DevicePathString);
 
 	/* Initialize the root handle */
 	Status = GrubCreateFile(&This->RootFile, This);
@@ -777,7 +780,9 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 VOID
 FSUninstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 {
-	PrintInfo(L"FSUninstall: %D\n", This->DevicePath);
+	CHAR16* DevicePathString = ToDevicePathString(This->DevicePath);
+	PrintInfo(L"FSUninstall: %s\n", DevicePathString);
+	FreePool(DevicePathString);
 
 	BS->UninstallMultipleProtocolInterfaces(ControllerHandle,
 			&gEfiSimpleFileSystemProtocolGuid, &This->FileIoInterface,
