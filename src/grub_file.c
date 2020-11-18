@@ -141,9 +141,9 @@ grub_disk_read(grub_disk_t disk, grub_disk_addr_t sector,
 	EFI_FS* FileSystem = (EFI_FS *) disk->data;
 	EFI_BLOCK_IO_MEDIA *Media;
 
-	ASSERT(FileSystem != NULL);
-	ASSERT(FileSystem->DiskIo != NULL);
-	ASSERT(FileSystem->BlockIo != NULL);
+	FS_ASSERT(FileSystem != NULL);
+	FS_ASSERT(FileSystem->DiskIo != NULL);
+	FS_ASSERT(FileSystem->BlockIo != NULL);
 
 	if (FileSystem->BlockIo2 != NULL) {
 		Media = FileSystem->BlockIo2->Media;
@@ -175,8 +175,8 @@ grub_disk_get_size (grub_disk_t disk)
 {
 	EFI_FS* FileSystem = (EFI_FS *) disk->data;
 
-	ASSERT(FileSystem != NULL);
-	ASSERT(FileSystem->BlockIo != NULL);
+	FS_ASSERT(FileSystem != NULL);
+	FS_ASSERT(FileSystem->BlockIo != NULL);
 
 	if (FileSystem->BlockIo2 != NULL) {
 		return (FileSystem->BlockIo2->Media->LastBlock + 1) *
@@ -216,7 +216,7 @@ grub_device_open(const char *name)
 	EFI_FS *FileSystem;
 	struct grub_device* device;
 
-	ASSERT(DevicePath != NULL);
+	FS_ASSERT(DevicePath != NULL);
 
 	for (FileSystem = (EFI_FS *) FORWARD_LINK_REF(FsListHead); FileSystem != (EFI_FS *) &FsListHead;
 			FileSystem = (EFI_FS *) FileSystem->Flink) {
@@ -247,7 +247,7 @@ grub_device_open(const char *name)
 grub_err_t
 grub_device_close(grub_device_t device)
 {
-	ASSERT(device != NULL);
+	FS_ASSERT(device != NULL);
 
 	grub_free(device->disk);
 	grub_free(device);
@@ -257,7 +257,7 @@ grub_device_close(grub_device_t device)
 EFI_STATUS
 GrubDeviceInit(EFI_FS *FileSystem)
 {
-	ASSERT(FileSystem->DevicePath != NULL);
+	FS_ASSERT(FileSystem->DevicePath != NULL);
 
 	/* Insert this filesystem in our list */
 	InsertTailList(&FsListHead, (LIST_ENTRY *) FileSystem);
@@ -298,7 +298,7 @@ GrubCreateFile(EFI_GRUB_FILE **File, EFI_FS *FileSystem)
 
 	/* Initialize the attributes */
 	NewFile->FileSystem = FileSystem;
-	ASSERT(FileSystem->RootFile != NULL)
+	FS_ASSERT(FileSystem->RootFile != NULL);
 	CopyMem(&NewFile->EfiFile, &FileSystem->RootFile->EfiFile, sizeof(EFI_FILE));
 
 	f = (grub_file_t) NewFile->GrubFile;

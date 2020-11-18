@@ -136,6 +136,8 @@ extern Print_t PrintInfo;
 extern Print_t PrintDebug;
 extern Print_t PrintExtra;
 
+#define FS_ASSERT(a)  if(!(a)) do { Print(L"*** ASSERT FAILED: %a(%d): %a ***\n", __FILE__, __LINE__, #a); while(1); } while(0)
+
 /**
  * Print an error message along with a human readable EFI status code
  *

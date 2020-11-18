@@ -81,7 +81,7 @@ static BOOLEAN
 ConvertUcs4Utf8(BOOLEAN toUnicode, UINT8 *inBuf, UINTN inBufLen,
 		UINT8 *outBuf, UINTN maxOutBufLen, UINTN *outBufLen)
 {
-	ASSERT((UINTN *)NULL != outBufLen);
+	FS_ASSERT((UINTN *)NULL != outBufLen);
 
 	if( toUnicode ) {
 		UINTN i, len = 0;
@@ -206,7 +206,7 @@ ConvertUcs4Utf8(BOOLEAN toUnicode, UINT8 *inBuf, UINTN inBufLen,
 		return TRUE;
 	} else {
 		UINTN i, len = 0;
-		ASSERT((inBufLen % 4) == 0);
+		FS_ASSERT((inBufLen % 4) == 0);
 		if ((inBufLen % 4) != 0) {
 			*outBufLen = 0;
 			return FALSE;
@@ -326,7 +326,7 @@ static BOOLEAN
 ConvertUcs2Utf8(BOOLEAN toUnicode, UINT8 *inBuf, UINTN inBufLen,
 		UINT8 *outBuf, UINTN maxOutBufLen, UINTN *outBufLen)
 {
-	ASSERT((UINTN *)NULL != outBufLen);
+	FS_ASSERT((UINTN *)NULL != outBufLen);
 
 	if( toUnicode ) {
 		UINTN i, len = 0;
@@ -416,7 +416,7 @@ ConvertUcs2Utf8(BOOLEAN toUnicode, UINT8 *inBuf, UINTN inBufLen,
 				abcde = ((inBuf[i+0] & 0x07) << 2) | ((inBuf[i+1] & 0x30) >> 4);
 				BCDE = abcde - 1;
 
-				ASSERT(BCDE < 0x10); /* should have been caught above */
+				FS_ASSERT(BCDE < 0x10); /* should have been caught above */
 
 				outBuf[len+0+H_0] = 0xD8 | ((BCDE & 0x0C) >> 2);
 				outBuf[len+0+H_1] = ((BCDE & 0x03) << 6)
@@ -435,7 +435,7 @@ ConvertUcs2Utf8(BOOLEAN toUnicode, UINT8 *inBuf, UINTN inBufLen,
 		return TRUE;
 	} else {
 		UINTN i, len = 0;
-		ASSERT((inBufLen % 2) == 0);
+		FS_ASSERT((inBufLen % 2) == 0);
 		if ((inBufLen % 2) != 0) {
 			*outBufLen = 0;
 			return FALSE;
@@ -485,7 +485,7 @@ ConvertUcs2Utf8(BOOLEAN toUnicode, UINT8 *inBuf, UINTN inBufLen,
 			} else if( (inBuf[i+H_0] & 0xDC) == 0xD8 ) {
 				int abcde, BCDE;
 
-				ASSERT(((inBuf[i+2+H_0] & 0xDC) == 0xDC) && ((inBufLen - i) > 2));
+				FS_ASSERT(((inBuf[i+2+H_0] & 0xDC) == 0xDC) && ((inBufLen - i) > 2));
 
 				/* D800-DBFF DC00-DFFF -> 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx */
 				/* 110110BC DEfghijk 110111lm nopqrstu ->
@@ -543,7 +543,7 @@ ConvertIso88591ToUtf8(const UINT8 *inBuf, UINTN inBufLen,
 {
 	UINTN i, len = 0;
 
-	ASSERT((UINTN *)NULL != outBufLen);
+	FS_ASSERT((UINTN *)NULL != outBufLen);
 
 	for( i = 0; i < inBufLen; i++) {
 		if( (inBuf[i] & 0x80) == 0x00 ) len += 1;
