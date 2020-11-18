@@ -74,8 +74,6 @@ static VOID
 FreeFsInstance(EFI_FS *Instance) {
 	if (Instance == NULL)
 		return;
-	if (Instance->DevicePath != NULL)
-		FreePool(Instance->DevicePath);
 	if (Instance->RootFile != NULL)
 		FreePool(Instance->RootFile);
 	FreePool(Instance);
