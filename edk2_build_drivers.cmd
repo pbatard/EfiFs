@@ -5,6 +5,7 @@ setlocal enabledelayedexpansion
 set EDK2_PATH=D:\edk2
 set EFIFS_PATH=%~dp0
 set NASM_PREFIX=%EDK2_PATH%\BaseTools\Bin\Win32\
+set BUILD=RELEASE
 
 rem cd /d "%~dp0"
 
@@ -47,7 +48,7 @@ if exist "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxil
   call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsamd64_arm.bat"
   call edksetup.bat reconfig
   call EfiFsPkg\set_grub_cpu.cmd ARM
-  call build -a ARM -b RELEASE -t VS2019 -p EfiFsPkg/EfiFsPkg.dsc
+  call build -a ARM -b %BUILD% -t VS2019 -p EfiFsPkg/EfiFsPkg.dsc
 )
 endlocal
 if not "%1"=="" goto out
@@ -58,7 +59,7 @@ if exist "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxil
   call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsamd64_arm64.bat"
   call edksetup.bat reconfig
   call EfiFsPkg\set_grub_cpu.cmd AARCH64
-  call build -a AARCH64 -b RELEASE -t VS2019 -p EfiFsPkg/EfiFsPkg.dsc
+  call build -a AARCH64 -b %BUILD% -t VS2019 -p EfiFsPkg/EfiFsPkg.dsc
 )
 endlocal
 if not "%1"=="" goto out
@@ -69,7 +70,7 @@ if exist "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxil
   call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat"
   call edksetup.bat reconfig
   call EfiFsPkg\set_grub_cpu.cmd IA32
-  call build -a IA32 -b RELEASE -t VS2019 -p EfiFsPkg/EfiFsPkg.dsc
+  call build -a IA32 -b %BUILD% -t VS2019 -p EfiFsPkg/EfiFsPkg.dsc
 )
 endlocal
 if not "%1"=="" goto out
@@ -80,7 +81,7 @@ if exist "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxil
   call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
   call edksetup.bat reconfig
   call EfiFsPkg\set_grub_cpu.cmd X64
-  call build -a X64 -b RELEASE -t VS2019 -p EfiFsPkg/EfiFsPkg.dsc
+  call build -a X64 -b %BUILD% -t VS2019 -p EfiFsPkg/EfiFsPkg.dsc
 )
 endlocal
 

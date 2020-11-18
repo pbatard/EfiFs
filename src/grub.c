@@ -114,6 +114,12 @@ grub_zalloc(grub_size_t size)
 	return (void *) ptr;
 }
 
+void*
+grub_calloc(grub_size_t nb_items, grub_size_t size)
+{
+	return grub_zalloc(nb_items * size);
+}
+
 void
 grub_free(void *p)
 {
