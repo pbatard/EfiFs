@@ -80,10 +80,9 @@ FreeFsInstance(EFI_FS *Instance) {
 }
 
 /*
- * http://sourceforge.net/p/tianocore/edk2-MdeModulePkg/ci/master/tree/Universal/Disk/DiskIoDxe/DiskIo.c
- * To check if your driver has a chance to apply to the controllers sent during
- * the supported detection phase, try to open the child protocols they are meant
- * to consume in exclusive access (here EFI_DISK_IO).
+ * To check if our driver has a chance to apply to the controllers sent during
+ * the supported detection phase, try to open the child protocols it is meant
+ * to consume (here EFI_DISK_IO) in exclusive access.
  */
 static EFI_STATUS EFIAPI
 FSBindingSupported(EFI_DRIVER_BINDING_PROTOCOL *This,
@@ -110,7 +109,8 @@ FSBindingSupported(EFI_DRIVER_BINDING_PROTOCOL *This,
 
 	PrintDebug(L"FSBindingSupported\n");
 
-	/* The whole concept of BindingSupported is to hint at what we may
+	/*
+	 * The whole concept of BindingSupported is to hint at what we may
 	 * actually support, but not check if the target is valid or
 	 * initialize anything, so we must close all protocols we opened.
 	 */
@@ -167,10 +167,10 @@ FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 	Status = BS->OpenProtocol(ControllerHandle,
 			&gEfiBlockIoProtocolGuid, (VOID **) &Instance->BlockIo,
 			This->DriverBindingHandle, ControllerHandle,
-			/* http://wiki.phoenix.com/wiki/index.php/EFI_BOOT_SERVICES#OpenProtocol.28.29
-			 * EFI_OPEN_PROTOCOL_BY_DRIVER returns Access Denied here, most likely
-			 * because the disk driver has that protocol already open. So we use
-			 * EFI_OPEN_PROTOCOL_GET_PROTOCOL (which doesn't require us to close it)
+			/*
+			 * EFI_OPEN_PROTOCOL_BY_DRIVER would return Access Denied here,
+			 * because the disk driver has that protocol already open. So use
+			 * EFI_OPEN_PROTOCOL_GET_PROTOCOL (which doesn't require us to close it).
 			 */
 			EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 	if (EFI_ERROR(Status)) {
@@ -203,20 +203,23 @@ FSBindingStart(EFI_DRIVER_BINDING_PROTOCOL *This,
 	}
 
 	Status = FSInstall(Instance, ControllerHandle);
-	/* Unless we close the DiskIO protocol in case of error, no other
-	 * FS driver will be able to access this partition.
-	 */
-	if (EFI_ERROR(Status)) {
+	if (EFI_ERROR(Status))
 		GrubDeviceExit(Instance);
-		BS->CloseProtocol(ControllerHandle, &gEfiDiskIo2ProtocolGuid,
-			This->DriverBindingHandle, ControllerHandle);
-		BS->CloseProtocol(ControllerHandle, &gEfiDiskIoProtocolGuid,
-			This->DriverBindingHandle, ControllerHandle);
-	}
 
 error:
-	if (EFI_ERROR(Status))
+	if (EFI_ERROR(Status)) {
+		/*
+		 * Unless we close the DiskIO protocols, which we do on error,
+		 * no other FS driver would be able to access this partition.
+		 */
+		if (Instance->DiskIo2 != NULL)
+			BS->CloseProtocol(ControllerHandle, &gEfiDiskIo2ProtocolGuid,
+				This->DriverBindingHandle, ControllerHandle);
+		if (Instance->DiskIo != NULL)
+			BS->CloseProtocol(ControllerHandle, &gEfiDiskIoProtocolGuid,
+				This->DriverBindingHandle, ControllerHandle);
 		FreeFsInstance(Instance);
+	}
 	return Status;
 }
 
