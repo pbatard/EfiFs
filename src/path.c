@@ -1,11 +1,16 @@
 /* path.c - Path handling routines */
 /*
- *  Copyright © 2014 Pete Batard <pete@akeo.ie>
+ *  Copyright © 2014-2021 Pete Batard <pete@akeo.ie>
  *  Based on path sanitation code by Ludwig Nussel <ludwig.nussel@suse.de>
+ *
+ *  Note: This file has been relicensed from GPLv3+ to GPLv2+ by formal
+ *  agreement of all of the contributors who applied changes on top of
+ *  its original Public Domain source. The original source can be found at:
+ *  https://github.com/saygili/pisilinux/blob/65c6b72d90aa282d8a3e79be209fa364c7180ffc/extra/util/archive/unarj/files/unarj-2.65-sanitation.patch#L4-L86
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
+ *  the Free Software Foundation, either version 2 of the License, or
  *  (at your option) any later version.
  *
  *  This program is distributed in the hope that it will be useful,
@@ -38,8 +43,8 @@ VOID CopyPathRelative(CHAR8 *dest, CHAR8 *src, INTN len)
 	for(; len && *p;)
 	{
 		src = p;
-		p = strchra(src, PATH_CHAR);
-		if(!p) p = src+strlena(src);
+		while (*p && *p != PATH_CHAR) p++;
+		if (!*p) p = src+strlena(src);
 
 		/* . => skip */
 		if(p-src == 1 && *src == '.' )
@@ -51,21 +56,12 @@ VOID CopyPathRelative(CHAR8 *dest, CHAR8 *src, INTN len)
 		{
 			if(o != dest)
 			{
-				CHAR8* tmp;
+				UINTN i;
 				*o = '\0';
-				tmp = strrchra(dest, PATH_CHAR);
-				if(!tmp)
-				{
-					len += o-dest;
-					o = dest;
-					if(*p) ++p;
-				}
-				else
-				{
-					len += o-tmp;
-					o = tmp;
-					if(*p) ++p;
-				}
+				for(i = strlena(dest)-1; i > 0 && dest[i] != PATH_CHAR; i--);
+				len += o-&dest[i];
+				o = &dest[i];
+				if(*p) ++p;
 			}
 			else /* nothing to pop */
 				if(*p) ++p;

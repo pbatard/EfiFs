@@ -4,9 +4,14 @@
  *  Based on Netscape security libraries:
  *  Copyright © 1994-2000 Netscape Communications Corporation.
  *
+ *  Note: This file has been relicensed from GPLv3+ to GPLv2+ by formal
+ *  agreement of all of the contributors who applied changes on top of
+ *  its original GPLv2+ source. The original source can be found at:
+ *  https://github.com/mozilla/gecko-dev/blob/9fd7059a19baa49b01a534eddf9a5a4de918a9f9/security/nss/lib/util/utf8.c
+ *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
+ *  the Free Software Foundation, either version 2 of the License, or
  *  (at your option) any later version.
  *
  *  This program is distributed in the hope that it will be useful,

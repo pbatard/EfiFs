@@ -54,17 +54,11 @@ For additional info as well as precompiled drivers, see https://efi.akeo.ie
   ```
   build -a X64 -b RELEASE -t <toolchain> -p EfiFsPkg/EfiFsPkg.dsc
   ```  
-  where `<toolchain>` is something like `VS2015` (Windows) or `GCC5` (Linux).  
+  where `<toolchain>` is something like `VS2019` (Windows) or `GCC5` (Linux).  
   NB: To build an individual driver, such as NTFS, you can also use something
   like:  
   ```
   build -a X64 -b RELEASE -t <toolchain> -p EfiFsPkg/EfiFsPkg.dsc -m EfiFsPkg/EfiFsPkg/Ntfs.inf
-  ```
-* Note that, provided that you cloned a recent EDK2 from git, you should be able
-  to use `VS2019` as your EDK2 toolchain, including for buidling the ARM or
-  ARM64 drivers, with something like:
-  ```
-  build -a AARCH64 -b RELEASE -t VS2019 -p EfiFsPkg/EfiFsPkg.dsc
   ```
 * A Windows script to build the drivers, using EDK2 with VS2019 is also provided
   as `edk2_build_drivers.cmd`.
@@ -101,6 +95,11 @@ appear in the default _Workloads_ screen:
 This is a pure GPLv3+ implementation of EFI drivers. Great care was taken not to
 use any code from non GPLv3 compatible sources, such as rEFInd's `fsw_efi`
 (GPLv2 only) or Intel's FAT driver (requires an extra copyright notice).
+
+Note however that some files (the non `grub_####` sources under `./src/`) are
+licensed under GPLv2+ rather than GPLv3+ and that, just like the GPLv3+ sources,
+we took great care of ensuring that we are fully compliant with any licensing
+or relicensing matters, so that they can legally be reused into GPLv2+ works.
 
 ## Bonus: Commands to compile EfiFs using EDK2 on a vanilla Debian GNU/Linux 10.x
 

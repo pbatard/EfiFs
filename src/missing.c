@@ -1,12 +1,16 @@
 /* missing.c - Missing convenience calls from the EFI interface */
 /*
- *  Copyright © 2014-2017 Pete Batard <pete@akeo.ie>
- *  Based on GRUB  --  GRand Unified Bootloader
- *  Copyright © 1999-2010 Free Software Foundation, Inc.
+ *  Copyright © 2014-2021 Pete Batard <pete@akeo.ie>
  *
+ *  NB: This file was relicensed from GPLv3+ to GPLv2+ by its author.
+ *  Per https://github.com/pbatard/efifs/commit/6472929565970fc88fbad479c5973898c3275235#diff-e4e188b933de262cfdf4c2be771da37b2ec89ba97d353a16352c6eebb41a286f
+ *  you can confirm that we did remove the initial 3 function calls
+ *  that were derived from GPLv3+ work, thus granting us the ability
+ *  to relicense this file.
+ * 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
+ *  the Free Software Foundation, either version 2 of the License, or
  *  (at your option) any later version.
  *
  *  This program is distributed in the hope that it will be useful,
@@ -24,39 +28,6 @@
 #if !defined(__MAKEWITH_GNUEFI) && defined(_M_IX86)
 #pragma comment(linker, "/INCLUDE:_MultS64x64")
 #endif
-
-VOID
-strcpya(CHAR8 *dst, CONST CHAR8 *src)
-{
-	INTN len = strlena(src) + 1;
-	CopyMem(dst, src, len);
-}
-
-CHAR8 *
-strchra(const CHAR8 *s, INTN c)
-{
-	do {
-		if (*s == c)
-			return (CHAR8 *) s;
-	}
-	while (*s++);
-
-	return NULL;
-}
-
-CHAR8 *
-strrchra(const CHAR8 *s, INTN c)
-{
-	CHAR8 *p = NULL;
-
-	do {
-		if (*s == c)
-			p = (CHAR8 *) s;
-	}
-	while (*s++);
-
-	return p;
-}
 
 EFI_STATUS
 PrintGuid(EFI_GUID *Guid)

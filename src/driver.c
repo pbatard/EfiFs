@@ -4,9 +4,14 @@
  *  Based on iPXE's efi_driver.c and efi_file.c:
  *  Copyright © 2011,2013 Michael Brown <mbrown@fensystems.co.uk>.
  *
+ *  Note: This file has been relicensed from GPLv3+ to GPLv2+ by formal
+ *  agreement of all of the contributors who applied changes on top of
+ *  its original GPLv2+ source. The original source can be found at:
+ *  https://github.com/ipxe/ipxe/blob/26029658063dcafcca746640a28a76d4f7f4a66e/src/interface/efi/efi_driver.c
+ *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
+ *  the Free Software Foundation, either version 2 of the License, or
  *  (at your option) any later version.
  *
  *  This program is distributed in the hope that it will be useful,
