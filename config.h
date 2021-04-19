@@ -44,3 +44,7 @@
 // Silence warnings that are triggered by GNU extensions not being available
 #pragma warning(disable: 4716)	// Some of the grub function calls are set not to return a value
 #endif
+
+#if !defined(__CHAR_BIT__)
+#define __CHAR_BIT__ 8
+#endif

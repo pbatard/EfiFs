@@ -119,7 +119,7 @@
 #define _WIDEN(s)               L ## s
 #define WIDEN(s)                _WIDEN(s)
 
-#define MAX_PATH 256
+#define MAX_PATH                1024
 #define MINIMUM_INFO_LENGTH     (sizeof(EFI_FILE_INFO) + MAX_PATH * sizeof(CHAR16))
 #define MINIMUM_FS_INFO_LENGTH  (sizeof(EFI_FILE_SYSTEM_INFO) + MAX_PATH * sizeof(CHAR16))
 #define IS_ROOT(File)           (File == File->FileSystem->RootFile)

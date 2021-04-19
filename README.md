@@ -105,7 +105,7 @@ or relicensing matters, so that they can legally be reused into GPLv2+ works.
 
 As root:
 ```
-apt-get install nasm uuid-dev gcc-multilib gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf
+apt install nasm uuid-dev gcc-multilib gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi libc6-dev-armel-cross
 cd /usr/src
 git clone https://github.com/tianocore/edk2.git
 git clone https://github.com/pbatard/efifs.git
@@ -117,7 +117,7 @@ cd ../../edk2
 git submodule update --init
 ln -s ../efifs EfiFsPkg
 make -C BaseTools
-export GCC5_ARM_PREFIX=arm-linux-gnueabihf-
+export GCC5_ARM_PREFIX=arm-linux-gnueabi-
 export GCC5_AARCH64_PREFIX=aarch64-linux-gnu-
 source edksetup.sh --reconfig
 ./EfiFsPkg/set_grub_cpu.sh X64
