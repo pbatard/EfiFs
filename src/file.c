@@ -452,6 +452,8 @@ FileWriteEx(IN EFI_FILE_PROTOCOL *This, IN OUT EFI_FILE_IO_TOKEN *Token)
 	return FileWrite(This, &(Token->BufferSize), Token->Buffer);
 }
 
+#define SEEK_END_POSITION 0xFFFFFFFFFFFFFFFF
+
 /**
  * Set file position
  *
@@ -480,7 +482,9 @@ FileSetPosition(EFI_FILE_HANDLE This, UINT64 Position)
 	 * we do not support writes).
 	 */
 	FileSize = GrubGetFileSize(File);
-	if (Position > FileSize) {
+	if (Position == SEEK_END_POSITION) {
+		Position = FileSize;
+	} else if (Position > FileSize) {
 		PrintError(L"'%s': Cannot seek to #%llx of %llx\n",
 				FileName(File), Position, FileSize);
 		return EFI_UNSUPPORTED;
