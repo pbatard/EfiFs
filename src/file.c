@@ -480,7 +480,10 @@ FileSetPosition(EFI_FILE_HANDLE This, UINT64 Position)
 	 * we do not support writes).
 	 */
 	FileSize = GrubGetFileSize(File);
-	if (Position > FileSize) {
+	/* Per specs */
+	if (Position == 0xFFFFFFFFFFFFFFFFULL) {
+		Position = FileSize;
+	} else if (Position > FileSize) {
 		PrintError(L"'%s': Cannot seek to #%llx of %llx\n",
 				FileName(File), Position, FileSize);
 		return EFI_UNSUPPORTED;
