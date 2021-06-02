@@ -1,6 +1,6 @@
 [submodule "grub"]
 	path = grub
-	url = git://git.savannah.gnu.org/grub.git
+	url = https://git.savannah.gnu.org/git/grub.git
 	ignore = dirty
 [submodule "gnu-efi"]
 	path = gnu-efi
