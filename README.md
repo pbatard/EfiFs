@@ -33,7 +33,7 @@ For additional info as well as precompiled drivers, see https://efi.akeo.ie
   `make ARCH=<arch> CROSS_COMPILE=<tuple>` where `<arch>` is one of `ia32`,
   `x64`, `arm` or `aa64` (the __official__ UEFI abbreviations for an arch, as
   used in `/efi/boot/boot[ARCH].efi`) and `<tuple>` is the one for your cross-
-  compiler, such as `arm-linux-gnueabihf-`.
+  compiler, such as `arm-linux-gnueabi-` or `aarch64-linux-gnu-`.
   e.g. `make ARCH=aa64 CROSS_COMPILE=aarch64-linux-gnu-`
 
 ### EDK2

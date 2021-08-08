@@ -22,6 +22,8 @@
   RVCT:RELEASE_*_*_CC_FLAGS      = -DMDEPKG_NDEBUG
   *_*_*_CC_FLAGS                 = -DDISABLE_NEW_DEPRECATED_INTERFACES
 
+!include MdePkg/MdeLibs.dsc.inc
+
 [LibraryClasses]
   #
   # Entry Point Libraries

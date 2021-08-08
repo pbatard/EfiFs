@@ -2,7 +2,7 @@ include Make.common
 
 GRUB_LIB        = $(GRUB_DIR)/libgrub.a
 
-CFLAGS         += -DGRUB_FILE=\"$(subst $(srcdir)/,,$<)\" -DLZO_CFG_FREESTANDING 
+CFLAGS         += -DGRUB_FILE=\"$(subst $(srcdir)/,,$<)\" -DLZO_CFG_FREESTANDING
 CFLAGS         += -I$(GRUB_DIR) -I$(GRUB_DIR)/include -I$(GRUB_DIR)/grub-core/lib/minilzo
 OBJS            = $(SRC_DIR)/grub.o $(GRUB_DIR)/grub-core/kern/err.o $(GRUB_DIR)/grub-core/kern/list.o \
                   $(GRUB_DIR)/grub-core/kern/misc.o $(GRUB_DIR)/grub-core/lib/crc.o \

@@ -131,6 +131,12 @@ grub_free(void *p)
 	}
 }
 
+int
+grub_is_lockdown(void)
+{
+	return 0;
+}
+
 void *
 grub_realloc(void *p, grub_size_t new_size)
 {
