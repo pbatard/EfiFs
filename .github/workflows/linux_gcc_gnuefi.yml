@@ -1,0 +1,40 @@
+name: Linux, gcc, gnu-efi
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        arch: [x64, ia32, aa64, arm]
+        include:
+        - arch: x64
+          pkg: gcc-mingw-w64-x86-64
+          tuple: x86_64-w64-mingw32-
+        - arch: ia32
+          pkg: gcc-mingw-w64-i686
+          tuple: i686-w64-mingw32-
+        - arch: aa64
+          pkg: gcc-aarch64-linux-gnu
+          tuple: aarch64-linux-gnu-
+        - arch: arm
+          pkg: gcc-arm-linux-gnueabi
+          tuple: arm-linux-gnueabi-
+
+    steps:
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        submodules: recursive
+    - name: Install gcc toolchain
+      run: sudo apt install ${{ matrix.pkg }}
+    - name: Patch GRUB
+      run: |
+        cd grub
+        git apply ../0001-GRUB-fixes.patch
+        cd ..
+    - name: Build drivers
+      run: make ARCH=${{ matrix.arch }} CROSS_COMPILE=${{ matrix.tuple }}
