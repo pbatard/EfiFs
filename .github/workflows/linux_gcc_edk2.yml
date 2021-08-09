@@ -1,0 +1,49 @@
+name: Linux, gcc, EDK2
+
+on: [push, pull_request]
+
+env:
+  BUILD_TYPE: RELEASE
+  GCC5_ARM_PREFIX: arm-linux-gnueabi-
+  GCC5_AARCH64_PREFIX: aarch64-linux-gnu-
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        arch: [X64, IA32, AARCH64, ARM]
+        include:
+        - arch: X64
+          pkgs: python3-distutils nasm uuid-dev
+        - arch: IA32
+          pkgs: gcc-multilib python3-distutils nasm uuid-dev
+        - arch: AARCH64
+          pkgs: gcc-aarch64-linux-gnu python3-distutils uuid-dev
+        - arch: ARM
+          pkgs: gcc-arm-linux-gnueabi python3-distutils uuid-dev
+
+    steps:
+    - name: Install toolchain
+      run: sudo apt install ${{ matrix.pkgs }}
+    - name: Set up EDK2
+      run: |
+        git clone --recursive https://github.com/tianocore/edk2.git
+        make -C edk2/BaseTools
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        submodules: recursive
+        path: edk2/EfiFsPkg
+    - name: Patch GRUB
+      run: |
+        cd edk2/EfiFsPkg/grub
+        git apply ../0001-GRUB-fixes.patch
+    - name: Build UEFI drivers
+      run: |
+        cd $GITHUB_WORKSPACE/edk2
+        source edksetup.sh
+        ./EfiFsPkg/set_grub_cpu.sh ${{ matrix.arch }}
+        build -a ${{ matrix.arch }} -b RELEASE -t GCC5 -p EfiFsPkg/EfiFsPkg.dsc
