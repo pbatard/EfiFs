@@ -1,0 +1,66 @@
+name: Windows, VS2019, EDK2
+
+on: [push, pull_request]
+
+env:
+  NASM_URL: https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/win64/nasm-2.15.05-win64.zip
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        arch: [X64, IA32, AARCH64, ARM]
+        include:
+        - arch: X64
+          msvc: amd64
+        - arch: IA32
+          msvc: amd64_x86
+        - arch: AARCH64
+          msvc: amd64_arm64
+        - arch: ARM
+          msvc: amd64_arm
+
+    steps:
+    - name: Set up environment variables
+      shell: cmd
+      run: |
+        for /F "tokens=* USEBACKQ" %%f in (`where python.exe`) do (set PYTHON_HOME=%%f)
+        echo PYTHON_HOME=%PYTHON_HOME%>> %GITHUB_ENV%
+        curl -L ${{ env.NASM_URL }} -o nasm.zip
+        7z x nasm.zip
+        del nasm.zip
+        move nasm* nasm
+        echo NASM_PREFIX=%cd%\nasm\>> %GITHUB_ENV%
+    - name: Set Visual Studio for win32 build
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: win32
+    - name: Set up EDK2
+      shell: cmd
+      run: |
+        git clone --recursive https://github.com/tianocore/edk2.git
+        cd edk2
+        call edksetup.bat rebuild
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        submodules: recursive
+        path: edk2/EfiFsPkg
+    - name: Patch GRUB
+      run: |
+        cd edk2\EfiFsPkg\grub
+        git apply ..\0001-GRUB-fixes.patch
+    - name: Set Visual Studio for ${{ matrix.msvc }} build
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: ${{ matrix.msvc }}
+    - name: Build UEFI drivers
+      shell: cmd
+      run: |
+        cd edk2
+        call edksetup.bat reconfig
+        call EfiFsPkg\set_grub_cpu.cmd ${{ matrix.arch }}
+        call build -a ${{ matrix.arch }} -b RELEASE -t VS2019 -p EfiFsPkg/EfiFsPkg.dsc

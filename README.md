@@ -1,6 +1,12 @@
 EfiFs - EFI File System Drivers
 ===============================
 
+[![Build status](https://img.shields.io/github/workflow/status/pbatard/efifs/Windows,%20VS2019,%20gnu-efi.svg?style=flat-square&label=VS2019%20(gnu-efi))](https://github.com/pbatard/efifs/actions/workflows/windows_vs2019_gnu-efi.yml)
+[![Build status](https://img.shields.io/github/workflow/status/pbatard/efifs/Windows,%20VS2019,%20EDK2.svg?style=flat-square&label=VS2019%20(EDK2))](https://github.com/pbatard/efifs/actions/workflows/windows_vs2019_edk2.yml)
+[![Build status](https://img.shields.io/github/workflow/status/pbatard/efifs/Linux,%20gcc,%20gnu-efi.svg?style=flat-square&label=gcc%20(gnu-efi))](https://github.com/pbatard/efifs/actions/workflows/linux_gcc_gnu-efi.yml)
+[![Build status](https://img.shields.io/github/workflow/status/pbatard/efifs/Linux,%20gcc,%20EDK2.svg?style=flat-square&label=gcc%20(EDK2))](https://github.com/pbatard/efifs/actions/workflows/linux_gcc_edk2.yml)
+[![Licence](https://img.shields.io/badge/license-GPLv3-blue.svg?style=flat-square)](https://www.gnu.org/licenses/gpl-3.0.en.html)
+
 This is a GPLv3+ implementation of standalone EFI File System drivers, based on
 the [GRUB 2.0](http://www.gnu.org/software/grub/) __read-only__ drivers.
 

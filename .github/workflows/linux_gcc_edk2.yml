@@ -3,7 +3,6 @@ name: Linux, gcc, EDK2
 on: [push, pull_request]
 
 env:
-  BUILD_TYPE: RELEASE
   GCC5_ARM_PREFIX: arm-linux-gnueabi-
   GCC5_AARCH64_PREFIX: aarch64-linux-gnu-
 
