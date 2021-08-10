@@ -1,8 +1,32 @@
 name: Linux, gcc, EDK2
 
-on: [push, pull_request]
+on: 
+  push:
+    paths-ignore:
+      - '.gitignore'
+      - '.gitattributes'
+      - '**.cmd'
+      - '!set_grub_cpu.cmd'
+      - '**.md'
+      - '**.sh'
+      - '!set_grub_cpu.sh'
+      - '**.txt'
+      - '**.vbs'
+  pull_request:
+    paths-ignore:
+      - '.gitignore'
+      - '.gitattributes'
+      - '**.cmd'
+      - '!set_grub_cpu.cmd'
+      - '**.md'
+      - '**.sh'
+      - '!set_grub_cpu.sh'
+      - '**.txt'
+      - '**.vbs'
 
 env:
+  BUILD_TYPE: RELEASE
+  COMPILER: GCC5
   GCC5_ARM_PREFIX: arm-linux-gnueabi-
   GCC5_AARCH64_PREFIX: aarch64-linux-gnu-
 
@@ -15,12 +39,16 @@ jobs:
         arch: [X64, IA32, AARCH64, ARM]
         include:
         - arch: X64
+          short: x64
           pkgs: python3-distutils nasm uuid-dev
         - arch: IA32
+          short: ia32
           pkgs: gcc-multilib python3-distutils nasm uuid-dev
         - arch: AARCH64
+          short: aa64
           pkgs: gcc-aarch64-linux-gnu python3-distutils uuid-dev
         - arch: ARM
+          short: arm
           pkgs: gcc-arm-linux-gnueabi python3-distutils uuid-dev
 
     steps:
@@ -42,7 +70,14 @@ jobs:
         git apply ../0001-GRUB-fixes.patch
     - name: Build UEFI drivers
       run: |
-        cd $GITHUB_WORKSPACE/edk2
+        cd edk2
         source edksetup.sh
         ./EfiFsPkg/set_grub_cpu.sh ${{ matrix.arch }}
-        build -a ${{ matrix.arch }} -b RELEASE -t GCC5 -p EfiFsPkg/EfiFsPkg.dsc
+        build -a ${{ matrix.arch }} -b ${{ env.BUILD_TYPE }} -t ${{ env.COMPILER }} -p EfiFsPkg/EfiFsPkg.dsc
+        for f in Build/EfiFs/${{ env.BUILD_TYPE }}_${{ env.COMPILER }}/${{ matrix.arch }}/*.efi; do mv "$f" "${f%.efi}_${{ matrix.short }}.efi"; done
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      if: ${{ github.event_name == 'push' }}
+      with:
+        name: gcc_edk2
+        path: edk2/Build/EfiFs/${{ env.BUILD_TYPE }}_${{ env.COMPILER }}/${{ matrix.arch }}/*.efi

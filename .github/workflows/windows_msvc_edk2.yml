@@ -1,8 +1,32 @@
-name: Windows, VS2019, EDK2
+name: Windows, MSVC, EDK2
 
-on: [push, pull_request]
+on: 
+  push:
+    paths-ignore:
+      - '.gitignore'
+      - '.gitattributes'
+      - '**.cmd'
+      - '!set_grub_cpu.cmd'
+      - '**.md'
+      - '**.sh'
+      - '!set_grub_cpu.sh'
+      - '**.txt'
+      - '**.vbs'
+  pull_request:
+    paths-ignore:
+      - '.gitignore'
+      - '.gitattributes'
+      - '**.cmd'
+      - '!set_grub_cpu.cmd'
+      - '**.md'
+      - '**.sh'
+      - '!set_grub_cpu.sh'
+      - '**.txt'
+      - '**.vbs'
 
 env:
+  BUILD_TYPE: RELEASE
+  COMPILER: VS2019
   NASM_URL: https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/win64/nasm-2.15.05-win64.zip
 
 jobs:
@@ -14,12 +38,16 @@ jobs:
         arch: [X64, IA32, AARCH64, ARM]
         include:
         - arch: X64
+          short: x64
           msvc: amd64
         - arch: IA32
+          short: ia32
           msvc: amd64_x86
         - arch: AARCH64
+          short: aa64
           msvc: amd64_arm64
         - arch: ARM
+          short: arm
           msvc: amd64_arm
 
     steps:
@@ -63,4 +91,11 @@ jobs:
         cd edk2
         call edksetup.bat reconfig
         call EfiFsPkg\set_grub_cpu.cmd ${{ matrix.arch }}
-        call build -a ${{ matrix.arch }} -b RELEASE -t VS2019 -p EfiFsPkg/EfiFsPkg.dsc
+        call build -a ${{ matrix.arch }} -b ${{ env.BUILD_TYPE }} -t ${{ env.COMPILER }} -p EfiFsPkg/EfiFsPkg.dsc
+        for %%f in (Build\EfiFs\${{ env.BUILD_TYPE }}_${{ env.COMPILER }}\${{ matrix.arch }}\*.efi) do ren "%%~f" "%%~nf_${{ matrix.short }}%%~xf"
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      if: ${{ github.event_name == 'push' }}
+      with:
+        name: msvc_edk2
+        path: edk2/Build/EfiFs/${{ env.BUILD_TYPE }}_${{ env.COMPILER }}/${{ matrix.arch }}/*.efi

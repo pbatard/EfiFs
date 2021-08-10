@@ -1,8 +1,8 @@
 EfiFs - EFI File System Drivers
 ===============================
 
-[![Build status](https://img.shields.io/github/workflow/status/pbatard/efifs/Windows,%20VS2019,%20gnu-efi.svg?style=flat-square&label=VS2019%20(gnu-efi))](https://github.com/pbatard/efifs/actions/workflows/windows_vs2019_gnu-efi.yml)
-[![Build status](https://img.shields.io/github/workflow/status/pbatard/efifs/Windows,%20VS2019,%20EDK2.svg?style=flat-square&label=VS2019%20(EDK2))](https://github.com/pbatard/efifs/actions/workflows/windows_vs2019_edk2.yml)
+[![Build status](https://img.shields.io/github/workflow/status/pbatard/efifs/Windows,%20MSVC,%20gnu-efi.svg?style=flat-square&label=MSVC%20(gnu-efi))](https://github.com/pbatard/efifs/actions/workflows/windows_msvc_gnu-efi.yml)
+[![Build status](https://img.shields.io/github/workflow/status/pbatard/efifs/Windows,%20MSVC,%20EDK2.svg?style=flat-square&label=MSVC%20(EDK2))](https://github.com/pbatard/efifs/actions/workflows/windows_msvc_edk2.yml)
 [![Build status](https://img.shields.io/github/workflow/status/pbatard/efifs/Linux,%20gcc,%20gnu-efi.svg?style=flat-square&label=gcc%20(gnu-efi))](https://github.com/pbatard/efifs/actions/workflows/linux_gcc_gnu-efi.yml)
 [![Build status](https://img.shields.io/github/workflow/status/pbatard/efifs/Linux,%20gcc,%20EDK2.svg?style=flat-square&label=gcc%20(EDK2))](https://github.com/pbatard/efifs/actions/workflows/linux_gcc_edk2.yml)
 [![Licence](https://img.shields.io/badge/license-GPLv3-blue.svg?style=flat-square)](https://www.gnu.org/licenses/gpl-3.0.en.html)
@@ -109,20 +109,15 @@ or relicensing matters, so that they can legally be reused into GPLv2+ works.
 
 ## Bonus: Commands to compile EfiFs using EDK2 on a vanilla Debian GNU/Linux 10.x
 
-As root:
 ```
-apt install nasm uuid-dev gcc-multilib gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi libc6-dev-armel-cross
-cd /usr/src
-git clone https://github.com/tianocore/edk2.git
-git clone https://github.com/pbatard/efifs.git
-cd efifs
-git submodule update --init
-cd grub
-patch -Np1 -i ../0001-GRUB-fixes.patch
-cd ../../edk2
-git submodule update --init
-ln -s ../efifs EfiFsPkg
+sudo apt install nasm uuid-dev gcc-multilib gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi
+git clone --recurse-submodules https://github.com/tianocore/edk2.git
+cd edk2
 make -C BaseTools
+git clone --recurse-submodules https://github.com/pbatard/efifs.git EfiFsPkg
+cd EfiFsPkg/grub
+git apply ../0001-GRUB-fixes.patch
+cd -
 export GCC5_ARM_PREFIX=arm-linux-gnueabi-
 export GCC5_AARCH64_PREFIX=aarch64-linux-gnu-
 source edksetup.sh --reconfig

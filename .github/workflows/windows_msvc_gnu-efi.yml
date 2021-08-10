@@ -1,4 +1,4 @@
-name: Linux, gcc, gnu-efi
+name: Windows, MSVC, gnu-efi
 
 on: 
   push:
@@ -26,24 +26,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     strategy:
       matrix:
         arch: [x64, ia32, aa64, arm]
-        include:
-        - arch: x64
-          pkg: gcc-mingw-w64-x86-64
-          tuple: x86_64-w64-mingw32-
-        - arch: ia32
-          pkg: gcc-mingw-w64-i686
-          tuple: i686-w64-mingw32-
-        - arch: aa64
-          pkg: gcc-aarch64-linux-gnu
-          tuple: aarch64-linux-gnu-
-        - arch: arm
-          pkg: gcc-arm-linux-gnueabi
-          tuple: arm-linux-gnueabi-
 
     steps:
     - name: Checkout repository and submodules
@@ -51,18 +38,20 @@ jobs:
       with:
         fetch-depth: 0
         submodules: recursive
-    - name: Install gcc toolchain
-      run: sudo apt install ${{ matrix.pkg }}
     - name: Patch GRUB
       run: |
         cd grub
-        git apply ../0001-GRUB-fixes.patch
+        git apply ..\0001-GRUB-fixes.patch
         cd ..
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v1
     - name: Build drivers
-      run: make ARCH=${{ matrix.arch }} CROSS_COMPILE=${{ matrix.tuple }}
+      run: |
+        msbuild efifs.sln /m /p:Configuration=Debug,Platform=${{ matrix.arch }}
+        msbuild efifs.sln /m /p:Configuration=Release,Platform=${{ matrix.arch }}
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       if: ${{ github.event_name == 'push' }}
       with:
-        name: gcc_gnu-efi
-        path: src/*.efi
+        name: msvc_gnu-efi
+        path: ${{ matrix.arch }}/Release/*.efi
