@@ -1,0 +1,754 @@
+From 89259418c06ce62695cafcfbae6cf197c5422aca Mon Sep 17 00:00:00 2001
+From: Ard Biesheuvel <ard.biesheuvel@linaro.org>
+Date: Tue, 20 Sep 2016 17:19:03 +0100
+Subject: [PATCH] MdeModulePkg/EbcDxe: add ARM support
+
+This is a port of the AARCH64 implementation of the EBC runtime to ARM.
+
+Contributed-under: TianoCore Contribution Agreement 1.0
+Signed-off-by: Ard Biesheuvel <ard.biesheuvel@linaro.org>
+---
+ ArmVirtPkg/ArmVirt.dsc.inc                      |   2 +-
+ ArmVirtPkg/ArmVirtQemuFvMain.fdf.inc            |  10 +-
+ ArmVirtPkg/ArmVirtXen.fdf                       |  10 +-
+ MdeModulePkg/Universal/EbcDxe/Arm/EbcLowLevel.S | 155 ++++++++
+ MdeModulePkg/Universal/EbcDxe/Arm/EbcSupport.c  | 467 ++++++++++++++++++++++++
+ MdeModulePkg/Universal/EbcDxe/EbcDxe.inf        |   8 +-
+ 6 files changed, 639 insertions(+), 13 deletions(-)
+ create mode 100644 MdeModulePkg/Universal/EbcDxe/Arm/EbcLowLevel.S
+ create mode 100644 MdeModulePkg/Universal/EbcDxe/Arm/EbcSupport.c
+
+diff --git a/ArmVirtPkg/ArmVirt.dsc.inc b/ArmVirtPkg/ArmVirt.dsc.inc
+index 6c6a52b..8293cae 100644
+--- a/ArmVirtPkg/ArmVirt.dsc.inc
++++ b/ArmVirtPkg/ArmVirt.dsc.inc
+@@ -421,7 +421,7 @@
+       gEfiMdePkgTokenSpaceGuid.PcdUefiLibMaxPrintBufferSize|8000
+   }
+ 
+-[Components.AARCH64]
++[Components]
+   #
+   # ACPI Support
+   #
+diff --git a/ArmVirtPkg/ArmVirtQemuFvMain.fdf.inc b/ArmVirtPkg/ArmVirtQemuFvMain.fdf.inc
+index 2571884..72f710e 100644
+--- a/ArmVirtPkg/ArmVirtQemuFvMain.fdf.inc
++++ b/ArmVirtPkg/ArmVirtQemuFvMain.fdf.inc
+@@ -140,17 +140,17 @@ READ_LOCK_STATUS   = TRUE
+   INF MdeModulePkg/Universal/SmbiosDxe/SmbiosDxe.inf
+   INF OvmfPkg/SmbiosPlatformDxe/SmbiosPlatformDxe.inf
+ 
++  #
++  # EBC support
++  #
++  INF MdeModulePkg/Universal/EbcDxe/EbcDxe.inf
++
+ !if $(ARCH) == AARCH64
+   #
+   # ACPI Support
+   #
+   INF MdeModulePkg/Universal/Acpi/AcpiTableDxe/AcpiTableDxe.inf
+   INF OvmfPkg/AcpiPlatformDxe/QemuFwCfgAcpiPlatformDxe.inf
+-
+-  #
+-  # EBC support
+-  #
+-  INF MdeModulePkg/Universal/EbcDxe/EbcDxe.inf
+ !endif
+ 
+   #
+diff --git a/ArmVirtPkg/ArmVirtXen.fdf b/ArmVirtPkg/ArmVirtXen.fdf
+index c997251..cf24b8f 100644
+--- a/ArmVirtPkg/ArmVirtXen.fdf
++++ b/ArmVirtPkg/ArmVirtXen.fdf
+@@ -181,16 +181,16 @@ READ_LOCK_STATUS   = TRUE
+   INF OvmfPkg/XenPvBlkDxe/XenPvBlkDxe.inf
+ 
+   #
++  # EBC support
++  #
++  INF MdeModulePkg/Universal/EbcDxe/EbcDxe.inf
++
++  #
+   # ACPI support
+   #
+ !if $(ARCH) == AARCH64
+   INF MdeModulePkg/Universal/Acpi/AcpiTableDxe/AcpiTableDxe.inf
+   INF ArmVirtPkg/XenAcpiPlatformDxe/XenAcpiPlatformDxe.inf
+-
+-  #
+-  # EBC support
+-  #
+-  INF MdeModulePkg/Universal/EbcDxe/EbcDxe.inf
+ !endif
+ 
+  #
+diff --git a/MdeModulePkg/Universal/EbcDxe/Arm/EbcLowLevel.S b/MdeModulePkg/Universal/EbcDxe/Arm/EbcLowLevel.S
+new file mode 100644
+index 0000000..f33cdc4
+--- /dev/null
++++ b/MdeModulePkg/Universal/EbcDxe/Arm/EbcLowLevel.S
+@@ -0,0 +1,155 @@
++///** @file
++//
++//  This code provides low level routines that support the Virtual Machine
++//  for option ROMs.
++//
++//  Copyright (c) 2016, Linaro, Ltd. All rights reserved.<BR>
++//  Copyright (c) 2015, The Linux Foundation. All rights reserved.<BR>
++//  Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
++//
++//  This program and the accompanying materials
++//  are licensed and made available under the terms and conditions of the BSD License
++//  which accompanies this distribution.  The full text of the license may be found at
++//  http://opensource.org/licenses/bsd-license.php
++//
++//  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
++//  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
++//
++//**/
++
++.syntax unified
++
++ASM_GLOBAL ASM_PFX(EbcLLCALLEXNative);
++ASM_GLOBAL ASM_PFX(EbcLLEbcInterpret);
++ASM_GLOBAL ASM_PFX(EbcLLExecuteEbcImageEntryPoint);
++ASM_GLOBAL ASM_PFX(CopyMem);
++
++ASM_GLOBAL ASM_PFX(mEbcInstructionBufferTemplate);
++
++//****************************************************************************
++// EbcLLCALLEX
++//
++// This function is called to execute an EBC CALLEX instruction.
++// This instruction requires that we thunk out to external native
++// code. For ARM, we copy the VM stack into the main stack and then pop
++// the first 4 arguments off according to the ARM Procedure Call Standard
++// On return, we restore the stack pointer to its original location.
++//
++//****************************************************************************
++// UINTN EbcLLCALLEXNative(UINTN FuncAddr, UINTN NewStackPointer, VOID *FramePtr)
++    .type   EbcLLCALLEXNative, %function
++ASM_PFX(EbcLLCALLEXNative):
++    mov     ip, r1                  // Preserve r1
++
++    //
++    // If the EBC stack frame is smaller than or equal to 16 bytes, we know there
++    // are no stacked arguments #5 and beyond that we need to copy to the native
++    // stack. In this case, we can perform a tail call which is much more
++    // efficient, since there is no need to touch the native stack at all.
++    //
++    sub     r3, r2, r1              // Length = NewStackPointer - FramePtr
++    cmp     r3, #16
++    bgt     4f
++
++    // Be weary of trying to optimize the branching below...
++    cmp     r3, #0
++    beq     0f
++    cmp     r3, #4
++    beq     1f
++    cmp     r3, #8
++    beq     2f
++    cmp     r3, #12
++    beq     3f
++    ldr     r3, [ip, #12]
++3:  ldr     r2, [ip, #8]
++2:  ldr     r1, [ip, #4]
++1:  ldr     ip, [ip]
++
++0:  eor     r0, r0, ip              // Swap r0 and ip
++    eor     ip, r0, ip
++    eor     r0, r0, ip
++
++    bx      ip
++
++    //
++    // More than 16 bytes: we need to build the full native stack frame and copy
++    // the part of the VM stack exceeding 16 bytes (which may contain stacked
++    // arguments) to the native stack
++    //
++4:  stmdb   sp!, {r4-r6, lr}
++    mov     r4, sp                  // Preserve the orginal stack address
++    mov     r5, r0
++    mov     r6, ip
++
++    sub     r2, r3, #16             // Size without reg params
++    sub     sp, sp, r2              // Allocate required space on the native stack
++    and     sp, sp, #0xfffffff8     // Ensure that the stack pointer remains 8 byte aligned
++    mov     r0, sp
++    add     r1, r1, #16
++    bl      ASM_PFX(CopyMem)
++    mov     ip, r6
++    ldrd    r0, r1, [ip]
++    ldrd    r2, r3, [ip, #8]
++
++    blx     r5
++
++    mov     sp, r4
++    ldmia   sp!, {r4-r6, pc}
++
++//****************************************************************************
++// EbcLLEbcInterpret
++//
++// This function is called by the thunk code to handle an Native to EBC call
++// This can handle up to 16 arguments (1-4 on in r0-r3, 5-16 are on the stack)
++// ip contains the Entry point that will be the first argument when
++// EBCInterpret is called.
++//
++//****************************************************************************
++    .type   EbcLLEbcInterpret, %function
++ASM_PFX(EbcLLEbcInterpret):
++    stmdb   sp!, {r4, lr}
++
++    // push the entry point and the address of args #5 - #16 onto the stack
++    add     r4, sp, #8
++    str     ip, [sp, #-8]!
++    str     r4, [sp, #4]
++
++    // call C-code
++    bl      ASM_PFX(EbcInterpret)
++
++    add     sp, sp, #8
++    ldmia   sp!, {r4, pc}
++
++//****************************************************************************
++// EbcLLExecuteEbcImageEntryPoint
++//
++// This function is called by the thunk code to handle the image entry point
++// ip contains the Entry point that will be the third argument when
++// ExecuteEbcImageEntryPoint is called.
++//
++//****************************************************************************
++    .thumb
++    .type   EbcLLExecuteEbcImageEntryPoint, %function
++ASM_PFX(EbcLLExecuteEbcImageEntryPoint):
++    mov     r2, ip
++
++    // tail call to C code
++    b.w     ASM_PFX(ExecuteEbcImageEntryPoint)
++
++//****************************************************************************
++// mEbcInstructionBufferTemplate
++//****************************************************************************
++    .section    ".rodata", "a"
++    .align      2
++    .arm
++ASM_PFX(mEbcInstructionBufferTemplate):
++    ldr     ip, 0f
++    ldr     pc, 1f
++
++    //
++    // Add a magic code here to help the VM recognize the thunk.
++    //
++    .long   0xCA112EBC
++
++0:  .long   0   // EBC_ENTRYPOINT_SIGNATURE
++1:  .long   0   // EBC_LL_EBC_ENTRYPOINT_SIGNATURE
+diff --git a/MdeModulePkg/Universal/EbcDxe/Arm/EbcSupport.c b/MdeModulePkg/Universal/EbcDxe/Arm/EbcSupport.c
+new file mode 100644
+index 0000000..2b41026
+--- /dev/null
++++ b/MdeModulePkg/Universal/EbcDxe/Arm/EbcSupport.c
+@@ -0,0 +1,467 @@
++/** @file
++  This module contains EBC support routines that are customized based on
++  the target Arm processor.
++
++Copyright (c) 2016, Linaro, Ltd. All rights reserved.<BR>
++Copyright (c) 2015, The Linux Foundation. All rights reserved.<BR>
++Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
++
++This program and the accompanying materials
++are licensed and made available under the terms and conditions of the BSD License
++which accompanies this distribution.  The full text of the license may be found at
++http://opensource.org/licenses/bsd-license.php
++
++THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
++WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
++
++**/
++
++#include "EbcInt.h"
++#include "EbcExecute.h"
++
++//
++// Amount of space that is not used in the stack
++//
++#define STACK_REMAIN_SIZE (1024 * 4)
++
++#pragma pack(1)
++typedef struct {
++  UINT32    Instr[2];
++  UINT32    Magic;
++  UINT32    EbcEntryPoint;
++  UINT32    EbcLlEntryPoint;
++} EBC_INSTRUCTION_BUFFER;
++#pragma pack()
++
++extern CONST EBC_INSTRUCTION_BUFFER       mEbcInstructionBufferTemplate;
++
++/**
++  Begin executing an EBC image.
++  This is used for Ebc Thunk call.
++
++  @return The value returned by the EBC application we're going to run.
++
++**/
++UINT64
++EFIAPI
++EbcLLEbcInterpret (
++  VOID
++  );
++
++/**
++  Begin executing an EBC image.
++  This is used for Ebc image entrypoint.
++
++  @return The value returned by the EBC application we're going to run.
++
++**/
++UINT64
++EFIAPI
++EbcLLExecuteEbcImageEntryPoint (
++  VOID
++  );
++
++/**
++  Pushes a 32 bit unsigned value to the VM stack.
++
++  @param VmPtr  The pointer to current VM context.
++  @param Arg    The value to be pushed.
++
++**/
++VOID
++PushU32 (
++  IN VM_CONTEXT *VmPtr,
++  IN UINT32     Arg
++  )
++{
++  //
++  // Advance the VM stack down, and then copy the argument to the stack.
++  // Hope it's aligned.
++  //
++  VmPtr->Gpr[0] -= sizeof (UINT32);
++  *(UINT32 *)(UINTN)VmPtr->Gpr[0] = Arg;
++}
++
++
++/**
++  Begin executing an EBC image.
++
++  This is a thunk function.
++
++  @param  Arg1                  The 1st argument.
++  @param  Arg2                  The 2nd argument.
++  @param  Arg3                  The 3rd argument.
++  @param  Arg4                  The 4th argument.
++  @param  Arg8                  The 8th argument.
++  @param  EntryPoint            The entrypoint of EBC code.
++  @param  Args5_16[]            Array containing arguments #5 to #16.
++
++  @return The value returned by the EBC application we're going to run.
++
++**/
++UINT64
++EFIAPI
++EbcInterpret (
++  IN UINTN      Arg1,
++  IN UINTN      Arg2,
++  IN UINTN      Arg3,
++  IN UINTN      Arg4,
++  IN UINTN      EntryPoint,
++  IN UINTN      Args5_16[]
++  )
++{
++  //
++  // Create a new VM context on the stack
++  //
++  VM_CONTEXT  VmContext;
++  UINTN       Addr;
++  EFI_STATUS  Status;
++  UINTN       StackIndex;
++
++  //
++  // Get the EBC entry point
++  //
++  Addr = EntryPoint;
++
++  //
++  // Now clear out our context
++  //
++  ZeroMem ((VOID *) &VmContext, sizeof (VM_CONTEXT));
++
++  //
++  // Set the VM instruction pointer to the correct location in memory.
++  //
++  VmContext.Ip = (VMIP) Addr;
++
++  //
++  // Initialize the stack pointer for the EBC. Get the current system stack
++  // pointer and adjust it down by the max needed for the interpreter.
++  //
++
++  //
++  // Adjust the VM's stack pointer down.
++  //
++
++  Status = GetEBCStack((EFI_HANDLE)(UINTN)-1, &VmContext.StackPool, &StackIndex);
++  if (EFI_ERROR(Status)) {
++    return Status;
++  }
++  VmContext.StackTop = (UINT8*)VmContext.StackPool + (STACK_REMAIN_SIZE);
++  VmContext.Gpr[0] = (UINT32) ((UINT8*)VmContext.StackPool + STACK_POOL_SIZE);
++  VmContext.HighStackBottom = (UINTN) VmContext.Gpr[0];
++  VmContext.Gpr[0] -= sizeof (UINTN);
++
++  //
++  // Align the stack on a natural boundary.
++  //
++  VmContext.Gpr[0] &= ~(VM_REGISTER)(sizeof (UINTN) - 1);
++
++  //
++  // Put a magic value in the stack gap, then adjust down again.
++  //
++  *(UINTN *) (UINTN) (VmContext.Gpr[0]) = (UINTN) VM_STACK_KEY_VALUE;
++  VmContext.StackMagicPtr             = (UINTN *) (UINTN) VmContext.Gpr[0];
++
++  //
++  // The stack upper to LowStackTop belongs to the VM.
++  //
++  VmContext.LowStackTop   = (UINTN) VmContext.Gpr[0];
++
++  //
++  // For the worst case, assume there are 4 arguments passed in registers, store
++  // them to VM's stack.
++  //
++  PushU32 (&VmContext, (UINT32) Args5_16[11]);
++  PushU32 (&VmContext, (UINT32) Args5_16[10]);
++  PushU32 (&VmContext, (UINT32) Args5_16[9]);
++  PushU32 (&VmContext, (UINT32) Args5_16[8]);
++  PushU32 (&VmContext, (UINT32) Args5_16[7]);
++  PushU32 (&VmContext, (UINT32) Args5_16[6]);
++  PushU32 (&VmContext, (UINT32) Args5_16[5]);
++  PushU32 (&VmContext, (UINT32) Args5_16[4]);
++  PushU32 (&VmContext, (UINT32) Args5_16[3]);
++  PushU32 (&VmContext, (UINT32) Args5_16[2]);
++  PushU32 (&VmContext, (UINT32) Args5_16[1]);
++  PushU32 (&VmContext, (UINT32) Args5_16[0]);
++  PushU32 (&VmContext, (UINT32) Arg4);
++  PushU32 (&VmContext, (UINT32) Arg3);
++  PushU32 (&VmContext, (UINT32) Arg2);
++  PushU32 (&VmContext, (UINT32) Arg1);
++
++  //
++  // Interpreter assumes 64-bit return address is pushed on the stack.
++  // Arm does not do this so pad the stack accordingly.
++  //
++  PushU32 (&VmContext, 0x0UL);
++  PushU32 (&VmContext, 0x0UL);
++  PushU32 (&VmContext, 0x12345678UL);
++  PushU32 (&VmContext, 0x87654321UL);
++
++  //
++  // For Arm, this is where we say our return address is
++  //
++  VmContext.StackRetAddr  = (UINT64) VmContext.Gpr[0];
++
++  //
++  // We need to keep track of where the EBC stack starts. This way, if the EBC
++  // accesses any stack variables above its initial stack setting, then we know
++  // it's accessing variables passed into it, which means the data is on the
++  // VM's stack.
++  // When we're called, on the stack (high to low) we have the parameters, the
++  // return address, then the saved ebp. Save the pointer to the return address.
++  // EBC code knows that's there, so should look above it for function parameters.
++  // The offset is the size of locals (VMContext + Addr + saved ebp).
++  // Note that the interpreter assumes there is a 16 bytes of return address on
++  // the stack too, so adjust accordingly.
++  //  VmContext.HighStackBottom = (UINTN)(Addr + sizeof (VmContext) + sizeof (Addr));
++  //
++
++  //
++  // Begin executing the EBC code
++  //
++  EbcExecute (&VmContext);
++
++  //
++  // Return the value in R[7] unless there was an error
++  //
++  ReturnEBCStack(StackIndex);
++  return (UINT64) VmContext.Gpr[7];
++}
++
++
++/**
++  Begin executing an EBC image.
++
++  @param  ImageHandle      image handle for the EBC application we're executing
++  @param  SystemTable      standard system table passed into an driver's entry
++                           point
++  @param  EntryPoint       The entrypoint of EBC code.
++
++  @return The value returned by the EBC application we're going to run.
++
++**/
++UINT64
++EFIAPI
++ExecuteEbcImageEntryPoint (
++  IN EFI_HANDLE           ImageHandle,
++  IN EFI_SYSTEM_TABLE     *SystemTable,
++  IN UINTN                EntryPoint
++  )
++{
++  //
++  // Create a new VM context on the stack
++  //
++  VM_CONTEXT  VmContext;
++  UINTN       Addr;
++  EFI_STATUS  Status;
++  UINTN       StackIndex;
++
++  //
++  // Get the EBC entry point
++  //
++  Addr = EntryPoint;
++
++  //
++  // Now clear out our context
++  //
++  ZeroMem ((VOID *) &VmContext, sizeof (VM_CONTEXT));
++
++  //
++  // Save the image handle so we can track the thunks created for this image
++  //
++  VmContext.ImageHandle = ImageHandle;
++  VmContext.SystemTable = SystemTable;
++
++  //
++  // Set the VM instruction pointer to the correct location in memory.
++  //
++  VmContext.Ip = (VMIP) Addr;
++
++  //
++  // Initialize the stack pointer for the EBC. Get the current system stack
++  // pointer and adjust it down by the max needed for the interpreter.
++  //
++
++  //
++  // Allocate stack pool
++  //
++  Status = GetEBCStack(ImageHandle, &VmContext.StackPool, &StackIndex);
++  if (EFI_ERROR(Status)) {
++    return Status;
++  }
++  VmContext.StackTop = (UINT8*)VmContext.StackPool + (STACK_REMAIN_SIZE);
++  VmContext.Gpr[0] = (UINT64)(UINTN) ((UINT8*)VmContext.StackPool + STACK_POOL_SIZE);
++  VmContext.HighStackBottom = (UINTN)VmContext.Gpr[0];
++  VmContext.Gpr[0] -= sizeof (UINTN);
++
++  //
++  // Put a magic value in the stack gap, then adjust down again
++  //
++  *(UINTN *) (UINTN) (VmContext.Gpr[0]) = (UINTN) VM_STACK_KEY_VALUE;
++  VmContext.StackMagicPtr             = (UINTN *) (UINTN) VmContext.Gpr[0];
++
++  //
++  // Align the stack on a natural boundary
++  //  VmContext.Gpr[0] &= ~(sizeof(UINTN) - 1);
++  //
++  VmContext.LowStackTop   = (UINTN) VmContext.Gpr[0];
++  VmContext.Gpr[0] -= sizeof (UINTN);
++  *(UINTN *) (UINTN) (VmContext.Gpr[0]) = (UINTN) SystemTable;
++  VmContext.Gpr[0] -= sizeof (UINTN);
++  *(UINTN *) (UINTN) (VmContext.Gpr[0]) = (UINTN) ImageHandle;
++
++  VmContext.Gpr[0] -= 16;
++  VmContext.StackRetAddr  = (UINT64) VmContext.Gpr[0];
++  //
++  // VM pushes 16-bytes for return address. Simulate that here.
++  //
++
++  //
++  // Begin executing the EBC code
++  //
++  EbcExecute (&VmContext);
++
++  //
++  // Return the value in R[7] unless there was an error
++  //
++  ReturnEBCStack(StackIndex);
++  return (UINT64) VmContext.Gpr[7];
++}
++
++
++/**
++  Create thunks for an EBC image entry point, or an EBC protocol service.
++
++  @param  ImageHandle           Image handle for the EBC image. If not null, then
++                                we're creating a thunk for an image entry point.
++  @param  EbcEntryPoint         Address of the EBC code that the thunk is to call
++  @param  Thunk                 Returned thunk we create here
++  @param  Flags                 Flags indicating options for creating the thunk
++
++  @retval EFI_SUCCESS           The thunk was created successfully.
++  @retval EFI_INVALID_PARAMETER The parameter of EbcEntryPoint is not 16-bit
++                                aligned.
++  @retval EFI_OUT_OF_RESOURCES  There is not enough memory to created the EBC
++                                Thunk.
++  @retval EFI_BUFFER_TOO_SMALL  EBC_THUNK_SIZE is not larger enough.
++
++**/
++EFI_STATUS
++EbcCreateThunks (
++  IN EFI_HANDLE           ImageHandle,
++  IN VOID                 *EbcEntryPoint,
++  OUT VOID                **Thunk,
++  IN  UINT32              Flags
++  )
++{
++  EBC_INSTRUCTION_BUFFER       *InstructionBuffer;
++
++  //
++  // Check alignment of pointer to EBC code
++  //
++  if ((UINT32) (UINTN) EbcEntryPoint & 0x01) {
++    return EFI_INVALID_PARAMETER;
++  }
++
++  InstructionBuffer = AllocatePool (sizeof (EBC_INSTRUCTION_BUFFER));
++  if (InstructionBuffer == NULL) {
++    return EFI_OUT_OF_RESOURCES;
++  }
++
++  //
++  // Give them the address of our buffer we're going to fix up
++  //
++  *Thunk = InstructionBuffer;
++
++  //
++  // Copy whole thunk instruction buffer template
++  //
++  CopyMem (InstructionBuffer, &mEbcInstructionBufferTemplate,
++    sizeof (EBC_INSTRUCTION_BUFFER));
++
++  //
++  // Patch EbcEntryPoint and EbcLLEbcInterpret
++  //
++  InstructionBuffer->EbcEntryPoint = (UINT32)EbcEntryPoint;
++  if ((Flags & FLAG_THUNK_ENTRY_POINT) != 0) {
++    InstructionBuffer->EbcLlEntryPoint = (UINT32)EbcLLExecuteEbcImageEntryPoint;
++  } else {
++    InstructionBuffer->EbcLlEntryPoint = (UINT32)EbcLLEbcInterpret;
++  }
++
++  //
++  // Add the thunk to the list for this image. Do this last since the add
++  // function flushes the cache for us.
++  //
++  EbcAddImageThunk (ImageHandle, InstructionBuffer,
++    sizeof (EBC_INSTRUCTION_BUFFER));
++
++  return EFI_SUCCESS;
++}
++
++
++/**
++  This function is called to execute an EBC CALLEX instruction.
++  The function check the callee's content to see whether it is common native
++  code or a thunk to another piece of EBC code.
++  If the callee is common native code, use EbcLLCAllEXASM to manipulate,
++  otherwise, set the VM->IP to target EBC code directly to avoid another VM
++  be startup which cost time and stack space.
++
++  @param  VmPtr            Pointer to a VM context.
++  @param  FuncAddr         Callee's address
++  @param  NewStackPointer  New stack pointer after the call
++  @param  FramePtr         New frame pointer after the call
++  @param  Size             The size of call instruction
++
++**/
++VOID
++EbcLLCALLEX (
++  IN VM_CONTEXT   *VmPtr,
++  IN UINTN        FuncAddr,
++  IN UINTN        NewStackPointer,
++  IN VOID         *FramePtr,
++  IN UINT8        Size
++  )
++{
++  CONST EBC_INSTRUCTION_BUFFER *InstructionBuffer;
++
++  //
++  // Processor specific code to check whether the callee is a thunk to EBC.
++  //
++  InstructionBuffer = (EBC_INSTRUCTION_BUFFER *)FuncAddr;
++
++  if (CompareMem (InstructionBuffer, &mEbcInstructionBufferTemplate,
++        sizeof(EBC_INSTRUCTION_BUFFER) - 2 * sizeof (UINT32)) == 0) {
++    //
++    // The callee is a thunk to EBC, adjust the stack pointer down 16 bytes and
++    // put our return address and frame pointer on the VM stack.
++    // Then set the VM's IP to new EBC code.
++    //
++    VmPtr->Gpr[0] -= 8;
++    VmWriteMemN (VmPtr, (UINTN) VmPtr->Gpr[0], (UINTN) FramePtr);
++    VmPtr->FramePtr = (VOID *) (UINTN) VmPtr->Gpr[0];
++    VmPtr->Gpr[0] -= 8;
++    VmWriteMem64 (VmPtr, (UINTN) VmPtr->Gpr[0], (UINT64) (UINTN) (VmPtr->Ip + Size));
++
++    VmPtr->Ip = (VMIP) InstructionBuffer->EbcEntryPoint;
++  } else {
++    //
++    // The callee is not a thunk to EBC, call native code,
++    // and get return value.
++    //
++    // Note that we are not able to distinguish which part of the interval
++    // [NewStackPointer, FramePtr] consists of stacked function arguments for
++    // this call, and which part simply consists of locals in the caller's
++    // stack frame. All we know is that there is an 8 byte gap at the top that
++    // we can ignore.
++    //
++    VmPtr->Gpr[7] = EbcLLCALLEXNative (FuncAddr, NewStackPointer, FramePtr - 8);
++
++    //
++    // Advance the IP.
++    //
++    VmPtr->Ip += Size;
++  }
++}
++
+diff --git a/MdeModulePkg/Universal/EbcDxe/EbcDxe.inf b/MdeModulePkg/Universal/EbcDxe/EbcDxe.inf
+index e9a0b28..8cc5a38 100644
+--- a/MdeModulePkg/Universal/EbcDxe/EbcDxe.inf
++++ b/MdeModulePkg/Universal/EbcDxe/EbcDxe.inf
+@@ -29,7 +29,7 @@
+ #
+ # The following information is for reference only and not required by the build tools.
+ #
+-#  VALID_ARCHITECTURES           = IA32 X64 IPF AARCH64
++#  VALID_ARCHITECTURES           = IA32 X64 IPF ARM AARCH64
+ #
+ 
+ [Sources]
+@@ -55,6 +55,10 @@
+   Ipf/EbcSupport.c
+   Ipf/EbcLowLevel.s
+ 
++[Sources.ARM]
++  Arm/EbcSupport.c
++  Arm/EbcLowLevel.S
++
+ [Sources.AARCH64]
+   AArch64/EbcSupport.c
+   AArch64/EbcLowLevel.S
+@@ -88,4 +92,4 @@
+ # EVENT_TYPE_PERIODIC_TIMER ## CONSUMES
+ 
+ [UserExtensions.TianoCore."ExtraFiles"]
+-  EbcDxeExtra.uni
+\ No newline at end of file
++  EbcDxeExtra.uni
+-- 
+2.9.3.windows.2
+

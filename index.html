@@ -1,0 +1,210 @@
+﻿<!DOCTYPE html>
+<html>
+  <head profile="http://www.w3.org/2005/10/profile">
+    <meta charset='utf-8'>
+    <title>Free Software EFI Drivers</title>
+    <script>
+      function setCookie(name, value, days) {
+      	var expires = "";
+      	if (days) {
+      		var date = new Date();
+      		date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+      		expires = "; expires=" + date.toUTCString();
+      	}
+      	document.cookie = name + "=" + (value || "")  + expires + "; path=/";
+      }
+      function getCookie(name) {
+      	var nameEQ = name + "=";
+      	var ca = document.cookie.split(';');
+      	for (var i = 0; i < ca.length; i++) {
+      		var c = ca[i];
+      		while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+      		if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+      	}
+      	return "";
+      }
+      document.addEventListener("DOMContentLoaded", function(event)
+      {
+      	if (getCookie('display_cookie_notice') != 'no')
+      		document.getElementById('cookie-statement').style.display = 'block';
+      });
+    </script>
+    <script type="text/javascript">
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+      ga('create', 'UA-37022602-1', 'auto');
+      ga('send', 'pageview');
+    </script>
+    <style type="text/css">
+      body {
+      background-color: #3f4555;
+      font-family: Helvetica, Arial, FreeSans, san-serif;
+      color: #ffffff;
+      }
+      #cookie-statement {
+      background-color: #5a5a5a;
+      border: none;
+      border-radius: 0;
+      color: #fff;
+      -moz-border-radius: 0;
+      -webkit-border-radius: 0;
+      margin: -8px -8px;
+      padding: 5px 0px 5px 15px;
+      position: relative;
+      width: 100%;
+      z-index: 999;
+      }
+      #cookie-statement a {
+      background-color: #303030;
+      border: 1px solid rgba(0,0,0,.1);
+      -moz-border-radius: 2px;
+      -webkit-border-radius: 2px;
+      border-radius: 2px;
+      color: #fff;
+      cursor: pointer;
+      line-height: 200%;
+      padding: 4px 8px;
+      text-decoration: none;
+      white-space: nowrap;
+      }
+      #right_column {
+      float: right;
+      margin: 0 auto;
+      margin-top: 10px;
+      margin-right: 10px;
+      width: 230px;
+      font-size: 0.8em;
+      }
+      #container {
+      margin: 0 auto;
+      width: 730px;
+      }
+      table.reference
+      {
+      color: #000030;
+      background-color:#ffffff;
+      border:1px solid #c3c3c3;
+      border-collapse:collapse;
+      width:100%;
+      }
+      table.reference th
+      {
+      background-color:#e5eecc;
+      border:1px solid #c3c3c3;
+      padding:3px;
+      vertical-align:top;
+      }
+      table.reference td 
+      {
+      border:1px solid #c3c3c3;
+      padding:3px;
+      vertical-align:top;
+      }
+      h1 { font-size: 3.8em; color: #c0baaa; }
+      h1 .small { font-size: 0.4em; }
+      h1 a { text-decoration: none }
+      h2 { padding: 12px; font-size: 1.5em; color: #c0baaa; line-height: 1.3em; border: 2px solid #706a6a;}
+      h3 { text-align: center; color: #c0baaa; }
+      a { color: #c0baaa; }
+      span.centerImage { text-align: center; }
+      .cookie-notification { background: #fffbe4; border-color: #f8f6e6; overflow: hidden; }
+      .tagline { font-size: 1.6em; margin-bottom: 20px; margin-top: -30px; font-style: italic;}
+      .download { float: right; }
+      pre { background: #000; color: #fff; padding: 15px;}
+      hr { border: 0; width: 80%; border-bottom: 1px solid #aaa}
+      .footer { font-size: 0.9em; text-align:center; padding-top:30px; font-style: italic; }
+      .treeView{ -moz-user-select:none; position:relative; }
+      .treeView ul{ margin:0 0 0 -1.5em; padding:0 0 0 1.5em; }
+      .treeView li{ margin:0; padding:0; list-style-position:inside; list-style-image:none; cursor:auto; }
+      .treeView li.collapsibleListOpen{ list-style-image:url('pics/button-open.png'); cursor:pointer; }
+      .treeView li.collapsibleListClosed{ list-style-image:url('pics/button-closed.png'); cursor:pointer; }
+      .treeView li.collapsibleListItem{ padding-left:1.5em; }
+      .treeView li li{ padding-left:1.5em; }
+    </style>
+  </head>
+  <body>
+    <div id="cookie-statement" style="display: none;" class="cookie-notification">
+      <div class="text">
+        <span>This page uses Google services, which may serve <u>non-personalised</u> cookies for advertising, analytics and security.</span>
+        <a href="https://policies.google.com/technologies/cookies" target="_blank">See details</a>
+        <a href="#" onclick="document.getElementById('cookie-statement').style.display = 'none'; setCookie('display_cookie_notice', 'no', 365);">OK</a>
+      </div>
+    </div>
+    <div id="right_column">
+      <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+      <!-- EFI -->
+      <ins class="adsbygoogle"
+        style="display:inline-block;width:160px;height:600px"
+        data-ad-client="ca-pub-8924382055379825"
+        data-ad-slot="3343954704"></ins>
+      <script>
+        (adsbygoogle = window.adsbygoogle || []).requestNonPersonalizedAds = 1;
+        (adsbygoogle = window.adsbygoogle || []).push({});
+      </script>
+    </div>
+    <div id="container">
+      <h1><img border="0" src="pics/uefi.svg" alt="[EFI icon]" style="width:128px;height:128px;vertical-align:middle; margin-bottom: 10px;"/>&nbsp;EFI Drivers</h1>
+      <div class="tagline">Free Software EFI/UEFI file system drivers</div>
+      <p>The purpose of this page is to provide <a href="http://en.wikipedia.org/wiki/Free_software">Free Software</a> UEFI components, such as a <b><u>read-only</u></b> NTFS, XFS or exFAT EFI drivers, or more exotic ones such as Amiga FFS/SFS, BFS, UFS, ZFS, courtesy of the <a href="http://www.gnu.org/software/grub/">GRUB project</a>, as well as other goodies.</p>
+      <h2 style="border: 4px solid #a09a8a;"><span style="font-size: 133%">Download</span></h2>
+      <p><b>Updated 2020.11.18:</b></p>
+      <p>The following links include binaries for <b>AFFS</b> (Amiga Fast FileSystem), <b>BFS</b> (BeOS FileSystem), <b>btrfs</b>, <span style="font-size: 110%"><b>exFAT</b></span>, <b>ext2/ext3/ext4</b>, <b>F2FS</b> (experimental), <b>HFS</b> and <b>HFS+</b> (Mac OS, including compression support), <b>ISO9660</b>, <b>JFS</b> (Journaled FileSystem), <b>nilfs2</b>, <span style="font-size: 120%"><b>NTFS</b></span> (including compression support), <b>ReiserFS</b>, <b>SFS</b> (Amiga Smart FileSystem), <b>UDF</b>, <b>UFS/FFS</b>, <b>UFS2/FFS2</b>, <span style="font-size: 120%"><b>XFS</b></span>, <b>ZFS</b> and more. These drivers were compiled with <a href="https://visualstudio.microsoft.com/vs/community/">Visual Studio 2019 Community Edition</a> using the latest <a href="https://github.com/tianocore/edk2">EDK2</a>:
+      <p>
+      <ul>
+        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.7/x64">EFI drivers v1.7 (x64)</a></b></span></li>
+        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.7/ia32">EFI drivers v1.7 (ia32)</a></b></span></li>
+        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.7/arm">EFI drivers v1.7 (arm)</a></b></span></li>
+        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.7/aa64">EFI drivers v1.7 (arm64)</a></b></span></li>
+        <li><a href="/downloads/">Other versions</a></li>
+      </ul>
+      </p>
+      <p>You can also find a <b><u>read/write</u></b> <span style="font-size: 110%">NTFS driver</span> (based on <a href="https://github.com/tuxera/ntfs-3g">ntfs-3g</a>) <a href="https://github.com/pbatard/ntfs-3g/releases"><b>HERE</b></a>.</p>
+      <h4>System Requirements:</h4>
+      <p>A computer or virtual machine with a UEFI firmware.</p>
+      <h2>Usage</h2>
+      <p>Download the driver and copy it to a partition that you can access from the EFI shell.<br />Then, from the EFI Shell, issue a command such as:</p>
+      <p>
+      <pre>load ntfs_x64.efi
+map -r</pre>
+      </p>
+      <p>After the <code>map</code> command has been executed, you should be able to access your NTFS partitions.</p>
+      <h2>Feedback</h2>
+      <!--			<p>A FAQ <b>will be</b> available <b><a href="https://github.com/pbatard/efifs/wiki/FAQ">HERE</a></b>.</p> -->
+      <p>To provide feedback, report a bug or request an enhancement please use the github <a href="https://github.com/pbatard/efifs/issues">issue tracker</a>. Or you can <a href="mailto:pete@akeo.ie?subject=EFI Drivers">send an e-mail</a>.</p>
+      <h2>License</h2>
+      <p><a href="http://www.gnu.org/licenses/gpl.html">GNU General Public License (GPL) version 3</a> or later.<br />You are free to distribute, modify or even sell the software, insofar as you respect the GPLv3 license.</p>
+      <a name="versions"></a>
+      <h2>Changelog</h2>
+      <ul>
+        <li>
+          <b>Version 1.7</b> (2020.11.18)
+          <ul>
+            <li>Fix potential freezout due to freeing of system resources</li>
+            <li>Fix Device Path not being displayed when logging is enabled</li>
+            <li>Improve asserts</li>
+            <li>Update GRUB and gnu-efi to latest</li>
+          </ul>
+        </li>
+        <li><b><a href="https://github.com/pbatard/efifs/blob/master/ChangeLog.txt">Other Versions</a></b></li>
+      </ul>
+      <h2>Source Code</h2>
+      <p>
+      <ul>
+        <li><a href="https://github.com/pbatard/efifs/archive/v1.7.tar.gz">EfiFs 1.7 source</a>.</li>
+        <li>
+          Alternatively, you can clone the <a href="http://git-scm.com">git</a> repository using:
+          <pre>$ git clone git://github.com/pbatard/efifs</pre>
+        </li>
+        <li>For more information, see the <a href="https://github.com/pbatard/efifs">GitHub project</a>.</li>
+      </ul>
+      If you are a developer, you are very much encouraged to tinker with the sourcecode and submit patches.</p>
+    </div>
+    <div class="footer">
+      Copyright © 2014-2021 <a href="http://pete.akeo.ie">Pete Batard</a><br/>
+      Hosting by <a href="https://github.com">GitHub</a>
+    </div>
+    </div>
+  </body>
+</html>
