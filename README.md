@@ -5,6 +5,8 @@ EfiFs - EFI File System Drivers
 [![Build status](https://img.shields.io/github/workflow/status/pbatard/efifs/Windows,%20MSVC,%20EDK2.svg?style=flat-square&label=MSVC%20(EDK2))](https://github.com/pbatard/efifs/actions/workflows/windows_msvc_edk2.yml)
 [![Build status](https://img.shields.io/github/workflow/status/pbatard/efifs/Linux,%20gcc,%20gnu-efi.svg?style=flat-square&label=gcc%20(gnu-efi))](https://github.com/pbatard/efifs/actions/workflows/linux_gcc_gnu-efi.yml)
 [![Build status](https://img.shields.io/github/workflow/status/pbatard/efifs/Linux,%20gcc,%20EDK2.svg?style=flat-square&label=gcc%20(EDK2))](https://github.com/pbatard/efifs/actions/workflows/linux_gcc_edk2.yml)
+[![Github stats](https://img.shields.io/github/downloads/pbatard/efifs/total.svg?style=flat-square)](https://github.com/pbatard/efifs/releases)
+[![Release](https://img.shields.io/github/release-pre/pbatard/efifs.svg?style=flat-square)](https://github.com/pbatard/efifs/releases)
 [![Licence](https://img.shields.io/badge/license-GPLv3-blue.svg?style=flat-square)](https://www.gnu.org/licenses/gpl-3.0.en.html)
 
 This is a GPLv3+ implementation of standalone EFI File System drivers, based on
