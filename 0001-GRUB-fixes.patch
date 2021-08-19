@@ -1,6 +1,6 @@
-From 660e3ab236aa947ad50d9c22c15f1b93868ff582 Mon Sep 17 00:00:00 2001
+From 8773e769c6238cc3011cc0078db5bc52695eb260 Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Sun, 8 Aug 2021 18:50:46 +0200
+Date: Thu, 19 Aug 2021 15:15:04 +0200
 Subject: [PATCH] GRUB fixes
 
 ---
@@ -41,12 +41,12 @@ Subject: [PATCH] GRUB fixes
  include/grub/ntfs.h                  |  2 ++
  include/grub/safemath.h              |  8 +++++
  include/grub/term.h                  |  4 +--
- include/grub/types.h                 | 38 ++++++++++++++------
+ include/grub/types.h                 | 42 +++++++++++++++-------
  include/grub/unicode.h               |  2 ++
  include/grub/x86_64/types.h          |  2 +-
  include/grub/zfs/zap_leaf.h          |  2 ++
  include/grub/zfs/zio.h               |  2 ++
- 42 files changed, 251 insertions(+), 58 deletions(-)
+ 42 files changed, 253 insertions(+), 60 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
 index cafcd0fba..d57cb5357 100644
@@ -1348,7 +1348,7 @@ index 3387cb052..940d4c7c9 100644
  
  static inline struct grub_term_coordinate
 diff --git a/include/grub/types.h b/include/grub/types.h
-index 0a3ff1591..00521330a 100644
+index 0a3ff1591..7390e41e1 100644
 --- a/include/grub/types.h
 +++ b/include/grub/types.h
 @@ -26,10 +26,20 @@
@@ -1372,7 +1372,7 @@ index 0a3ff1591..00521330a 100644
  #ifdef GRUB_BUILD
  # define GRUB_CPU_SIZEOF_VOID_P	BUILD_SIZEOF_VOID_P
  # define GRUB_CPU_SIZEOF_LONG	BUILD_SIZEOF_LONG
-@@ -193,17 +203,15 @@ static inline grub_uint16_t grub_swap_bytes16(grub_uint16_t _x)
+@@ -193,19 +203,17 @@ static inline grub_uint16_t grub_swap_bytes16(grub_uint16_t _x)
  #define grub_swap_bytes16_compile_time(x) ((((x) & 0xff) << 8) | (((x) & 0xff00) >> 8))
  #define grub_swap_bytes32_compile_time(x) ((((x) & 0xff) << 24) | (((x) & 0xff00) << 8) | (((x) & 0xff0000) >> 8) | (((x) & 0xff000000UL) >> 24))
  #define grub_swap_bytes64_compile_time(x)	\
@@ -1387,6 +1387,8 @@ index 0a3ff1591..00521330a 100644
 -                    | ((_x & (grub_uint64_t) 0xFF000000000000ULL) >> 40) \
 -                    | (_x >> 56)); \
 -})
+-
+-#if (defined(__GNUC__) && (__GNUC__ > 3) && (__GNUC__ > 4 || __GNUC_MINOR__ >= 3)) || defined(__clang__)
 +((grub_uint64_t) ((((grub_uint64_t)x) << 56) \
 +                    | ((((grub_uint64_t)x) & (grub_uint64_t) 0xFF00ULL) << 40) \
 +                    | ((((grub_uint64_t)x) & (grub_uint64_t) 0xFF0000ULL) << 24) \
@@ -1396,9 +1398,11 @@ index 0a3ff1591..00521330a 100644
 +                    | ((((grub_uint64_t)x) & (grub_uint64_t) 0xFF000000000000ULL) >> 40) \
 +                    | (((grub_uint64_t)x) >> 56)) \
 +)
- 
- #if (defined(__GNUC__) && (__GNUC__ > 3) && (__GNUC__ > 4 || __GNUC_MINOR__ >= 3)) || defined(__clang__)
++
++#if ((defined(__GNUC__) && (__GNUC__ > 3) && (__GNUC__ > 4 || __GNUC_MINOR__ >= 3)) || defined(__clang__)) && (!defined (__riscv))
  static inline grub_uint32_t grub_swap_bytes32(grub_uint32_t x)
+ {
+ 	return __builtin_bswap32(x);
 @@ -280,18 +288,24 @@ static inline grub_uint64_t grub_swap_bytes64(grub_uint64_t _x)
  
  #endif /* ! WORDS_BIGENDIAN */
@@ -1506,5 +1510,5 @@ index 19ce136bb..11ee51b61 100644
  /*
   * Gang block headers are self-checksumming and contain an array
 -- 
-2.32.0.windows.2
+2.33.0.windows.1
 

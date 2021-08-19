@@ -9,6 +9,7 @@ case "$1" in
   "arm64")   arch=arm64;;
   "aa64")    arch=arm64;;
   "aarch64") arch=arm64;;
+  "riscv64") arch=riscv64;;
   *) echo "Unsupported arch"; exit 1;;
 esac
  rm -f $grub_include/cpu

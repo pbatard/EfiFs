@@ -17,6 +17,8 @@
 #define GRUB_TARGET_CPU "arm"
 #elif defined (_M_ARM64) || defined(__aarch64__)
 #define GRUB_TARGET_CPU "arm64"
+#elif defined (_M_RISCV64) || (defined (__riscv) && (__riscv_xlen == 64))
+#define GRUB_TARGET_CPU "riscv64"
 #else
 #error Usupported architecture
 #endif

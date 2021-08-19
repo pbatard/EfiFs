@@ -29,6 +29,7 @@ env:
   COMPILER: GCC5
   GCC5_ARM_PREFIX: arm-linux-gnueabi-
   GCC5_AARCH64_PREFIX: aarch64-linux-gnu-
+  GCC5_RISCV64_PREFIX: riscv64-linux-gnu-
 
 jobs:
   build:
@@ -36,7 +37,7 @@ jobs:
 
     strategy:
       matrix:
-        arch: [X64, IA32, AARCH64, ARM]
+        arch: [X64, IA32, AARCH64, ARM, RISCV64]
         include:
         - arch: X64
           short: x64
@@ -50,10 +51,16 @@ jobs:
         - arch: ARM
           short: arm
           pkgs: gcc-arm-linux-gnueabi python3-distutils uuid-dev
+        - arch: RISCV64
+          short: riscv64
+          pkgs: gcc-riscv64-linux-gnu python3-distutils uuid-dev
 
     steps:
     - name: Install toolchain
       run: sudo apt install ${{ matrix.pkgs }}
+    - name: Fix missing Risc-V header
+      if: matrix.arch == 'riscv64'
+      run: sudo ln -s /usr/riscv64-linux-gnu/include/gnu/stubs-lp64d.h /usr/riscv64-linux-gnu/include/gnu/stubs-lp64.h
     - name: Set up EDK2
       run: |
         git clone --recursive https://github.com/tianocore/edk2.git

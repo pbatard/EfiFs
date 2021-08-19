@@ -30,7 +30,7 @@ jobs:
 
     strategy:
       matrix:
-        arch: [x64, ia32, aa64, arm]
+        arch: [x64, ia32, aa64, arm, riscv64]
         include:
         - arch: x64
           pkg: gcc-mingw-w64-x86-64
@@ -44,6 +44,9 @@ jobs:
         - arch: arm
           pkg: gcc-arm-linux-gnueabi
           tuple: arm-linux-gnueabi-
+        - arch: riscv64
+          pkg: gcc-riscv64-linux-gnu
+          tuple: riscv64-linux-gnu-
 
     steps:
     - name: Checkout repository and submodules
