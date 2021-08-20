@@ -149,14 +149,15 @@
       <div class="tagline">Free Software EFI/UEFI file system drivers</div>
       <p>The purpose of this page is to provide <a href="http://en.wikipedia.org/wiki/Free_software">Free Software</a> UEFI components, such as a <b><u>read-only</u></b> NTFS, XFS or exFAT EFI drivers, or more exotic ones such as Amiga FFS/SFS, BFS, UFS, ZFS, courtesy of the <a href="http://www.gnu.org/software/grub/">GRUB project</a>, as well as other goodies.</p>
       <h2 style="border: 4px solid #a09a8a;"><span style="font-size: 133%">Download</span></h2>
-      <p><b>Updated 2020.11.18:</b></p>
-      <p>The following links include binaries for <b>AFFS</b> (Amiga Fast FileSystem), <b>BFS</b> (BeOS FileSystem), <b>btrfs</b>, <span style="font-size: 110%"><b>exFAT</b></span>, <b>ext2/ext3/ext4</b>, <b>F2FS</b> (experimental), <b>HFS</b> and <b>HFS+</b> (Mac OS, including compression support), <b>ISO9660</b>, <b>JFS</b> (Journaled FileSystem), <b>nilfs2</b>, <span style="font-size: 120%"><b>NTFS</b></span> (including compression support), <b>ReiserFS</b>, <b>SFS</b> (Amiga Smart FileSystem), <b>UDF</b>, <b>UFS/FFS</b>, <b>UFS2/FFS2</b>, <span style="font-size: 120%"><b>XFS</b></span>, <b>ZFS</b> and more. These drivers were compiled with <a href="https://visualstudio.microsoft.com/vs/community/">Visual Studio 2019 Community Edition</a> using the latest <a href="https://github.com/tianocore/edk2">EDK2</a>:
+      <p><b>Updated 2021.08.20:</b></p>
+      <p>The following links include binaries for <b>AFFS</b> (Amiga Fast FileSystem), <b>BFS</b> (BeOS FileSystem), <b>btrfs</b>, <span style="font-size: 110%"><b>exFAT</b></span>, <b>ext2/ext3/ext4</b>, <b>F2FS</b> (experimental), <b>HFS</b> and <b>HFS+</b> (Mac OS, including compression support), <b>ISO9660</b>, <b>JFS</b> (Journaled FileSystem), <b>nilfs2</b>, <span style="font-size: 120%"><b>NTFS</b></span> (including compression support), <b>ReiserFS</b>, <b>SFS</b> (Amiga Smart FileSystem), <b>UDF</b>, <b>UFS/FFS</b>, <b>UFS2/FFS2</b>, <span style="font-size: 120%"><b>XFS</b></span>, <b>ZFS</b> and more. These drivers were transparently compiled <a href="https://github.com/pbatard/efifs/actions/workflows/linux_gcc_edk2.yml">using a Linux/gcc/EDK2 environment</a>:
       <p>
       <ul>
-        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.7/x64">EFI drivers v1.7 (x64)</a></b></span></li>
-        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.7/ia32">EFI drivers v1.7 (ia32)</a></b></span></li>
-        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.7/arm">EFI drivers v1.7 (arm)</a></b></span></li>
-        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.7/aa64">EFI drivers v1.7 (arm64)</a></b></span></li>
+        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.8/x64">EFI drivers v1.8 (x64)</a></b></span></li>
+        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.8/ia32">EFI drivers v1.8 (ia32)</a></b></span></li>
+        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.8/aa64">EFI drivers v1.8 (arm64)</a></b></span></li>
+        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.8/arm">EFI drivers v1.8 (arm)</a></b></span></li>
+        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.8/riscv64">EFI drivers v1.8 (riscv64)</a></b></span></li>
         <li><a href="/downloads/">Other versions</a></li>
       </ul>
       </p>
@@ -179,11 +180,10 @@ map -r</pre>
       <h2>Changelog</h2>
       <ul>
         <li>
-          <b>Version 1.7</b> (2020.11.18)
+          <b>Version 1.8</b> (2021.08.20)
           <ul>
-            <li>Fix potential freezout due to freeing of system resources</li>
-            <li>Fix Device Path not being displayed when logging is enabled</li>
-            <li>Improve asserts</li>
+            <li>Add RISCV64 drivers</li>
+            <li>Support <code>SetPosition()</code> value <code>0xFFFFFFFFFFFFFFFF</code> meaning <code>SEEK_END</code></li>
             <li>Update GRUB and gnu-efi to latest</li>
           </ul>
         </li>
@@ -192,7 +192,7 @@ map -r</pre>
       <h2>Source Code</h2>
       <p>
       <ul>
-        <li><a href="https://github.com/pbatard/efifs/archive/v1.7.tar.gz">EfiFs 1.7 source</a>.</li>
+        <li><a href="https://github.com/pbatard/efifs/archive/v1.8.tar.gz">EfiFs 1.8 source</a>.</li>
         <li>
           Alternatively, you can clone the <a href="http://git-scm.com">git</a> repository using:
           <pre>$ git clone git://github.com/pbatard/efifs</pre>
