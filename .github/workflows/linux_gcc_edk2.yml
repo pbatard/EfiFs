@@ -88,3 +88,37 @@ jobs:
       with:
         name: gcc_edk2
         path: edk2/Build/EfiFs/${{ env.BUILD_TYPE }}_${{ env.COMPILER }}/${{ matrix.arch }}/*.efi
+    - name: Display SHA-256
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        mv edk2/Build/EfiFs/${{ env.BUILD_TYPE }}_${{ env.COMPILER }}/${{ matrix.arch }}/*.efi .
+        sha256sum *.efi
+    - name: Create release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      with:
+        files: ./*.efi
+    - name: Create web artifacts
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        GIT_VERSION=$(git --git-dir edk2/EfiFsPkg/.git describe --tags --abbrev=0)
+        DIR_VERSION=${GIT_VERSION:1}
+        mkdir -p web/${{ matrix.short }}
+        curl -L https://raw.githubusercontent.com/pbatard/efifs/gh-pages/downloads/header.html -o web/${{ matrix.short }}/index.html
+        printf "<pre><img src=\"/icons/blank.png\" alt=\"Icon\" width=\"32\" height=\"32\"> Name                       Last modified      Size  Description<hr><a href=\"/downloads/efifs-%s/\"><img src=\"/icons/back.png\" alt=\"[PARENTDIR]\" width=\"32\" height=\"32\"></a> <a href=\"/downloads/efifs-%s/\">Parent Directory</a>                               -\n" ${DIR_VERSION} ${DIR_VERSION} >> web/${{ matrix.short }}/index.html
+        for f in *.efi; do
+          TIMESTAMP=$(date -r $f "+%Y-%m-%d %H:%M");
+          SIZE=$(du --apparent-size -sh $f | awk '{ print $1 }');
+          LINK=https://github.com/pbatard/efifs/releases/download/${GIT_VERSION}/$f;
+          FILE_AND_TAG="$f</a>";
+          printf "<a href=\"%s\"><img src=\"/icons/uefi.svg\" alt=\"[EFI]\" width=\"32\" height=\"32\"></a> <a href=\"%s\">%-31s%-19s%-5s\n" "${LINK}" "${LINK}" "${FILE_AND_TAG}" "${TIMESTAMP}" "${SIZE}" >> web/${{ matrix.short }}/index.html;
+        done
+        printf "<hr></pre>\n  </body>\n</html>\n" >> web/${{ matrix.short }}/index.html
+    - name: Upload web artifacts
+      uses: actions/upload-artifact@v2
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        name: web_files
+        path: web/*/index.html
