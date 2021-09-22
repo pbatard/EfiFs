@@ -1,6 +1,6 @@
-From 8773e769c6238cc3011cc0078db5bc52695eb260 Mon Sep 17 00:00:00 2001
+From f071a4507ea2fa7b382087f323b6c70640b2288a Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Thu, 19 Aug 2021 15:15:04 +0200
+Date: Wed, 22 Sep 2021 14:12:12 +0100
 Subject: [PATCH] GRUB fixes
 
 ---
@@ -832,7 +832,7 @@ index 6dd731e23..be286376b 100644
  enum
    {
 diff --git a/grub-core/fs/udf.c b/grub-core/fs/udf.c
-index 2ac5c1d00..a8661bc4f 100644
+index 4ff97021c..41ca1f3d0 100644
 --- a/grub-core/fs/udf.c
 +++ b/grub-core/fs/udf.c
 @@ -114,6 +114,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
@@ -872,7 +872,7 @@ index 34a698b71..bbb6d858e 100644
  /* Information about a "mounted" ufs filesystem.  */
  struct grub_ufs_data
 diff --git a/grub-core/fs/xfs.c b/grub-core/fs/xfs.c
-index 0f524c3a8..d7dbfd93c 100644
+index e3816d1ec..5c617882f 100644
 --- a/grub-core/fs/xfs.c
 +++ b/grub-core/fs/xfs.c
 @@ -103,6 +103,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
@@ -883,7 +883,7 @@ index 0f524c3a8..d7dbfd93c 100644
  struct grub_xfs_sblock
  {
    grub_uint8_t magic[4];
-@@ -222,6 +223,7 @@ struct grub_xfs_dirblock_tail
+@@ -228,6 +229,7 @@ struct grub_xfs_dirblock_tail
    grub_uint32_t leaf_count;
    grub_uint32_t leaf_stale;
  } GRUB_PACKED;
@@ -1253,7 +1253,7 @@ index e14dd31ff..d51bda77d 100644
  /* Return the offset of the record with the index INDEX, in the node
     NODE which is part of the B+ tree BTREE.  */
 diff --git a/include/grub/misc.h b/include/grub/misc.h
-index 7d2b55196..70f1d5c87 100644
+index 7d2b55196..1798d2190 100644
 --- a/include/grub/misc.h
 +++ b/include/grub/misc.h
 @@ -27,12 +27,22 @@
@@ -1268,10 +1268,10 @@ index 7d2b55196..70f1d5c87 100644
  	((addr) & ~((typeof (addr)) (align) - 1))
 +#else
 +#define ALIGN_UP(addr, align) \
-+	((addr + align - 1) & ~(align - 1))
++	(((addr) + (align) - 1) & ~((align) - 1))
 +#define ALIGN_UP_OVERHEAD(addr, align) ((-(addr)) & ((align) - 1))
 +#define ALIGN_DOWN(addr, align) \
-+	((addr) & ~(align - 1))
++	((addr) & ~((align) - 1))
 +#endif
 +#ifndef ARRAY_SIZE
  #define ARRAY_SIZE(array) (sizeof (array) / sizeof (array[0]))
