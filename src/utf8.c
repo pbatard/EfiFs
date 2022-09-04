@@ -631,7 +631,7 @@ error:
 }
 
 /**
- * Convert an UTF-8 string to UTF-16, using an user supplied buffer
+ * Convert an UTF-8 string to UTF-16, using a user supplied buffer
  *
  * @v Src               A NUL terminated UTF-8 input string
  * @v Dst               A pointer an UTF-16 string buffer
@@ -658,11 +658,12 @@ Utf8ToUtf16NoAllocUpdateLen(CHAR8 *Src, CHAR16 *Dst, UINTN *Len)
 
 	SrcLen++;	/* +1 for NUL terminator */
 
-	if (!ConvertUcs2Utf8(TRUE, (UINT8 *)Src, SrcLen, (UINT8 *)Dst, *Len, Len))
-		return EFI_NO_MAPPING;
-
-	if (*Len > OrgLen)
-		return EFI_BUFFER_TOO_SMALL;
+	if (!ConvertUcs2Utf8(TRUE, (UINT8*)Src, SrcLen, (UINT8*)Dst, *Len, Len)) {
+		if (*Len > OrgLen)
+			return EFI_BUFFER_TOO_SMALL;
+		else
+			return EFI_NO_MAPPING;
+	}
 
 	return EFI_SUCCESS;
 }

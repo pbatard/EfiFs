@@ -103,7 +103,7 @@
 
 /* Driver version */
 #define FS_DRIVER_VERSION_MAJOR 1
-#define FS_DRIVER_VERSION_MINOR 7
+#define FS_DRIVER_VERSION_MINOR 9
 
 #ifndef ARRAYSIZE
 #define ARRAYSIZE(A)            (sizeof(A)/sizeof((A)[0]))
@@ -119,9 +119,9 @@
 #define _WIDEN(s)               L ## s
 #define WIDEN(s)                _WIDEN(s)
 
-#define MAX_PATH                256
-#define MINIMUM_INFO_LENGTH     (sizeof(EFI_FILE_INFO) + MAX_PATH * sizeof(CHAR16))
-#define MINIMUM_FS_INFO_LENGTH  (sizeof(EFI_FILE_SYSTEM_INFO) + MAX_PATH * sizeof(CHAR16))
+#define MAX_FILE_NAME_LEN       256
+#define MINIMUM_INFO_LENGTH     (SIZE_OF_EFI_FILE_INFO + MAX_FILE_NAME_LEN * sizeof(CHAR16))
+#define MINIMUM_FS_INFO_LENGTH  (SIZE_OF_EFI_FILE_SYSTEM_INFO + MAX_FILE_NAME_LEN * sizeof(CHAR16))
 #define IS_ROOT(File)           (File == File->FileSystem->RootFile)
 
 /* Logging */

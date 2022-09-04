@@ -35,7 +35,7 @@ static const CHAR16 *
 FileName(EFI_GRUB_FILE *File)
 {
 	EFI_STATUS Status;
-	static CHAR16 Path[MAX_PATH];
+	static CHAR16 Path[MAX_FILE_NAME_LEN];
 
 	Status = Utf8ToUtf16NoAlloc(File->path, Path, sizeof(Path));
 	if (EFI_ERROR(Status)) {
@@ -82,7 +82,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	EFI_GRUB_FILE *NewFile;
 
 	// TODO: Use dynamic buffers?
-	char path[MAX_PATH], clean_path[MAX_PATH], *dirname;
+	char path[MAX_FILE_NAME_LEN], clean_path[MAX_FILE_NAME_LEN], *dirname;
 	INTN i, len;
 	BOOLEAN AbsolutePath = (*Name == L'\\');
 
@@ -136,7 +136,7 @@ FileOpen(EFI_FILE_HANDLE This, EFI_FILE_HANDLE *New,
 	/* We only want to handle absolute paths */
 	clean_path[0] = '/';
 	/* Find out if we're dealing with root by removing the junk */
-	CopyPathRelative(&clean_path[1], path, MAX_PATH - 1);
+	CopyPathRelative(&clean_path[1], path, MAX_FILE_NAME_LEN - 1);
 	if (clean_path[1] == 0) {
 		/* We're dealing with the root */
 		PrintInfo(L"  Reopening <ROOT>\n");
@@ -275,6 +275,7 @@ DirHook(const CHAR8 *name, const GRUB_DIRHOOK_INFO *DirInfo, VOID *Data)
 	EFI_STATUS Status;
 	EFI_FILE_INFO *Info = (EFI_FILE_INFO *) Data;
 	INT64 *Index = (INT64 *) &Info->FileSize;
+	UINTN tmpLen;
 	CHAR8 *filename = (CHAR8 *) (UINTN) Info->PhysicalSize;
 	EFI_TIME Time = { 1970, 01, 01, 00, 00, 00, 0, 0, 0, 0, 0};
 
@@ -288,14 +289,14 @@ DirHook(const CHAR8 *name, const GRUB_DIRHOOK_INFO *DirInfo, VOID *Data)
 
 	strcpya(filename, name);
 
-	Status = Utf8ToUtf16NoAlloc(filename, Info->FileName, (INTN)(Info->Size - sizeof(EFI_FILE_INFO)));
+	tmpLen = (UINTN)(Info->Size - SIZE_OF_EFI_FILE_INFO);
+	Status = Utf8ToUtf16NoAllocUpdateLen(filename, Info->FileName, &tmpLen);
+	Info->Size = SIZE_OF_EFI_FILE_INFO + tmpLen;
 	if (EFI_ERROR(Status)) {
 		if (Status != EFI_BUFFER_TOO_SMALL)
 			PrintStatusError(Status, L"Could not convert directory entry to UTF-8");
 		return (INT32) Status;
 	}
-	/* The Info struct size already accounts for the extra NUL */
-	Info->Size = sizeof(*Info) + StrLen(Info->FileName) * sizeof(CHAR16);
 
 	// Oh, and of course GRUB uses a 32 bit signed mtime value (seriously, wtf guys?!?)
 	if (DirInfo->MtimeSet)
@@ -328,7 +329,7 @@ FileReadDir(EFI_GRUB_FILE *File, UINTN *Len, VOID *Data)
 	INT64 *Index = (INT64 *) &Info->FileSize;
 	/* And PhysicalSize as a pointer to our filename */
 	CHAR8 **basename = (CHAR8 **) &Info->PhysicalSize;
-	CHAR8 path[MAX_PATH];
+	CHAR8 path[MAX_FILE_NAME_LEN];
 	EFI_GRUB_FILE *TmpFile = NULL;
 	INTN len;
 
@@ -552,7 +553,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 			return EFI_BUFFER_TOO_SMALL;
 		}
 
-		ZeroMem(Data, sizeof(EFI_FILE_INFO));
+		ZeroMem(Data, SIZE_OF_EFI_FILE_INFO);
 		Info->Size = *Len;
 		Info->Attribute = EFI_FILE_READ_ONLY;
 		GrubTimeToEfiTime(File->Mtime, &Time);
@@ -567,8 +568,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 			Info->PhysicalSize = GrubGetFileSize(File);
 		}
 
-		/* The Info struct size accounts for the NUL string terminator */
-		tmpLen = (UINTN)(Info->Size - sizeof(EFI_FILE_INFO));
+		tmpLen = (UINTN)(Info->Size - SIZE_OF_EFI_FILE_INFO);
 		Status = Utf8ToUtf16NoAllocUpdateLen(File->basename, Info->FileName, &tmpLen);
 		if (EFI_ERROR(Status)) {
 			if (Status != EFI_BUFFER_TOO_SMALL)
@@ -576,7 +576,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 			return Status;
 		}
 
-		Info->Size = sizeof(EFI_FILE_INFO) + tmpLen;
+		Info->Size = SIZE_OF_EFI_FILE_INFO + tmpLen;
 		*Len = (INTN)Info->Size;
 		return EFI_SUCCESS;
 
@@ -589,7 +589,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 			return EFI_BUFFER_TOO_SMALL;
 		}
 
-		ZeroMem(Data, sizeof(EFI_FILE_INFO));
+		ZeroMem(Data, SIZE_OF_EFI_FILE_SYSTEM_INFO);
 		FSInfo->Size = *Len;
 		FSInfo->ReadOnly = 1;
 		/* NB: This should really be cluster size, but we don't have access to that */
@@ -616,17 +616,16 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 		if (EFI_ERROR(Status)) {
 			PrintStatusError(Status, L"Could not read disk label");
 			FSInfo->VolumeLabel[0] = 0;
-			*Len = sizeof(EFI_FILE_SYSTEM_INFO);
+			*Len = SIZE_OF_EFI_FILE_SYSTEM_INFO + sizeof(CHAR16);
 		} else {
-			/* The Info struct size accounts for the NUL string terminator */
-			tmpLen = (INTN)(FSInfo->Size - sizeof(EFI_FILE_SYSTEM_INFO));
+			tmpLen = (INTN)(FSInfo->Size - SIZE_OF_EFI_FILE_SYSTEM_INFO);
 			Status = Utf8ToUtf16NoAllocUpdateLen(label, FSInfo->VolumeLabel, &tmpLen);
 			if (EFI_ERROR(Status)) {
 				if (Status != EFI_BUFFER_TOO_SMALL)
 					PrintStatusError(Status, L"Could not convert label to UTF-16");
 				return Status;
 			}
-			FSInfo->Size = sizeof(EFI_FILE_SYSTEM_INFO) + tmpLen;
+			FSInfo->Size = SIZE_OF_EFI_FILE_SYSTEM_INFO + tmpLen;
 			*Len = (INTN)FSInfo->Size;
 		}
 		return EFI_SUCCESS;
@@ -637,8 +636,7 @@ FileGetInfo(EFI_FILE_HANDLE This, EFI_GUID *Type, UINTN *Len, VOID *Data)
 		Status = GrubLabel(File, &label);
 		if (EFI_ERROR(Status)) {
 			PrintStatusError(Status, L"Could not read disk label");
-		}
-		else {
+		} else {
 			Status = Utf8ToUtf16NoAllocUpdateLen(label, VLInfo->VolumeLabel, Len);
 			if (EFI_ERROR(Status)) {
 				if (Status != EFI_BUFFER_TOO_SMALL)
