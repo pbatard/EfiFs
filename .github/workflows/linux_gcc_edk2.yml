@@ -30,6 +30,7 @@ env:
   GCC5_ARM_PREFIX: arm-linux-gnueabi-
   GCC5_AARCH64_PREFIX: aarch64-linux-gnu-
   GCC5_RISCV64_PREFIX: riscv64-linux-gnu-
+  NASM_VERSION: 2.15.05
 
 jobs:
   build:
@@ -41,10 +42,10 @@ jobs:
         include:
         - arch: X64
           short: x64
-          pkgs: python3-distutils nasm uuid-dev
+          pkgs: python3-distutils uuid-dev
         - arch: IA32
           short: ia32
-          pkgs: gcc-multilib python3-distutils nasm uuid-dev
+          pkgs: gcc-multilib python3-distutils uuid-dev
         - arch: AARCH64
           short: aa64
           pkgs: gcc-aarch64-linux-gnu python3-distutils uuid-dev
@@ -58,6 +59,17 @@ jobs:
     steps:
     - name: Install toolchain
       run: sudo apt install ${{ matrix.pkgs }}
+    - name: Install nasm ${{ env.NASM_VERSION }}
+      # https://edk2.groups.io/g/devel/topic/89637409#87359
+      if: matrix.arch == 'X64' || matrix.arch == 'IA32'
+      run: |
+        curl -O https://www.nasm.us/pub/nasm/releasebuilds/${{ env.NASM_VERSION }}/nasm-${{ env.NASM_VERSION }}.tar.bz2
+        tar -xjf nasm-${{ env.NASM_VERSION }}.tar.bz2
+        cd nasm-${{ env.NASM_VERSION }}
+        ./autogen.sh
+        ./configure --prefix=/usr/local/ 
+        make 
+        sudo make install
     - name: Fix missing Risc-V header
       if: matrix.arch == 'riscv64'
       run: sudo ln -s /usr/riscv64-linux-gnu/include/gnu/stubs-lp64d.h /usr/riscv64-linux-gnu/include/gnu/stubs-lp64.h
