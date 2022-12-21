@@ -1,10 +1,10 @@
 EfiFs - EFI File System Drivers
 ===============================
 
-[![Build status](https://img.shields.io/github/workflow/status/pbatard/efifs/Windows,%20MSVC,%20gnu-efi.svg?style=flat-square&label=MSVC%20(gnu-efi))](https://github.com/pbatard/efifs/actions/workflows/windows_msvc_gnu-efi.yml)
-[![Build status](https://img.shields.io/github/workflow/status/pbatard/efifs/Windows,%20MSVC,%20EDK2.svg?style=flat-square&label=MSVC%20(EDK2))](https://github.com/pbatard/efifs/actions/workflows/windows_msvc_edk2.yml)
-[![Build status](https://img.shields.io/github/workflow/status/pbatard/efifs/Linux,%20gcc,%20gnu-efi.svg?style=flat-square&label=gcc%20(gnu-efi))](https://github.com/pbatard/efifs/actions/workflows/linux_gcc_gnu-efi.yml)
-[![Build status](https://img.shields.io/github/workflow/status/pbatard/efifs/Linux,%20gcc,%20EDK2.svg?style=flat-square&label=gcc%20(EDK2))](https://github.com/pbatard/efifs/actions/workflows/linux_gcc_edk2.yml)
+[![Build status](https://img.shields.io/github/actions/workflow/status/pbatard/efifs/windows_msvc_gnu-efi.yml?style=flat-square&label=MSVC%20(gnu-efi))](https://github.com/pbatard/efifs/actions/workflows/windows_msvc_gnu-efi.yml)
+[![Build status](https://img.shields.io/github/actions/workflow/status/pbatard/efifs/windows_msvc_edk2.yml?style=flat-square&label=MSVC%20(EDK2))](https://github.com/pbatard/efifs/actions/workflows/windows_msvc_edk2.yml)
+[![Build status](https://img.shields.io/github/actions/workflow/status/pbatard/efifs/linux_gcc_gnu-efi.yml?style=flat-square&label=gcc%20(gnu-efi))](https://github.com/pbatard/efifs/actions/workflows/linux_gcc_gnu-efi.yml)
+[![Build status](https://img.shields.io/github/actions/workflow/status/pbatard/efifs/linux_gcc_edk2.yml?style=flat-square&label=gcc%20(EDK2))](https://github.com/pbatard/efifs/actions/workflows/linux_gcc_edk2.yml)
 [![Github stats](https://img.shields.io/github/downloads/pbatard/efifs/total.svg?label=Downloads%20%28since%202021.08.15%29&style=flat-square)](https://github.com/pbatard/efifs/releases)  
 [![Release](https://img.shields.io/github/release-pre/pbatard/efifs.svg?label=Latest%20Release&style=flat-square)](https://github.com/pbatard/efifs/releases)
 [![Licence](https://img.shields.io/badge/license-GPLv3-blue.svg?label=License&style=flat-square)](https://www.gnu.org/licenses/gpl-3.0.en.html)
@@ -16,7 +16,7 @@ For additional info as well as precompiled drivers, see https://efi.akeo.ie
 
 ## Requirements
 
-* [Visual Studio 2019](https://www.visualstudio.com/vs/community/) (Windows),
+* [Visual Studio 2022](https://www.visualstudio.com/vs/community/) (Windows),
   MinGW (Windows), gcc (Linux) or [EDK2](https://github.com/tianocore/edk2).
 * A git client able to initialize/update submodules
 * [QEMU](http://www.qemu.org) __v2.7 or later__ if debugging with Visual Studio
@@ -62,13 +62,13 @@ For additional info as well as precompiled drivers, see https://efi.akeo.ie
   ```
   build -a X64 -b RELEASE -t <toolchain> -p EfiFsPkg/EfiFsPkg.dsc
   ```  
-  where `<toolchain>` is something like `VS2019` (Windows) or `GCC5` (Linux).  
+  where `<toolchain>` is something like `VS2022` (Windows) or `GCC5` (Linux).  
   NB: To build an individual driver, such as NTFS, you can also use something
   like:  
   ```
   build -a X64 -b RELEASE -t <toolchain> -p EfiFsPkg/EfiFsPkg.dsc -m EfiFsPkg/EfiFsPkg/Ntfs.inf
   ```
-* A Windows script to build the drivers, using EDK2 with VS2019 is also provided
+* A Windows script to build the drivers, using EDK2 with VS2022 is also provided
   as `edk2_build_drivers.cmd`.
 
 ## Testing
@@ -89,14 +89,14 @@ Then boot into the EFI shell and run the following:
 * For logging output, set the `FS_LOGGING` shell variable to 1 or more
 * To unload use the `drivers` command, then `unload` with the driver ID
 
-## Visual Studio 2019 and ARM/ARM64 support
+## Visual Studio 2022 and ARM/ARM64 support
 
 Please be mindful that, to enable ARM/ARM64 compilation support in Visual
-Studio 2019, you __MUST__ go to the _Individual components_ screen in the setup
+Studio 2022, you __MUST__ go to the _Individual components_ screen in the setup
 application and select the ARM compilers and libraries there, as they do __NOT__
 appear in the default _Workloads_ screen:
 
-![VS2019 Individual Components](https://files.akeo.ie/pics/VS2019_Individual_Components.png)
+![VS2022 Individual Components](https://files.akeo.ie/pics/VS2019_Individual_Components.png)
 
 ## Additional Notes
 
