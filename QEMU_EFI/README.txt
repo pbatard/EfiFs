@@ -7,5 +7,8 @@
   firmware image downloaded from:
   http://snapshots.linaro.org/components/kernel/leg-virt-tianocore-edk2-upstream/1631/QEMU-AARCH64/RELEASE_GCC5/
 
+* QEMU_EFI-RISCV64 is a build of the SiFive/U5SeriesPkg provided by edk2-platforms at:
+  https://github.com/tianocore/edk2-platforms/tree/master/Platform/SiFive/U5SeriesPkg
+
 * The NTFS versions are the same firmwares, but with the Fat driver replaced with a
   read-only NTFS driver. These are meant to be used for testing the EBC Fat module.
