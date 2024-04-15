@@ -41,6 +41,14 @@
     <ClCompile Include="..\grub\grub-core\kern\misc.c" />
     <ClCompile Include="..\grub\grub-core\lib\crc.c" />
     <ClCompile Include="..\grub\grub-core\lib\minilzo\minilzo.c" />
+    <ClCompile Include="..\grub\grub-core\lib\zstd\entropy_common.c" />
+    <ClCompile Include="..\grub\grub-core\lib\zstd\error_private.c" />
+    <ClCompile Include="..\grub\grub-core\lib\zstd\fse_decompress.c" />
+    <ClCompile Include="..\grub\grub-core\lib\zstd\huf_decompress.c" />
+    <ClCompile Include="..\grub\grub-core\lib\zstd\module.c" />
+    <ClCompile Include="..\grub\grub-core\lib\zstd\xxhash.c" />
+    <ClCompile Include="..\grub\grub-core\lib\zstd\zstd_common.c" />
+    <ClCompile Include="..\grub\grub-core\lib\zstd\zstd_decompress.c" />
     <ClCompile Include="..\src\grub.c" />
   </ItemGroup>
   <ItemGroup>
@@ -143,8 +151,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;EFI_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;EFI_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -169,8 +177,8 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;EFI_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;EFI_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -195,8 +203,8 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)\grub\include;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;EFI_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;EFI_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -221,8 +229,8 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\aarch64;$(SolutionDir)\grub\include;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;EFI_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\gnu-efi\inc\aarch64;$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;EFI_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -247,8 +255,8 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -276,8 +284,8 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -305,8 +313,8 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)\grub\include;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -334,8 +342,8 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\aarch64;$(SolutionDir)\grub\include;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\gnu-efi\inc\aarch64;$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>

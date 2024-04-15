@@ -2,11 +2,14 @@ include Make.common
 
 GRUB_LIB        = $(GRUB_DIR)/libgrub.a
 
-CFLAGS         += -DGRUB_FILE=\"$(subst $(srcdir)/,,$<)\" -DLZO_CFG_FREESTANDING
-CFLAGS         += -I$(GRUB_DIR) -I$(GRUB_DIR)/include -I$(GRUB_DIR)/grub-core/lib/minilzo
+CFLAGS         += -DGRUB_FILE=\"$(subst $(srcdir)/,,$<)\" -DLZO_CFG_FREESTANDING -DGRUB
+CFLAGS         += -I$(GRUB_DIR) -I$(GRUB_DIR)/include -I$(GRUB_DIR)/grub-core/lib/minilzo -I$(GRUB_DIR)/grub-core/lib/zstd
 OBJS            = $(SRC_DIR)/grub.o $(GRUB_DIR)/grub-core/kern/err.o $(GRUB_DIR)/grub-core/kern/list.o \
                   $(GRUB_DIR)/grub-core/kern/misc.o $(GRUB_DIR)/grub-core/lib/crc.o \
-                  $(GRUB_DIR)/grub-core/lib/minilzo/minilzo.o
+                  $(GRUB_DIR)/grub-core/lib/minilzo/minilzo.o $(GRUB_DIR)/grub-core/lib/zstd/entropy_common.o \
+                  $(GRUB_DIR)/grub-core/lib/zstd/error_private.o $(GRUB_DIR)/grub-core/lib/zstd/fse_decompress.o \
+                  $(GRUB_DIR)/grub-core/lib/zstd/huf_decompress.o $(GRUB_DIR)/grub-core/lib/zstd/xxhash.o \
+                  $(GRUB_DIR)/grub-core/lib/zstd/zstd_common.o $(GRUB_DIR)/grub-core/lib/zstd/zstd_decompress.o
 
 -include $(OBJS:.o=.d)
 .PHONY: all clean

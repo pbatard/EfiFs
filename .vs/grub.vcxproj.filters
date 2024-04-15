@@ -32,6 +32,30 @@
     <ClCompile Include="..\grub\grub-core\lib\crc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\grub\grub-core\lib\zstd\entropy_common.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\grub\grub-core\lib\zstd\error_private.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\grub\grub-core\lib\zstd\fse_decompress.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\grub\grub-core\lib\zstd\huf_decompress.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\grub\grub-core\lib\zstd\module.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\grub\grub-core\lib\zstd\xxhash.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\grub\grub-core\lib\zstd\zstd_common.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\grub\grub-core\lib\zstd\zstd_decompress.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\config.h">

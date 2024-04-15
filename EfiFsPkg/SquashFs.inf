@@ -37,6 +37,7 @@
   ../grub/grub-core/kern/list.c
   ../grub/grub-core/fs/fshelp.c
   ../grub/grub-core/fs/squash4.c
+  ../grub/grub-core/lib/posix_wrap/string.h
 
 [Packages]
   EfiFsPkg/EfiFsPkg.dec

@@ -116,7 +116,7 @@ OBJCOPY        := $(CROSS_COMPILE)objcopy
 CFLAGS         += -fno-stack-protector -Wshadow -Wall -Wunused -Werror-implicit-function-declaration
 CFLAGS         += -Wno-pointer-sign    # -funsigned-char does not work :(
 CFLAGS         += -I$(GNUEFI_DIR)/inc -I$(GNUEFI_DIR)/inc/$(GNUEFI_ARCH) -I$(GNUEFI_DIR)/inc/protocol
-CFLAGS         += -DCONFIG_$(GNUEFI_ARCH) -D__MAKEWITH_GNUEFI -DGNU_EFI_USE_MS_ABI -DNO_ZSTD -DNO_RAID_REBUILD
+CFLAGS         += -DCONFIG_$(GNUEFI_ARCH) -D__MAKEWITH_GNUEFI -DGNU_EFI_USE_MS_ABI -DNO_RAID6_RECOVERY
 LDFLAGS        += -L$(GNUEFI_DIR)/$(GNUEFI_ARCH)/lib -e $(EP_PREFIX)efi_main
 LDFLAGS        += -s -Wl,-Bsymbolic -nostdlib -shared
 LIBS            = -lefi $(CRT0_LIBS)
@@ -142,7 +142,7 @@ endif
 
 ifdef DRIVERNAME
   CFLAGS       += -DDRIVERNAME=$(DRIVERNAME)
-  CFLAGS       += -I$(GRUB_DIR) -I$(GRUB_DIR)/include -I$(GRUB_DIR)/grub-core/lib/minilzo
+  CFLAGS       += -I$(GRUB_DIR) -I$(GRUB_DIR)/include -I$(GRUB_DIR)/grub-core/lib/minilzo -I$(GRUB_DIR)/grub-core/lib/zstd
   CFLAGS       += -DGRUB_FILE=\"$(subst $(srcdir)/,,$<)\"
   LDFLAGS      += -shared -L$(GNUEFI_LIBDIR) -L$(GRUB_DIR) -e $(EP_PREFIX)InitializeDriver
   LIBS         += -lgrub -lefi

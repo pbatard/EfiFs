@@ -26,6 +26,15 @@
   ../grub/grub-core/lib/crc.c
   ../grub/grub-core/lib/crypto.c
   ../grub/grub-core/lib/minilzo/minilzo.c
+  ../grub/grub-core/lib/zstd/entropy_common.c
+  ../grub/grub-core/lib/zstd/error_private.c
+  ../grub/grub-core/lib/zstd/fse_decompress.c
+  ../grub/grub-core/lib/zstd/huf.h
+  ../grub/grub-core/lib/zstd/huf_decompress.c
+  ../grub/grub-core/lib/zstd/xxhash.c
+  ../grub/grub-core/lib/zstd/zstd_common.c
+  ../grub/grub-core/lib/zstd/zstd_decompress.c
+  ../grub/grub-core/lib/zstd/zstd.h
   ../grub/grub-core/io/lzopio.c
   ../grub/grub-core/io/gzio.c
   ../grub/grub-core/kern/err.c
@@ -73,6 +82,6 @@
   *_*_IA32_CC_FLAGS    = -DFORMAT=efi-app-ia32
   *_*_X64_CC_FLAGS     = -DFORMAT=efi-app-x64
   *_*_*_CC_FLAGS       = -Os -DCPU_$(ARCH) -DGRUB_FILE=__FILE__ -DDRIVERNAME=$(BASE_NAME) -DDRIVERNAME_STR=\"Btrfs\"
-  *_*_*_CC_FLAGS       = -DEXTRAMODULE=gzio -DNO_ZSTD -DNO_RAID_REBUILD
+  *_*_*_CC_FLAGS       = -DEXTRAMODULE=gzio -DZSTD_NO_TRACE -DGRUB -DNO_RAID6_RECOVERY
   GCC:*_*_*_CC_FLAGS   = -Wno-unused-function
   MSFT:*_*_*_CC_FLAGS  = /wd4028 /wd4068 /wd4133 /wd4146 /wd4201 /wd4204 /wd4244 /wd4245 /wd4267 /wd4311 /wd4312 /wd4334 /wd4706
