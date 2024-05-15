@@ -72,7 +72,7 @@ jobs:
         cd edk2
         call edksetup.bat rebuild
     - name: Checkout repository and submodules
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
         submodules: recursive
@@ -94,8 +94,18 @@ jobs:
         call build -a ${{ matrix.arch }} -b ${{ env.BUILD_TYPE }} -t ${{ env.COMPILER }} -p EfiFsPkg/EfiFsPkg.dsc
         for %%f in (Build\EfiFs\${{ env.BUILD_TYPE }}_${{ env.COMPILER }}\${{ matrix.arch }}\*.efi) do ren "%%~f" "%%~nf_${{ matrix.short }}%%~xf"
     - name: Upload artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       if: ${{ github.event_name == 'push' }}
       with:
-        name: msvc_edk2
+        name: msvc_edk2_${{ matrix.short }}
         path: edk2/Build/EfiFs/${{ env.BUILD_TYPE }}_${{ env.COMPILER }}/${{ matrix.arch }}/*.efi
+
+  merge-artifacts:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: msvc_edk2
+          delete-merged: true

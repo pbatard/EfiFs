@@ -34,7 +34,7 @@ jobs:
 
     steps:
     - name: Checkout repository and submodules
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
         submodules: recursive
@@ -44,14 +44,24 @@ jobs:
         git apply ..\0001-GRUB-fixes.patch
         cd ..
     - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v1
+      uses: microsoft/setup-msbuild@v2
     - name: Build drivers
       run: |
         msbuild efifs.sln /m /p:Configuration=Debug,Platform=${{ matrix.arch }}
         msbuild efifs.sln /m /p:Configuration=Release,Platform=${{ matrix.arch }}
     - name: Upload artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       if: ${{ github.event_name == 'push' }}
       with:
-        name: msvc_gnu-efi
+        name: msvc_gnu-efi_${{ matrix.arch }}
         path: ${{ matrix.arch }}/Release/*.efi
+
+  merge-artifacts:
+    runs-on: windows-latest
+    needs: build
+    steps:
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: msvc_gnu-efi
+          delete-merged: true

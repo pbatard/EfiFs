@@ -50,7 +50,7 @@ jobs:
 
     steps:
     - name: Checkout repository and submodules
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
         submodules: recursive
@@ -64,8 +64,18 @@ jobs:
     - name: Build drivers
       run: make ARCH=${{ matrix.arch }} CROSS_COMPILE=${{ matrix.tuple }}
     - name: Upload artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       if: ${{ github.event_name == 'push' }}
       with:
-        name: gcc_gnu-efi
+        name: gcc_gnu-efi_${{ matrix.arch }}
         path: src/*.efi
+
+  merge-artifacts:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: gcc_gnu-efi
+          delete-merged: true
