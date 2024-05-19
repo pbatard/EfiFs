@@ -208,7 +208,7 @@ extern CHAR16 *ShortDriverName, *FullDriverName;
 extern GRUB_MOD_INIT GrubModuleInit[];
 extern GRUB_MOD_EXIT GrubModuleExit[];
 
-#define strcpya(dst, src) CopyMem(dst, src, strlena(src) + 1)
+#define strcpya(dst, src) CopyMem((VOID*)dst, (VOID*)src, strlena(src) + 1)
 extern VOID SetLogging(VOID);
 extern VOID PrintStatus(EFI_STATUS Status);
 extern VOID GrubDriverInit(VOID);

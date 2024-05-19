@@ -1,12 +1,12 @@
-From 4c08ec1dba1995c99e89e6a1fa49b785262f3ee6 Mon Sep 17 00:00:00 2001
+From e56b3efa53f4dfb99b2b5c8315826986477039ac Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Wed, 15 May 2024 11:58:08 +0100
+Date: Sun, 19 May 2024 11:56:58 +0100
 Subject: [PATCH] GRUB fixes
 
 ---
  grub-core/fs/affs.c                  |  2 ++
  grub-core/fs/bfs.c                   |  2 ++
- grub-core/fs/btrfs.c                 | 50 +++++++++++++++++-----------
+ grub-core/fs/btrfs.c                 | 52 +++++++++++++++++-----------
  grub-core/fs/cbfs.c                  |  2 +-
  grub-core/fs/cpio_common.c           |  2 +-
  grub-core/fs/f2fs.c                  |  2 ++
@@ -14,7 +14,7 @@ Subject: [PATCH] GRUB fixes
  grub-core/fs/hfs.c                   |  6 ++++
  grub-core/fs/hfsplus.c               |  2 ++
  grub-core/fs/hfspluscomp.c           |  4 +++
- grub-core/fs/iso9660.c               | 38 +++++++++++++--------
+ grub-core/fs/iso9660.c               | 38 +++++++++++++-------
  grub-core/fs/jfs.c                   |  5 +--
  grub-core/fs/nilfs2.c                |  4 ++-
  grub-core/fs/ntfs.c                  |  2 ++
@@ -46,16 +46,16 @@ Subject: [PATCH] GRUB fixes
  include/grub/fat.h                   |  2 ++
  include/grub/hfs.h                   |  2 ++
  include/grub/hfsplus.h               |  6 ++++
- include/grub/misc.h                  | 13 ++++++++
+ include/grub/misc.h                  | 13 +++++++
  include/grub/ntfs.h                  |  2 ++
  include/grub/safemath.h              |  8 +++++
  include/grub/term.h                  |  4 +--
- include/grub/types.h                 | 42 +++++++++++++++--------
+ include/grub/types.h                 | 42 +++++++++++++++-------
  include/grub/unicode.h               |  2 ++
  include/grub/x86_64/types.h          |  2 +-
  include/grub/zfs/zap_leaf.h          |  2 ++
  include/grub/zfs/zio.h               |  2 ++
- 51 files changed, 259 insertions(+), 87 deletions(-)
+ 51 files changed, 261 insertions(+), 87 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
 index ed606b3f1..3f298a696 100644
@@ -98,7 +98,7 @@ index 07cb3e3ac..5d6ef2664 100644
  struct grub_bfs_data
  {
 diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
-index ba0c58352..8cc8258cf 100644
+index ba0c58352..b2299e94b 100644
 --- a/grub-core/fs/btrfs.c
 +++ b/grub-core/fs/btrfs.c
 @@ -63,6 +63,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
@@ -192,17 +192,22 @@ index ba0c58352..8cc8258cf 100644
      }
  
    grub_dprintf ("btrfs", "rebuilding RAID 5 stripe #%" PRIuGRUB_UINT64_T "\n", i);
-@@ -725,6 +731,7 @@ rebuild_raid5 (char *dest, struct raid56_buffer *buffers,
+@@ -725,8 +731,10 @@ rebuild_raid5 (char *dest, struct raid56_buffer *buffers,
        } else
  	grub_crypto_xor (dest, dest, buffers[i].buf, csize);
      }
 +  return GRUB_ERR_NONE;
  }
  
++#ifndef NO_RAID6_RECOVERY
  static grub_err_t
-@@ -742,14 +749,18 @@ raid6_recover_read_buffer (void *data, int disk_nr,
+ raid6_recover_read_buffer (void *data, int disk_nr,
+ 			   grub_uint64_t addr __attribute__ ((unused)),
+@@ -741,15 +749,20 @@ raid6_recover_read_buffer (void *data, int disk_nr,
+ 
      return grub_errno = GRUB_ERR_NONE;
  }
++#endif
  
 -static void
 +static grub_err_t
@@ -222,7 +227,7 @@ index ba0c58352..8cc8258cf 100644
  }
  
  static grub_err_t
-@@ -843,11 +854,10 @@ raid56_read_retry (struct grub_btrfs_data *data,
+@@ -843,11 +856,10 @@ raid56_read_retry (struct grub_btrfs_data *data,
  
    /* We have enough disks. So, rebuild the data. */
    if (chunk_type & GRUB_BTRFS_CHUNK_TYPE_RAID5)
@@ -236,7 +241,7 @@ index ba0c58352..8cc8258cf 100644
   cleanup:
    if (buffers)
      for (i = 0; i < nstripes; i++)
-@@ -965,8 +975,8 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
+@@ -965,8 +977,8 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
  			       "couldn't find the chunk descriptor");
  	  }
  
@@ -247,7 +252,7 @@ index ba0c58352..8cc8258cf 100644
  	grub_dprintf ("btrfs", "chunk 0x%" PRIxGRUB_UINT64_T
  		      "+0x%" PRIxGRUB_UINT64_T
  		      " (%d stripes (%d substripes) of %"
-@@ -1052,13 +1062,13 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
+@@ -1052,13 +1064,13 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
  	      grub_uint64_t middle, high;
  	      grub_uint64_t low;
  	      grub_uint16_t nsubstripes;
@@ -263,7 +268,7 @@ index ba0c58352..8cc8258cf 100644
  				    &stripen);
  	      stripen *= nsubstripes;
  	      redundancy = nsubstripes;
-@@ -1335,7 +1345,7 @@ static void *grub_zstd_malloc (void *state __attribute__((unused)), size_t size)
+@@ -1335,7 +1347,7 @@ static void *grub_zstd_malloc (void *state __attribute__((unused)), size_t size)
  
  static void grub_zstd_free (void *state __attribute__((unused)), void *address)
  {

@@ -24,9 +24,24 @@
 
 #include "driver.h"
 
-// Needed to avoid a LNK2043 error with EDK2/MSVC/IA32
+/* Needed to avoid a LNK2043 error with EDK2/MSVC/IA32 */
 #if !defined(__MAKEWITH_GNUEFI) && defined(_M_IX86)
 #pragma comment(linker, "/INCLUDE:_MultS64x64")
+#endif
+
+/* 
+ * Needed to avoid a linker error with MinGW when functions allocate a large amount of data from stack
+ * See https://www.metricpanda.com/rival-fortress-update-45-dealing-with-__chkstk-__chkstk_ms-when-cross-compiling-for-windows
+ */
+#if defined(__MINGW32__)
+#if defined(__MINGW64__)
+void ___chkstk_ms(void)
+#else
+void __chkstk_ms(void)
+#endif
+{
+    return;
+}
 #endif
 
 EFI_STATUS
@@ -102,7 +117,7 @@ StrDup(CONST CHAR16* Src)
 	UINTN Size = StrSize(Src);
 	CHAR16* Dest = AllocatePool(Size);
 	if (Dest != NULL)
-		CopyMem (Dest, Src, Size);
+		CopyMem (Dest, (VOID*)Src, Size);
 	return Dest;
 }
 
