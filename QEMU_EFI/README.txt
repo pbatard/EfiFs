@@ -9,7 +9,7 @@
 
 * QEMU_EFI-RISCV64 is a repackaged version of the unmodified RISCV_VIRT_CODE.fd
   Debian firmware image from:
-  http://ftp.ie.debian.org/debian/pool/main/e/edk2/qemu-efi-riscv64_2023.08-1_all.deb
+  http://ftp.ie.debian.org/debian/pool/main/e/edk2/qemu-efi-riscv64_2024.02-2_all.deb
 
 * The NTFS versions are the same firmwares, but with the Fat driver replaced with a
   read-only NTFS driver. These are meant to be used for testing the EBC Fat module.
