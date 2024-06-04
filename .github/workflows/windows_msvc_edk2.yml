@@ -27,7 +27,7 @@ on:
 env:
   BUILD_TYPE: RELEASE
   COMPILER: VS2019
-  NASM_URL: https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/win64/nasm-2.15.05-win64.zip
+  NASM_URL: https://www.nasm.us/pub/nasm/releasebuilds/2.16/win64/nasm-2.16-win64.zip
 
 jobs:
   build:
@@ -61,30 +61,36 @@ jobs:
         del nasm.zip
         move nasm* nasm
         echo NASM_PREFIX=%cd%\nasm\>> %GITHUB_ENV%
+
     - name: Set Visual Studio for win32 build
       uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: win32
+
     - name: Set up EDK2
       shell: cmd
       run: |
         git clone --recursive https://github.com/tianocore/edk2.git
         cd edk2
         call edksetup.bat rebuild
+
     - name: Checkout repository and submodules
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
         submodules: recursive
         path: edk2/EfiFsPkg
+
     - name: Patch GRUB
       run: |
         cd edk2\EfiFsPkg\grub
         git apply ..\0001-GRUB-fixes.patch
+
     - name: Set Visual Studio for ${{ matrix.msvc }} build
       uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: ${{ matrix.msvc }}
+
     - name: Build UEFI drivers
       shell: cmd
       run: |
@@ -93,6 +99,7 @@ jobs:
         call EfiFsPkg\set_grub_cpu.cmd ${{ matrix.arch }}
         call build -a ${{ matrix.arch }} -b ${{ env.BUILD_TYPE }} -t ${{ env.COMPILER }} -p EfiFsPkg/EfiFsPkg.dsc
         for %%f in (Build\EfiFs\${{ env.BUILD_TYPE }}_${{ env.COMPILER }}\${{ matrix.arch }}\*.efi) do ren "%%~f" "%%~nf_${{ matrix.short }}%%~xf"
+
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       if: ${{ github.event_name == 'push' }}

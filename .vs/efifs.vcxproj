@@ -151,7 +151,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <AdditionalOptions>/Oi- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -172,7 +172,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <AdditionalOptions>/Oi- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -193,7 +193,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <AdditionalOptions>/Oi- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -214,7 +214,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <AdditionalOptions>/Oi- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -233,7 +233,7 @@
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <AdditionalOptions>/Oi- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MinSpace</Optimization>
     </ClCompile>
     <Link>
@@ -256,7 +256,7 @@
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <AdditionalOptions>/Oi- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MinSpace</Optimization>
     </ClCompile>
     <Link>
@@ -279,7 +279,7 @@
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <AdditionalOptions>/Oi- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MinSpace</Optimization>
     </ClCompile>
     <Link>
@@ -302,7 +302,7 @@
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <AdditionalOptions>/Oi- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MinSpace</Optimization>
     </ClCompile>
     <Link>

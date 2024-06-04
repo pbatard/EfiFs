@@ -144,11 +144,7 @@ grub_realloc(void *p, grub_size_t new_size)
 
 	if (ptr != NULL) {
 		ptr = &ptr[-1];
-#if defined(__MAKEWITH_GNUEFI)
-		ptr = ReallocatePool(ptr, (UINTN)*ptr, (UINTN)(new_size + sizeof(grub_size_t)));
-#else
 		ptr = ReallocatePool((UINTN)*ptr, (UINTN)(new_size + sizeof(grub_size_t)), ptr);
-#endif
 		if (ptr != NULL)
 			*ptr++ = new_size;
 	}

@@ -68,6 +68,7 @@
   EfiFsPkg/EfiFsPkg/Cbfs.inf
   EfiFsPkg/EfiFsPkg/Cpio.inf
   EfiFsPkg/EfiFsPkg/CpioBe.inf
+  EfiFsPkg/EfiFsPkg/EroFs.inf
   EfiFsPkg/EfiFsPkg/Ext2.inf
   EfiFsPkg/EfiFsPkg/ExFat.inf
   EfiFsPkg/EfiFsPkg/F2fs.inf

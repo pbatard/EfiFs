@@ -17,6 +17,10 @@ btrfs:
 	@rm -f this.o
 	+$(MAKE) DRIVERNAME=$@ DRIVERNAME_STR="Btrfs" FSDIR=fs EXTRAMODULE=gzio EXTRAMODULEDIR=io -f $(DRIVER_MAKEFILE) driver
 
+erofs:
+	@rm -f this.o
+	+$(MAKE) DRIVERNAME=$@ DRIVERNAME_STR="EROFS" FSDIR=fs -f $(DRIVER_MAKEFILE) driver
+
 exfat:
 	@rm -f this.o
 	+$(MAKE) DRIVERNAME=$@ DRIVERNAME_STR="ExFAT" FSDIR=fs -f $(DRIVER_MAKEFILE) driver

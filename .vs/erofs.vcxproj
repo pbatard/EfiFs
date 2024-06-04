@@ -35,8 +35,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{A6F3DBC3-01FE-4A63-B24D-927B0920D393}</ProjectGuid>
-    <ProjectName>iso9660</ProjectName>
+    <ProjectGuid>{6a8c4102-1c13-4ae9-a691-bf8ee908d89f}</ProjectGuid>
+    <ProjectName>erofs</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -163,7 +163,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;DRIVERNAME_STR="ISO9660";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;DRIVERNAME_STR="ExFAT";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <WarningLevel>Level3</WarningLevel>
@@ -191,7 +191,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;DRIVERNAME_STR="ISO9660";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;DRIVERNAME_STR="ExFAT";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <WarningLevel>Level3</WarningLevel>
@@ -220,7 +220,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;DRIVERNAME_STR="ISO9660";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;DRIVERNAME_STR="ExFAT";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <WarningLevel>Level3</WarningLevel>
@@ -249,7 +249,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\aarch64;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;DRIVERNAME_STR="ISO9660";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;DRIVERNAME_STR="ExFAT";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <WarningLevel>Level3</WarningLevel>
@@ -277,7 +277,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;DRIVERNAME_STR="ISO9660";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;DRIVERNAME_STR="ExFAT";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <WarningLevel>Level3</WarningLevel>
@@ -306,7 +306,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;DRIVERNAME_STR="ISO9660";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;DRIVERNAME_STR="ExFAT";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <WarningLevel>Level3</WarningLevel>
@@ -335,7 +335,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;DRIVERNAME_STR="ISO9660";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;DRIVERNAME_STR="ExFAT";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <WarningLevel>Level3</WarningLevel>
@@ -365,7 +365,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\aarch64;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;DRIVERNAME_STR="ISO9660";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DRIVERNAME=$(ProjectName);GRUB_FILE=__FILE__;_UNICODE;UNICODE;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;DRIVERNAME_STR="ExFAT";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <WarningLevel>Level3</WarningLevel>
@@ -392,7 +392,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\grub\grub-core\fs\iso9660.c" />
+    <ClCompile Include="..\grub\grub-core\fs\erofs.c" />
     <ClCompile Include="..\src\this.c" />
   </ItemGroup>
   <ItemGroup>

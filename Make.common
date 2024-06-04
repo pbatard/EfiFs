@@ -167,6 +167,17 @@ ifdef OBJS
   -include $(OBJS:.o=.d)
 endif
 
+# Set verbose or nonverbose output similarly to automake's silent rules.
+# Default is nonverbose, but, just like with automake, it can be disabled
+# with: 'make V=1'
+ifneq ($(V),1)
+  HIDE=@
+  ECHO=echo
+else
+  HIDE=
+  ECHO=true
+endif
+
 $(GNUEFI_LIB):
 	$(MAKE) -C$(GNUEFI_DIR) CROSS_COMPILE=$(CROSS_COMPILE) ARCH=$(GNUEFI_ARCH) $(GNUEFI_LIBS)
 
@@ -175,21 +186,21 @@ $(GNUEFI_LIB):
 driver: $(DRIVER).efi
 
 $(DRIVER).efi: $(OBJS)
-	@echo  [LD]  $(notdir $@)
-ifeq ($(CRT0_LIBS),)	
-	@$(CC) $(LDFLAGS) $(OBJS) -o $(DRIVER).efi $(LIBS)
+	@$(ECHO) "  LD       $(notdir $@)"
+ifeq ($(CRT0_LIBS),)
+	$(HIDE)$(CC) $(LDFLAGS) $(OBJS) -o $(DRIVER).efi $(LIBS)
 else
-	@$(CC) $(LDFLAGS) $(OBJS) -o $(DRIVER).elf $(LIBS)
-	@$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel* \
-	            -j .rela* -j .reloc -j .eh_frame -O binary $(DRIVER).elf $@
-	@rm -f $(DRIVER).elf
+	$(HIDE)$(CC) $(LDFLAGS) $(OBJS) -o $(DRIVER).elf $(LIBS)
+	$(HIDE)$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel* \
+	                  -j .rela* -j .reloc -j .eh_frame -O binary $(DRIVER).elf $@
+	$(HIDE)rm -f $(DRIVER).elf
 endif
 	@chmod a-x $(DRIVER).efi
 
 %.o: %.c
-	@echo  [CC]  $(notdir $@)
-	@$(CC) $(CFLAGS) -ffreestanding -c $< -o $@
-	@$(CC) -MM $(CFLAGS) $*.c > $*.d
+	@$(ECHO) "  CC       $(notdir $@)"
+	$(HIDE)$(CC) $(CFLAGS) -ffreestanding -c $< -o $@
+	$(HIDE)$(CC) -MM $(CFLAGS) $*.c > $*.d
 
 clean.common:
 	$(MAKE) -C$(GNUEFI_DIR) ARCH=$(GNUEFI_ARCH) clean

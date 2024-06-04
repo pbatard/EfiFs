@@ -171,6 +171,7 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -198,6 +199,7 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -226,6 +228,7 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -254,6 +257,7 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -279,7 +283,7 @@
       <WarningLevel>Level3</WarningLevel>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalOptions>/Oi- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MinSpace</Optimization>
     </ClCompile>
     <Lib>
@@ -308,7 +312,7 @@
       <WarningLevel>Level3</WarningLevel>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalOptions>/Oi- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MinSpace</Optimization>
     </ClCompile>
     <Lib>
@@ -337,7 +341,7 @@
       <WarningLevel>Level3</WarningLevel>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalOptions>/Oi- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MinSpace</Optimization>
     </ClCompile>
     <Lib>
@@ -367,7 +371,7 @@
       <WarningLevel>Level3</WarningLevel>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalOptions>/Oi- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MinSpace</Optimization>
     </ClCompile>
     <Lib>

@@ -1,6 +1,6 @@
-From e56b3efa53f4dfb99b2b5c8315826986477039ac Mon Sep 17 00:00:00 2001
+From c1eb6b7996d16ab05af43726539b22853abeefd9 Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Sun, 19 May 2024 11:56:58 +0100
+Date: Tue, 4 Jun 2024 16:50:10 +0100
 Subject: [PATCH] GRUB fixes
 
 ---
@@ -9,6 +9,7 @@ Subject: [PATCH] GRUB fixes
  grub-core/fs/btrfs.c                 | 52 +++++++++++++++++-----------
  grub-core/fs/cbfs.c                  |  2 +-
  grub-core/fs/cpio_common.c           |  2 +-
+ grub-core/fs/erofs.c                 |  6 ++++
  grub-core/fs/f2fs.c                  |  2 ++
  grub-core/fs/fat.c                   |  8 +++--
  grub-core/fs/hfs.c                   |  6 ++++
@@ -46,16 +47,16 @@ Subject: [PATCH] GRUB fixes
  include/grub/fat.h                   |  2 ++
  include/grub/hfs.h                   |  2 ++
  include/grub/hfsplus.h               |  6 ++++
- include/grub/misc.h                  | 13 +++++++
+ include/grub/misc.h                  |  5 +++
  include/grub/ntfs.h                  |  2 ++
- include/grub/safemath.h              |  8 +++++
+ include/grub/safemath.h              | 24 +++++++++++++
  include/grub/term.h                  |  4 +--
  include/grub/types.h                 | 42 +++++++++++++++-------
  include/grub/unicode.h               |  2 ++
  include/grub/x86_64/types.h          |  2 +-
  include/grub/zfs/zap_leaf.h          |  2 ++
  include/grub/zfs/zio.h               |  2 ++
- 51 files changed, 261 insertions(+), 87 deletions(-)
+ 52 files changed, 275 insertions(+), 87 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
 index ed606b3f1..3f298a696 100644
@@ -303,6 +304,56 @@ index 5d41b6fdb..042870715 100644
  {
    struct head hd;
    grub_size_t namesize;
+diff --git a/grub-core/fs/erofs.c b/grub-core/fs/erofs.c
+index 46cfc2e5c..dde762d02 100644
+--- a/grub-core/fs/erofs.c
++++ b/grub-core/fs/erofs.c
+@@ -37,6 +37,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
+ #define EROFS_FEATURE_INCOMPAT_CHUNKED_FILE	0x00000004
+ #define EROFS_ALL_FEATURE_INCOMPAT		EROFS_FEATURE_INCOMPAT_CHUNKED_FILE
+ 
++PRAGMA_BEGIN_PACKED
+ struct grub_erofs_super
+ {
+   grub_uint32_t		magic;
+@@ -71,6 +72,7 @@ struct grub_erofs_super
+   grub_uint64_t		packed_nid;
+   grub_uint8_t		reserved2[24];
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ #define EROFS_INODE_LAYOUT_COMPACT	0
+ #define EROFS_INODE_LAYOUT_EXTENDED	1
+@@ -87,11 +89,13 @@ struct grub_erofs_super
+ #define EROFS_I_VERSION_BIT	0
+ #define EROFS_I_DATALAYOUT_BIT	1
+ 
++PRAGMA_BEGIN_PACKED
+ struct grub_erofs_inode_chunk_info
+ {
+   grub_uint16_t		format;
+   grub_uint16_t		reserved;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ #define EROFS_CHUNK_FORMAT_BLKBITS_MASK	0x001F
+ #define EROFS_CHUNK_FORMAT_INDEXES	0x0020
+@@ -122,6 +126,7 @@ union grub_erofs_inode_i_u
+   struct grub_erofs_inode_chunk_info	c;
+ };
+ 
++PRAGMA_BEGIN_PACKED
+ struct grub_erofs_inode_compact
+ {
+   grub_uint16_t			i_format;
+@@ -183,6 +188,7 @@ struct grub_erofs_dirent
+   grub_uint8_t		file_type;
+   grub_uint8_t		reserved;
+ } GRUB_PACKED;
++PRAGMA_END_PACKED
+ 
+ struct grub_erofs_map_blocks
+ {
 diff --git a/grub-core/fs/f2fs.c b/grub-core/fs/f2fs.c
 index 855e24618..273ff806d 100644
 --- a/grub-core/fs/f2fs.c
@@ -1379,33 +1430,20 @@ index 2d8336aff..8627dc47e 100644
  /* Return the offset of the record with the index INDEX, in the node
     NODE which is part of the B+ tree BTREE.  */
 diff --git a/include/grub/misc.h b/include/grub/misc.h
-index 1b35a167f..2b3be1c57 100644
+index 1b35a167f..8ef1e4d6c 100644
 --- a/include/grub/misc.h
 +++ b/include/grub/misc.h
-@@ -27,12 +27,22 @@
- #include <grub/i18n.h>
- #include <grub/compiler.h>
- 
-+#ifndef _MSC_VER
- #define ALIGN_UP(addr, align) \
- 	(((addr) + (typeof (addr)) (align) - 1) & ~((typeof (addr)) (align) - 1))
+@@ -32,7 +32,9 @@
  #define ALIGN_UP_OVERHEAD(addr, align) ((-(addr)) & ((typeof (addr)) (align) - 1))
  #define ALIGN_DOWN(addr, align) \
  	((addr) & ~((typeof (addr)) (align) - 1))
-+#else
-+#define ALIGN_UP(addr, align) \
-+	(((addr) + (align) - 1) & ~((align) - 1))
-+#define ALIGN_UP_OVERHEAD(addr, align) ((-(addr)) & ((align) - 1))
-+#define ALIGN_DOWN(addr, align) \
-+	((addr) & ~((align) - 1))
-+#endif
 +#ifndef ARRAY_SIZE
  #define ARRAY_SIZE(array) (sizeof (array) / sizeof (array[0]))
 +#endif
  #define COMPILE_TIME_ASSERT(cond) switch (0) { case 1: case !(cond): ; }
  
  #define grub_dprintf(condition, ...) grub_real_dprintf(GRUB_FILE, __LINE__, condition, __VA_ARGS__)
-@@ -292,6 +302,9 @@ grub_uuidcasecmp (const char *uuid1, const char *uuid2, grub_size_t n)
+@@ -292,6 +294,9 @@ grub_uuidcasecmp (const char *uuid1, const char *uuid2, grub_size_t n)
   *  ... or ...
   *  l = grub_strtoul(s, (const char ** const)&end, 10);
   */
@@ -1436,24 +1474,40 @@ index d1a6af696..203e0141e 100644
  struct grub_ntfs_attr
  {
 diff --git a/include/grub/safemath.h b/include/grub/safemath.h
-index fbd9b5925..7589bfc65 100644
+index e032f63a0..095695bda 100644
 --- a/include/grub/safemath.h
 +++ b/include/grub/safemath.h
-@@ -30,6 +30,14 @@
- #define grub_sub(a, b, res)	__builtin_sub_overflow(a, b, res)
- #define grub_mul(a, b, res)	__builtin_mul_overflow(a, b, res)
+@@ -47,6 +47,30 @@
+   __failed;						\
+ })
  
 +#elif defined(_MSC_VER)
 +
 +#include <intsafe.h>
++#include <stdbool.h>
++#include <intrin.h>
 +
 +#define grub_add(a, b, res)	UIntPtrAdd(a, b, res)
 +#define grub_sub(a, b, res)	UIntPtrSub(a, b, res)
 +#define grub_mul(a, b, res)	UIntPtrMult(a, b, res)
 +
- #define grub_cast(a, res)	grub_add ((a), 0, (res))
- 
++#define grub_cast(a, res)	grub_add ((a), 0, (res))
++
++// Only used by EROFS for now...
++static __inline bool ALIGN_UP_OVF(uintptr_t v, uintptr_t align, uintptr_t* res)
++{
++  bool __failed;
++  uintptr_t __a = ((uintptr_t)(align) - 1);
++
++  __failed = FAILED(grub_add (v, __a, res));
++  if (__failed == false)
++    *(res) &= ~__a;
++  return __failed;
++}
++
  #else
+ #error gcc 5.1 or newer or clang 8.0 or newer is required
+ #endif
 diff --git a/include/grub/term.h b/include/grub/term.h
 index 7f1a14c84..6daa584a1 100644
 --- a/include/grub/term.h
@@ -1636,5 +1690,5 @@ index 19ce136bb..11ee51b61 100644
  /*
   * Gang block headers are self-checksumming and contain an array
 -- 
-2.45.1.windows.1
+2.45.2.windows.1
 

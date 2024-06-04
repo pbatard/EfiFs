@@ -159,7 +159,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <AdditionalOptions>/Oi- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -185,7 +185,7 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <AdditionalOptions>/Oi- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -211,7 +211,7 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <AdditionalOptions>/Oi- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -237,7 +237,7 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <AdditionalOptions>/Oi- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -262,7 +262,7 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <AdditionalOptions>/Oi- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MinSpace</Optimization>
     </ClCompile>
     <Link>
@@ -291,7 +291,7 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <AdditionalOptions>/Oi- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MinSpace</Optimization>
     </ClCompile>
     <Link>
@@ -320,7 +320,7 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <AdditionalOptions>/Oi- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MinSpace</Optimization>
     </ClCompile>
     <Link>
@@ -349,7 +349,7 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <AdditionalOptions>/Oi- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Oi- /std:clatest %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MinSpace</Optimization>
     </ClCompile>
     <Link>

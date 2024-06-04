@@ -1,12 +1,12 @@
 ## @file
 # 
-# Ntfs - EfiFs NTFS driver.
+# EroFs - EfiFs EROFS File System driver.
 #
 
 [Defines]
   INF_VERSION                = 0x00010005
-  BASE_NAME                  = ntfs
-  FILE_GUID                  = 80FB68D4-7C52-4AFE-A91E-D3DDADB5C54F
+  BASE_NAME                  = erofs
+  FILE_GUID                  = 2B0F3769-1EBF-44E9-9BF2-E696C96104A2
   MODULE_TYPE                = UEFI_DRIVER
   VERSION_STRING             = 1.7
   EDK_RELEASE_VERSION        = 0x00020000
@@ -27,8 +27,7 @@
   ../grub/grub-core/kern/list.c
   ../grub/grub-core/kern/misc.c
   ../grub/grub-core/fs/fshelp.c
-  ../grub/grub-core/fs/ntfs.c
-  ../grub/grub-core/fs/ntfscomp.c
+  ../grub/grub-core/fs/erofs.c
 
 [Packages]
   EfiFsPkg/EfiFsPkg.dec
@@ -68,7 +67,5 @@
 [BuildOptions]
   *_*_IA32_CC_FLAGS    = -DFORMAT=efi-app-ia32
   *_*_X64_CC_FLAGS     = -DFORMAT=efi-app-x64
-  *_*_*_CC_FLAGS       = -Os -DCPU_$(ARCH) -DGRUB_FILE=__FILE__ -DDRIVERNAME=$(BASE_NAME) -DDRIVERNAME_STR=\"NTFS\"
-  # NTFS has a compressed driver
-  *_*_*_CC_FLAGS       = -DCOMPRESSED_DRIVERNAME=$(BASE_NAME)comp
+  *_*_*_CC_FLAGS       = -Os -DCPU_$(ARCH) -DGRUB_FILE=__FILE__ -DDRIVERNAME=$(BASE_NAME) -DDRIVERNAME_STR=\"ext2/3/4\"
   MSFT:*_*_*_CC_FLAGS  = /Oi- /std:clatest /wd4028 /wd4068 /wd4133 /wd4146 /wd4201 /wd4204 /wd4244 /wd4245 /wd4267 /wd4311 /wd4312 /wd4334 /wd4706
