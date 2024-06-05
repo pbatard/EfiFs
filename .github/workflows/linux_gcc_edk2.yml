@@ -33,7 +33,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     strategy:
       matrix:
@@ -41,19 +41,19 @@ jobs:
         include:
         - arch: X64
           short: x64
-          pkgs: nasm python3-distutils uuid-dev
+          pkgs: nasm python3-setuptools uuid-dev
         - arch: IA32
           short: ia32
-          pkgs: gcc-multilib nasm python3-distutils uuid-dev
+          pkgs: gcc-multilib nasm python3-setuptools uuid-dev
         - arch: AARCH64
           short: aa64
-          pkgs: gcc-aarch64-linux-gnu python3-distutils uuid-dev
+          pkgs: gcc-aarch64-linux-gnu python3-setuptools uuid-dev
         - arch: ARM
           short: arm
-          pkgs: gcc-arm-linux-gnueabi python3-distutils uuid-dev
+          pkgs: gcc-arm-linux-gnueabi python3-setuptools uuid-dev
         - arch: RISCV64
           short: riscv64
-          pkgs: gcc-riscv64-linux-gnu python3-distutils uuid-dev
+          pkgs: gcc-riscv64-linux-gnu python3-setuptools uuid-dev
 
     steps:
     - name: Install toolchain
@@ -136,7 +136,7 @@ jobs:
         path: web/*/index.html
 
   merge-artifacts:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: build
     steps:
       - name: Merge Artifacts

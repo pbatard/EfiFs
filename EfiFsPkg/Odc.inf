@@ -8,7 +8,7 @@
   BASE_NAME                  = odc
   FILE_GUID                  = FC117DCB-B369-46B7-A84E-E34EF821756C
   MODULE_TYPE                = UEFI_DRIVER
-  VERSION_STRING             = 1.7
+  VERSION_STRING             = 1.10
   EDK_RELEASE_VERSION        = 0x00020000
   EFI_SPECIFICATION_VERSION  = 0x00020000
   ENTRY_POINT                = FSDriverInstall

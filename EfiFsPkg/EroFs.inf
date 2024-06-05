@@ -8,7 +8,7 @@
   BASE_NAME                  = erofs
   FILE_GUID                  = 2B0F3769-1EBF-44E9-9BF2-E696C96104A2
   MODULE_TYPE                = UEFI_DRIVER
-  VERSION_STRING             = 1.7
+  VERSION_STRING             = 1.10
   EDK_RELEASE_VERSION        = 0x00020000
   EFI_SPECIFICATION_VERSION  = 0x00020000
   ENTRY_POINT                = FSDriverInstall

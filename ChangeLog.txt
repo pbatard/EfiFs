@@ -1,5 +1,10 @@
 For detailed information about the changes below, please see the git log or
-visit: https://github.com/pbatard/efifs
+visit: https://github.com/pbatard/EfiFs
+
+v1.10 (2024.06.05)
+* Add EROFS support
+* Add Btrfs zstd compression support (with thanks to Jan Schmitz)
+* Update GRUB and gnu-efi to latest
 
 v1.9 (2022.09.05)
 * Work around Linux kernel's EFI stub not properly handling EFI_BUFFER_TOO_SMALL on GetInfo

@@ -103,7 +103,7 @@
 
 /* Driver version */
 #define FS_DRIVER_VERSION_MAJOR 1
-#define FS_DRIVER_VERSION_MINOR 9
+#define FS_DRIVER_VERSION_MINOR 10
 
 #ifndef ARRAYSIZE
 #define ARRAYSIZE(A)            (sizeof(A)/sizeof((A)[0]))

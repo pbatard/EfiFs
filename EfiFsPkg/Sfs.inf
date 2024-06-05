@@ -8,7 +8,7 @@
   BASE_NAME                  = sfs
   FILE_GUID                  = 0093FDD4-86D8-457C-82C9-2832321BB8B5
   MODULE_TYPE                = UEFI_DRIVER
-  VERSION_STRING             = 1.7
+  VERSION_STRING             = 1.10
   EDK_RELEASE_VERSION        = 0x00020000
   EFI_SPECIFICATION_VERSION  = 0x00020000
   ENTRY_POINT                = FSDriverInstall
