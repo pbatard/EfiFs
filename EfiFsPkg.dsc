@@ -21,6 +21,7 @@
   MSFT:RELEASE_*_*_CC_FLAGS      = -DMDEPKG_NDEBUG
   RVCT:RELEASE_*_*_CC_FLAGS      = -DMDEPKG_NDEBUG
   *_*_*_CC_FLAGS                 = -DDISABLE_NEW_DEPRECATED_INTERFACES
+  MSFT:*_*_ARM_CC_FLAGS          = /GS-
   MSFT:*_*_AARCH64_CC_FLAGS      = /GS-
 
 !include MdePkg/MdeLibs.dsc.inc
@@ -45,11 +46,11 @@
   DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf  
   DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
 
-[LibraryClasses.ARM, LibraryClasses.AARCH64, LibraryClasses.RISCV64, LibraryClasses.LOONGARCH64,]
+[LibraryClasses.ARM, LibraryClasses.AARCH64, LibraryClasses.RISCV64, LibraryClasses.LOONGARCH64]
   NULL|MdePkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
 
 [LibraryClasses.IA32, LibraryClasses.X64]
-!if $(TOOLCHAIN) == "VS2019"
+!if $(TOOLCHAIN) == "VS2022"
   NULL|EfiFsPkg/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
 !endif
 

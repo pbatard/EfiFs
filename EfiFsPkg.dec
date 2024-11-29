@@ -1,7 +1,7 @@
 ## @file
 #  EfiFs Package
 #
-#  Copyright (c) 2017-2018, Pete Batard <pete@akeo.ie>
+#  Copyright (c) 2017-2024, Pete Batard <pete@akeo.ie>
 #
 ##
 
@@ -19,3 +19,5 @@
   grub/include
   grub
   grub/grub-core/lib/minilzo
+  grub/grub-core/lib/zstd
+

@@ -162,7 +162,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)\grub\grub-core\lib\libgcrypt\src;$(SolutionDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)\grub\grub-core\lib\zstd;$(SolutionDir)\grub\grub-core\lib\libgcrypt\src;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_UNICODE;UNICODE;__MAKEWITH_GNUEFI;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;GRUB_FILE=__FILE__;DRIVERNAME=$(ProjectName);DRIVERNAME_STR="ZFS";EXTRAMODULE=gzio;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
@@ -190,7 +190,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)\grub\grub-core\lib\libgcrypt\src;$(SolutionDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)\grub\grub-core\lib\zstd;$(SolutionDir)\grub\grub-core\lib\libgcrypt\src;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_UNICODE;UNICODE;__MAKEWITH_GNUEFI;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;GRUB_FILE=__FILE__;DRIVERNAME=$(ProjectName);DRIVERNAME_STR="ZFS";EXTRAMODULE=gzio;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
@@ -219,7 +219,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)\grub\grub-core\lib\libgcrypt\src;$(SolutionDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)\grub\grub-core\lib\zstd;$(SolutionDir)\grub\grub-core\lib\libgcrypt\src;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_UNICODE;UNICODE;__MAKEWITH_GNUEFI;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;GRUB_FILE=__FILE__;DRIVERNAME=$(ProjectName);DRIVERNAME_STR="ZFS";EXTRAMODULE=gzio;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
@@ -247,7 +247,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\aarch64;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)\grub\grub-core\lib\libgcrypt\src;$(SolutionDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)\grub\grub-core\lib\zstd;$(SolutionDir)\grub\grub-core\lib\libgcrypt\src;$(SolutionDir)\gnu-efi\inc\aarch64;$(SolutionDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_UNICODE;UNICODE;__MAKEWITH_GNUEFI;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;GRUB_FILE=__FILE__;DRIVERNAME=$(ProjectName);DRIVERNAME_STR="ZFS";EXTRAMODULE=gzio;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
@@ -275,7 +275,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)\grub\grub-core\lib\libgcrypt\src;$(SolutionDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)\grub\grub-core\lib\zstd;$(SolutionDir)\grub\grub-core\lib\libgcrypt\src;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_UNICODE;UNICODE;__MAKEWITH_GNUEFI;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;GRUB_FILE=__FILE__;DRIVERNAME=$(ProjectName);DRIVERNAME_STR="ZFS";EXTRAMODULE=gzio;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
@@ -304,7 +304,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)\grub\grub-core\lib\libgcrypt\src;$(SolutionDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)\grub\grub-core\lib\zstd;$(SolutionDir)\grub\grub-core\lib\libgcrypt\src;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_UNICODE;UNICODE;__MAKEWITH_GNUEFI;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;GRUB_FILE=__FILE__;DRIVERNAME=$(ProjectName);DRIVERNAME_STR="ZFS";EXTRAMODULE=gzio;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
@@ -333,7 +333,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)\grub\grub-core\lib\libgcrypt\src;$(SolutionDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)\grub\grub-core\lib\zstd;$(SolutionDir)\grub\grub-core\lib\libgcrypt\src;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_UNICODE;UNICODE;__MAKEWITH_GNUEFI;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;GRUB_FILE=__FILE__;DRIVERNAME=$(ProjectName);DRIVERNAME_STR="ZFS";EXTRAMODULE=gzio;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
@@ -362,7 +362,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\aarch64;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)\grub\grub-core\lib\libgcrypt\src;$(SolutionDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\grub\grub-core\lib\minilzo;$(SolutionDir)\grub\grub-core\lib\zstd;$(SolutionDir)\grub\grub-core\lib\libgcrypt\src;$(SolutionDir)\gnu-efi\inc\aarch64;$(SolutionDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_UNICODE;UNICODE;__MAKEWITH_GNUEFI;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;GRUB_FILE=__FILE__;DRIVERNAME=$(ProjectName);DRIVERNAME_STR="ZFS";EXTRAMODULE=gzio;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>

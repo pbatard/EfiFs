@@ -1,6 +1,6 @@
-From c1eb6b7996d16ab05af43726539b22853abeefd9 Mon Sep 17 00:00:00 2001
+From 3cee4004cc6d36f2a5587327ea42aa13991db0e8 Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Tue, 4 Jun 2024 16:50:10 +0100
+Date: Fri, 29 Nov 2024 16:46:25 +0000
 Subject: [PATCH] GRUB fixes
 
 ---
@@ -16,12 +16,12 @@ Subject: [PATCH] GRUB fixes
  grub-core/fs/hfsplus.c               |  2 ++
  grub-core/fs/hfspluscomp.c           |  4 +++
  grub-core/fs/iso9660.c               | 38 +++++++++++++-------
- grub-core/fs/jfs.c                   |  5 +--
+ grub-core/fs/jfs.c                   |  6 ++--
  grub-core/fs/nilfs2.c                |  4 ++-
  grub-core/fs/ntfs.c                  |  2 ++
  grub-core/fs/proc.c                  |  2 +-
  grub-core/fs/reiserfs.c              | 16 ++++++++-
- grub-core/fs/sfs.c                   |  3 +-
+ grub-core/fs/sfs.c                   |  4 ++-
  grub-core/fs/squash4.c               | 10 ++++--
  grub-core/fs/tar.c                   |  2 +-
  grub-core/fs/udf.c                   |  2 ++
@@ -56,7 +56,7 @@ Subject: [PATCH] GRUB fixes
  include/grub/x86_64/types.h          |  2 +-
  include/grub/zfs/zap_leaf.h          |  2 ++
  include/grub/zfs/zio.h               |  2 ++
- 52 files changed, 275 insertions(+), 87 deletions(-)
+ 52 files changed, 277 insertions(+), 87 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
 index ed606b3f1..3f298a696 100644
@@ -79,7 +79,7 @@ index ed606b3f1..3f298a696 100644
  /* The location of `struct grub_affs_file' relative to the end of a
     file header block.  */
 diff --git a/grub-core/fs/bfs.c b/grub-core/fs/bfs.c
-index 07cb3e3ac..5d6ef2664 100644
+index 9bc478ce8..2b415387a 100644
 --- a/grub-core/fs/bfs.c
 +++ b/grub-core/fs/bfs.c
 @@ -69,6 +69,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
@@ -305,7 +305,7 @@ index 5d41b6fdb..042870715 100644
    struct head hd;
    grub_size_t namesize;
 diff --git a/grub-core/fs/erofs.c b/grub-core/fs/erofs.c
-index 46cfc2e5c..dde762d02 100644
+index f2a82e988..c56918e71 100644
 --- a/grub-core/fs/erofs.c
 +++ b/grub-core/fs/erofs.c
 @@ -37,6 +37,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
@@ -652,7 +652,7 @@ index 8c348b59a..0425ea2bf 100644
  
        /* Check if `grub_realloc' failed.  */
 diff --git a/grub-core/fs/jfs.c b/grub-core/fs/jfs.c
-index 62e20ef6f..5b8909c58 100644
+index 62e20ef6f..e1a3b8b1a 100644
 --- a/grub-core/fs/jfs.c
 +++ b/grub-core/fs/jfs.c
 @@ -61,6 +61,7 @@ struct grub_jfs_sblock
@@ -663,7 +663,7 @@ index 62e20ef6f..5b8909c58 100644
  struct grub_jfs_extent
  {
    /* The length of the extent in filesystem blocks.  */
-@@ -252,10 +253,10 @@ struct grub_jfs_diropen
+@@ -252,10 +253,11 @@ struct grub_jfs_diropen
    char name[256 * GRUB_MAX_UTF8_PER_UTF16 + 1];
    grub_uint32_t ino;
  } GRUB_PACKED;
@@ -672,6 +672,7 @@ index 62e20ef6f..5b8909c58 100644
  
  static grub_dl_t my_mod;
 -
++
 +
  static grub_err_t grub_jfs_lookup_symlink (struct grub_jfs_data *data, grub_uint32_t ino);
  
@@ -788,7 +789,7 @@ index 36b26ac98..3c001897e 100644
  struct grub_fshelp_node
  {
 diff --git a/grub-core/fs/sfs.c b/grub-core/fs/sfs.c
-index 983e88008..a09c0a2b2 100644
+index 983e88008..337700914 100644
 --- a/grub-core/fs/sfs.c
 +++ b/grub-core/fs/sfs.c
 @@ -31,6 +31,7 @@
@@ -799,11 +800,12 @@ index 983e88008..a09c0a2b2 100644
  struct grub_sfs_bheader
  {
    grub_uint8_t magic[4];
-@@ -122,8 +123,8 @@ struct grub_sfs_btree
+@@ -122,8 +123,9 @@ struct grub_sfs_btree
       supported.  */
    struct grub_sfs_btree_node node[1];
  } GRUB_PACKED;
 +PRAGMA_END_PACKED
++
  
 -
  
@@ -942,10 +944,10 @@ index 8e02ab4a3..48c6c8613 100644
  struct grub_fshelp_node
  {
 diff --git a/grub-core/fs/zfs/zfs.c b/grub-core/fs/zfs/zfs.c
-index b5453e006..9dcdc9f70 100644
+index 3fdf9bda8..753703f54 100644
 --- a/grub-core/fs/zfs/zfs.c
 +++ b/grub-core/fs/zfs/zfs.c
-@@ -252,8 +252,8 @@ struct grub_zfs_data
+@@ -254,8 +254,8 @@ struct grub_zfs_data
    struct subvolume subvol;
  
    struct grub_zfs_device_desc *devices_attached;
@@ -956,7 +958,7 @@ index b5453e006..9dcdc9f70 100644
    struct grub_zfs_device_desc *device_original;
  
    uberblock_t current_uberblock;
-@@ -2727,7 +2727,9 @@ dnode_get (dnode_end_t * mdn, grub_uint64_t objnum, grub_uint8_t type,
+@@ -2767,7 +2767,9 @@ dnode_get (dnode_end_t * mdn, grub_uint64_t objnum, grub_uint8_t type,
    return GRUB_ERR_NONE;
  }
  
@@ -1045,7 +1047,7 @@ index 7cee5d75c..30ff90432 100644
  
  	    while (len < format2 && p[len])
 diff --git a/grub-core/lib/posix_wrap/limits.h b/grub-core/lib/posix_wrap/limits.h
-index 26918c8a0..55384b326 100644
+index 4be7b4080..9f89a0f9d 100644
 --- a/grub-core/lib/posix_wrap/limits.h
 +++ b/grub-core/lib/posix_wrap/limits.h
 @@ -23,8 +23,12 @@
@@ -1079,7 +1081,7 @@ index 26918c8a0..55384b326 100644
 +#endif
  
  #define CHAR_BIT 8
- 
+ #define WORD_BIT 32
 diff --git a/grub-core/lib/xzembed/xz_dec_lzma2.c b/grub-core/lib/xzembed/xz_dec_lzma2.c
 index af7b77079..d39f8afc0 100644
 --- a/grub-core/lib/xzembed/xz_dec_lzma2.c
@@ -1430,7 +1432,7 @@ index 2d8336aff..8627dc47e 100644
  /* Return the offset of the record with the index INDEX, in the node
     NODE which is part of the B+ tree BTREE.  */
 diff --git a/include/grub/misc.h b/include/grub/misc.h
-index 1b35a167f..8ef1e4d6c 100644
+index 1578f36c3..e2705282e 100644
 --- a/include/grub/misc.h
 +++ b/include/grub/misc.h
 @@ -32,7 +32,9 @@
@@ -1528,7 +1530,7 @@ index 7f1a14c84..6daa584a1 100644
  
  static inline struct grub_term_coordinate
 diff --git a/include/grub/types.h b/include/grub/types.h
-index 064066e2e..4c518ea73 100644
+index 45079bf65..5f661f999 100644
 --- a/include/grub/types.h
 +++ b/include/grub/types.h
 @@ -27,10 +27,20 @@
@@ -1553,8 +1555,8 @@ index 064066e2e..4c518ea73 100644
  # define GRUB_CPU_SIZEOF_VOID_P	BUILD_SIZEOF_VOID_P
  # define GRUB_CPU_SIZEOF_LONG	BUILD_SIZEOF_LONG
 @@ -199,19 +209,17 @@ static inline grub_uint16_t grub_swap_bytes16(grub_uint16_t _x)
- #define grub_swap_bytes16_compile_time(x) ((((x) & 0xff) << 8) | (((x) & 0xff00) >> 8))
- #define grub_swap_bytes32_compile_time(x) ((((x) & 0xff) << 24) | (((x) & 0xff00) << 8) | (((x) & 0xff0000) >> 8) | (((x) & 0xff000000UL) >> 24))
+ #define grub_swap_bytes16_compile_time(x) ((grub_uint16_t)((((x) & 0xff) << 8) | (((x) & 0xff00) >> 8)))
+ #define grub_swap_bytes32_compile_time(x) ((grub_uint32_t)((((x) & 0xff) << 24) | (((x) & 0xff00) << 8) | (((x) & 0xff0000) >> 8) | (((x) & 0xff000000UL) >> 24)))
  #define grub_swap_bytes64_compile_time(x)	\
 -({ \
 -   grub_uint64_t _x = (x); \
@@ -1673,7 +1675,7 @@ index 11447c166..0479d383f 100644
  	} l_array;
  	struct zap_leaf_free {
 diff --git a/include/grub/zfs/zio.h b/include/grub/zfs/zio.h
-index 19ce136bb..11ee51b61 100644
+index 997b0c4d4..88dcce269 100644
 --- a/include/grub/zfs/zio.h
 +++ b/include/grub/zfs/zio.h
 @@ -27,10 +27,12 @@
