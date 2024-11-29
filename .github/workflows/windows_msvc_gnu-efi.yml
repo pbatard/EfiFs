@@ -30,7 +30,7 @@ jobs:
 
     strategy:
       matrix:
-        arch: [x64, ia32, aa64, arm]
+        arch: [x64, ia32, aa64]
 
     steps:
     - name: Checkout repository and submodules

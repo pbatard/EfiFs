@@ -30,6 +30,7 @@ env:
   GCC5_ARM_PREFIX: arm-linux-gnueabi-
   GCC5_AARCH64_PREFIX: aarch64-linux-gnu-
   GCC5_RISCV64_PREFIX: riscv64-linux-gnu-
+  GCC5_LOONGARCH64_PREFIX: loongarch64-unknown-linux-gnu-
 
 jobs:
   build:
@@ -37,7 +38,7 @@ jobs:
 
     strategy:
       matrix:
-        arch: [X64, IA32, AARCH64, ARM, RISCV64]
+        arch: [X64, IA32, AARCH64, ARM, RISCV64, LOONGARCH64]
         include:
         - arch: X64
           short: x64
@@ -54,15 +55,23 @@ jobs:
         - arch: RISCV64
           short: riscv64
           pkgs: gcc-riscv64-linux-gnu python3-setuptools uuid-dev
+        - arch: LOONGARCH64
+          short: loongarch64
+          pkgs: gcc-multilib python3-setuptools uuid-dev
 
     steps:
     - name: Install toolchain
       run: |
         sudo apt-get update
         sudo apt-get install ${{ matrix.pkgs }}
+        if [[ "${{ matrix.arch }}" == "LOONGARCH64" ]]; then
+          curl -L -O https://github.com/loongson/build-tools/releases/download/2024.11.01/x86_64-cross-tools-loongarch64-binutils_2.43.1-gcc_14.2.0-glibc_2.40.tar.xz
+          tar -xJf x86_64-cross-tools-loongarch64-binutils_2.43.1-gcc_14.2.0-glibc_2.40.tar.xz
+          echo "$PWD/cross-tools/bin" >> "$GITHUB_PATH"
+        fi
 
     - name: Fix missing Risc-V header
-      if: matrix.arch == 'riscv64'
+      if: matrix.arch == 'RISCV64'
       run: sudo ln -s /usr/riscv64-linux-gnu/include/gnu/stubs-lp64d.h /usr/riscv64-linux-gnu/include/gnu/stubs-lp64.h
 
     - name: Set up EDK2

@@ -10,7 +10,7 @@
   PLATFORM_GUID                  = 700d6096-1578-409e-a6c7-9acdf9f565b3
   PLATFORM_VERSION               = 1.3
   DSC_SPECIFICATION              = 0x00010005
-  SUPPORTED_ARCHITECTURES        = IA32|X64|EBC|ARM|AARCH64|RISCV64
+  SUPPORTED_ARCHITECTURES        = IA32|X64|EBC|ARM|AARCH64|RISCV64|LOONGARCH64
   OUTPUT_DIRECTORY               = Build/EfiFs
   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
   SKUID_IDENTIFIER               = DEFAULT
@@ -21,6 +21,7 @@
   MSFT:RELEASE_*_*_CC_FLAGS      = -DMDEPKG_NDEBUG
   RVCT:RELEASE_*_*_CC_FLAGS      = -DMDEPKG_NDEBUG
   *_*_*_CC_FLAGS                 = -DDISABLE_NEW_DEPRECATED_INTERFACES
+  MSFT:*_*_AARCH64_CC_FLAGS      = /GS-
 
 !include MdePkg/MdeLibs.dsc.inc
 
@@ -44,9 +45,8 @@
   DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf  
   DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
 
-[LibraryClasses.ARM, LibraryClasses.AARCH64, LibraryClasses.RISCV64]
-  NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
-  NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
+[LibraryClasses.ARM, LibraryClasses.AARCH64, LibraryClasses.RISCV64, LibraryClasses.LOONGARCH64,]
+  NULL|MdePkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
 
 [LibraryClasses.IA32, LibraryClasses.X64]
 !if $(TOOLCHAIN) == "VS2019"

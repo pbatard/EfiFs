@@ -35,7 +35,7 @@ jobs:
 
     strategy:
       matrix:
-        arch: [X64, IA32, AARCH64, ARM]
+        arch: [X64, IA32, AARCH64]
         include:
         - arch: X64
           short: x64
@@ -46,9 +46,6 @@ jobs:
         - arch: AARCH64
           short: aa64
           msvc: amd64_arm64
-        - arch: ARM
-          short: arm
-          msvc: amd64_arm
 
     steps:
     - name: Set up environment variables

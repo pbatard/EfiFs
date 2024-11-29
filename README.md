@@ -39,9 +39,10 @@ For additional info as well as precompiled drivers, see https://efi.akeo.ie
 
 * Run `make` in the top directory. If needed you can also issue something like
   `make ARCH=<arch> CROSS_COMPILE=<tuple>` where `<arch>` is one of `ia32`,
-  `x64`, `arm`, `aa64` or `riscv64` (the __official__ UEFI abbreviations for an
-  arch, as used in `/efi/boot/boot[ARCH].efi`) and `<tuple>` is the one for your
-  cross-compiler, such as `arm-linux-gnueabi-` or `aarch64-linux-gnu-`.
+  `x64`, `arm`, `aa64`, `riscv64` or `loongarch64` (the __official__ UEFI
+  abbreviations for an arch, as used in `/efi/boot/boot[ARCH].efi`) and `<tuple>`
+  is the one for your cross-compiler, such as `arm-linux-gnueabi-` or
+  `aarch64-linux-gnu-`.
   e.g. `make ARCH=aa64 CROSS_COMPILE=aarch64-linux-gnu-`
 
 ### EDK2
@@ -54,7 +55,7 @@ For additional info as well as precompiled drivers, see https://efi.akeo.ie
   by invoking:
   * (Windows) `set_grub_cpu.cmd <arch>`
   * (Linux) `./set_grub_cpu.sh <arch>`  
-  Where `<arch>` is one of `ia32`, `x64`, `arm`, `aarch64` or `riscv64`.  
+  Where `<arch>` is one of `ia32`, `x64`, `arm`, `aarch64`, `riscv64` or `loongarch64`.
   Note that you __MUST__ invoke the `set_grub_cpu` script __every time you
   switch target__.
 * After having invoked `edksetup.bat` (Windows) or `edksetup.sh` (Linux) run

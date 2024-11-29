@@ -30,7 +30,7 @@ jobs:
 
     strategy:
       matrix:
-        arch: [x64, ia32, aa64, arm, riscv64]
+        arch: [x64, ia32, aa64, arm, riscv64, loongarch64]
         include:
         - arch: x64
           pkg: gcc-mingw-w64-x86-64
@@ -47,6 +47,9 @@ jobs:
         - arch: riscv64
           pkg: gcc-riscv64-linux-gnu
           tuple: riscv64-linux-gnu-
+        - arch: loongarch64
+          pkg: gcc-multilib
+          tuple: loongarch64-unknown-linux-gnu-
 
     steps:
     - name: Checkout repository and submodules
@@ -59,6 +62,11 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install ${{ matrix.pkg }}
+        if [[ "${{ matrix.arch }}" == "loongarch64" ]]; then
+          curl -L -O https://github.com/loongson/build-tools/releases/download/2024.11.01/x86_64-cross-tools-loongarch64-binutils_2.43.1-gcc_14.2.0-glibc_2.40.tar.xz
+          tar -xJf x86_64-cross-tools-loongarch64-binutils_2.43.1-gcc_14.2.0-glibc_2.40.tar.xz
+          echo "$PWD/cross-tools/bin" >> "$GITHUB_PATH"
+        fi
 
     - name: Patch GRUB
       run: |
