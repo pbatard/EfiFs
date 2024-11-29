@@ -39,8 +39,8 @@ For additional info as well as precompiled drivers, see https://efi.akeo.ie
 
 * Run `make` in the top directory. If needed you can also issue something like
   `make ARCH=<arch> CROSS_COMPILE=<tuple>` where `<arch>` is one of `ia32`,
-  `x64`, `arm`, `aa64` or `riscv64` (the __official__ UEFI abbreviations for an
-  arch, as used in `/efi/boot/boot[ARCH].efi`) and `<tuple>` is the one for your
+  `x64`, `arm`, `aa64`, `riscv64` or `loongarch64` (the __official__ UEFI abbreviations
+  for an arch, as used in `/efi/boot/boot[ARCH].efi`) and `<tuple>` is the one for your
   cross-compiler, such as `arm-linux-gnueabi-` or `aarch64-linux-gnu-`.
   e.g. `make ARCH=aa64 CROSS_COMPILE=aarch64-linux-gnu-`
 
@@ -54,7 +54,7 @@ For additional info as well as precompiled drivers, see https://efi.akeo.ie
   by invoking:
   * (Windows) `set_grub_cpu.cmd <arch>`
   * (Linux) `./set_grub_cpu.sh <arch>`  
-  Where `<arch>` is one of `ia32`, `x64`, `arm`, `aarch64` or `riscv64`.  
+  Where `<arch>` is one of `ia32`, `x64`, `arm`, `aarch64`, `riscv64` or `loongarch64`.  
   Note that you __MUST__ invoke the `set_grub_cpu` script __every time you
   switch target__.
 * After having invoked `edksetup.bat` (Windows) or `edksetup.sh` (Linux) run
@@ -112,7 +112,7 @@ or relicensing matters, so that they can legally be reused into GPLv2+ works.
 ## Bonus: Commands to compile EfiFs using EDK2 on a vanilla Debian GNU/Linux 10.x
 
 ```
-sudo apt install nasm uuid-dev gcc-multilib gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi gcc-riscv64-linux-gnu
+sudo apt install nasm uuid-dev gcc-multilib gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi gcc-riscv64-linux-gnu gcc-loongarch64-linux-gnu
 git clone --recurse-submodules https://github.com/tianocore/edk2.git
 cd edk2
 make -C BaseTools
@@ -123,6 +123,7 @@ cd -
 export GCC5_ARM_PREFIX=arm-linux-gnueabi-
 export GCC5_AARCH64_PREFIX=aarch64-linux-gnu-
 export GCC5_RISCV64_PREFIX=riscv64-linux-gnu-
+export GCC5_LOONGARCH64_PREFIX=loongarch64-linux-gnu-
 source edksetup.sh --reconfig
 ./EfiFsPkg/set_grub_cpu.sh X64
 build -a X64 -b RELEASE -t GCC5 -p EfiFsPkg/EfiFsPkg.dsc
@@ -134,4 +135,6 @@ build -a AARCH64 -b RELEASE -t GCC5 -p EfiFsPkg/EfiFsPkg.dsc
 build -a ARM -b RELEASE -t GCC5 -p EfiFsPkg/EfiFsPkg.dsc
 ./EfiFsPkg/set_grub_cpu.sh RISCV64
 build -a RISCV64 -b RELEASE -t GCC5 -p EfiFsPkg/EfiFsPkg.dsc
+./EfiFsPkg/set_grub_cpu.sh LOONGARCH64
+build -a LOONGARCH64 -b RELEASE -t GCC5 -p EfiFsPkg/EfiFsPkg.dsc
 ```

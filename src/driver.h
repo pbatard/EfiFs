@@ -73,7 +73,7 @@
 #endif
 
 /* Sort out the platform specifics */
-#if defined(_M_ARM64) || defined(__aarch64__) || defined (_M_X64) || defined(__x86_64__) || defined(_M_RISCV64) || (defined (__riscv) && (__riscv_xlen == 64))
+#if defined(_M_ARM64) || defined(__aarch64__) || defined (_M_X64) || defined(__x86_64__) || defined(_M_RISCV64) || (defined (__riscv) && (__riscv_xlen == 64)) || defined (_M_LOONGARCH64) || defined (__loongarch__)
 #define PERCENT_P L"%llx"
 #else
 #define PERCENT_P L"%x"

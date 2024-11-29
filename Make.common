@@ -27,6 +27,9 @@ else
   else ifeq ($(shell uname -m),riscv64)
     ARCH        = riscv64
     CROSS_COMPILE =
+  else ifeq ($(shell uname -m),loongarch64)
+    ARCH        = loongarch64
+    CROSS_COMPILE =
   else
     ARCH        = ia32
   endif
@@ -81,6 +84,16 @@ else ifeq ($(ARCH),riscv64)
   GCC_ARCH      = riscv64
   CPU_ARCH      = riscv64
   CRT0_ARCH     = riscv64
+  CROSS_COMPILE = $(GCC_ARCH)-linux-gnu-
+  EP_PREFIX     =
+  CFLAGS        = -fpic -fshort-wchar -Wno-pointer-to-int-cast
+  LDFLAGS       = -Wl,--defsym=EFI_SUBSYSTEM=$(SUBSYSTEM)
+  CRT0_LIBS     = -lgnuefi
+else ifeq ($(ARCH),loongarch64)
+  GNUEFI_ARCH   = loongarch64
+  GCC_ARCH      = loongarch64
+  CPU_ARCH      = loongarch64
+  CRT0_ARCH     = loongarch64
   CROSS_COMPILE = $(GCC_ARCH)-linux-gnu-
   EP_PREFIX     =
   CFLAGS        = -fpic -fshort-wchar -Wno-pointer-to-int-cast
