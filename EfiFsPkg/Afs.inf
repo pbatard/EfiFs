@@ -8,7 +8,7 @@
   BASE_NAME                  = afs
   FILE_GUID                  = DEFE2F9E-38C4-4278-AB7D-3BCC7B3C9292
   MODULE_TYPE                = UEFI_DRIVER
-  VERSION_STRING             = 1.10
+  VERSION_STRING             = 1.11
   EDK_RELEASE_VERSION        = 0x00020000
   EFI_SPECIFICATION_VERSION  = 0x00020000
   ENTRY_POINT                = FSDriverInstall

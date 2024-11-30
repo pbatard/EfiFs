@@ -8,7 +8,7 @@
   BASE_NAME                  = tar
   FILE_GUID                  = 5FA5BB28-C228-48BC-BEED-4137E56B5C32
   MODULE_TYPE                = UEFI_DRIVER
-  VERSION_STRING             = 1.10
+  VERSION_STRING             = 1.11
   EDK_RELEASE_VERSION        = 0x00020000
   EFI_SPECIFICATION_VERSION  = 0x00020000
   ENTRY_POINT                = FSDriverInstall

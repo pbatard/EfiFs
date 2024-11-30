@@ -1,6 +1,11 @@
 For detailed information about the changes below, please see the git log or
 visit: https://github.com/pbatard/EfiFs
 
+v1.11 (2024.11.30)
+* Add LoongArch64 build support (with thanks to Dongyan Qian)
+* Add zstd compression support to ZFS
+* Update GRUB and gnu-efi to latest
+
 v1.10 (2024.06.05)
 * Add EROFS support
 * Add Btrfs zstd compression support (with thanks to Jan Schmitz)

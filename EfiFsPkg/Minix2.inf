@@ -8,7 +8,7 @@
   BASE_NAME                  = minix2
   FILE_GUID                  = 0AF860D2-4089-496A-AB51-2F28730E5CF6
   MODULE_TYPE                = UEFI_DRIVER
-  VERSION_STRING             = 1.10
+  VERSION_STRING             = 1.11
   EDK_RELEASE_VERSION        = 0x00020000
   EFI_SPECIFICATION_VERSION  = 0x00020000
   ENTRY_POINT                = FSDriverInstall

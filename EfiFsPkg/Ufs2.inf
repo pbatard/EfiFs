@@ -8,7 +8,7 @@
   BASE_NAME                  = ufs2
   FILE_GUID                  = 15ED2F4C-1EB8-4B4F-826B-73D83EDAA449
   MODULE_TYPE                = UEFI_DRIVER
-  VERSION_STRING             = 1.10
+  VERSION_STRING             = 1.11
   EDK_RELEASE_VERSION        = 0x00020000
   EFI_SPECIFICATION_VERSION  = 0x00020000
   ENTRY_POINT                = FSDriverInstall

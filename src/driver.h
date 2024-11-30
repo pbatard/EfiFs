@@ -1,6 +1,6 @@
 /* fs_driver.h - Wrapper for standalone EFI filesystem drivers */
 /*
- *  Copyright © 2014-2020 Pete Batard <pete@akeo.ie>
+ *  Copyright © 2014-2024 Pete Batard <pete@akeo.ie>
  *
  *  Note: This file has been relicensed from GPLv3+ to GPLv2+ by formal
  *  agreement of all of its contributors.
@@ -103,7 +103,7 @@
 
 /* Driver version */
 #define FS_DRIVER_VERSION_MAJOR 1
-#define FS_DRIVER_VERSION_MINOR 10
+#define FS_DRIVER_VERSION_MINOR 11
 
 #ifndef ARRAYSIZE
 #define ARRAYSIZE(A)            (sizeof(A)/sizeof((A)[0]))

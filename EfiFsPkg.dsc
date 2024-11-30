@@ -1,7 +1,7 @@
 ## @file
 #  EfiFs Driver Modules
 #
-#  Copyright (c) 2017-2019, Pete Batard <pete@akeo.ie>
+#  Copyright (c) 2017-2024, Pete Batard <pete@akeo.ie>
 #
 ##
 

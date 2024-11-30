@@ -8,7 +8,7 @@
   BASE_NAME                  = hfs
   FILE_GUID                  = BB57B5D8-F6DE-481C-9B08-C779B0F33E25
   MODULE_TYPE                = UEFI_DRIVER
-  VERSION_STRING             = 1.10
+  VERSION_STRING             = 1.11
   EDK_RELEASE_VERSION        = 0x00020000
   EFI_SPECIFICATION_VERSION  = 0x00020000
   ENTRY_POINT                = FSDriverInstall

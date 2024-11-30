@@ -1,4 +1,4 @@
-From 3cee4004cc6d36f2a5587327ea42aa13991db0e8 Mon Sep 17 00:00:00 2001
+From c5c5b86e7baf3454358f02590675244f8875ab13 Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
 Date: Fri, 29 Nov 2024 16:46:25 +0000
 Subject: [PATCH] GRUB fixes
@@ -1361,17 +1361,17 @@ index 8d7e4a1e5..bf4441479 100644
  #ifdef GRUB_UTIL
  #include <grub/disk.h>
 diff --git a/include/grub/hfs.h b/include/grub/hfs.h
-index e27993c42..1a1943d67 100644
+index e27993c42..7a1008778 100644
 --- a/include/grub/hfs.h
 +++ b/include/grub/hfs.h
-@@ -36,6 +36,7 @@ typedef struct grub_hfs_extent grub_hfs_datarecord_t[3];
+@@ -24,6 +24,7 @@
+ #define GRUB_HFS_MAGIC		0x4244
  
- /* The HFS superblock (The official name is `Master Directory
-    Block').  */
+ /* A single extent.  A file consists of one or more extents.  */
 +PRAGMA_BEGIN_PACKED
- struct grub_hfs_sblock
+ struct grub_hfs_extent
  {
-   grub_uint16_t magic;
+   /* The first physical block.  */
 @@ -68,5 +69,6 @@ struct grub_hfs_sblock
    grub_uint32_t catalog_size;
    grub_hfs_datarecord_t catalog_recs;
