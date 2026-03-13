@@ -342,7 +342,7 @@ reflect(grub_uint32_t ref, int len)
 }
 
 static void
-crc32_init(void *context)
+crc32_init(void *context, unsigned int flags __attribute__((unused)))
 {
 	CRC_CONTEXT *ctx = (CRC_CONTEXT *)context;
 	ctx->CRC = 0 ^ 0xffffffffL;
@@ -389,7 +389,14 @@ crc32_final(void *context)
 
 gcry_md_spec_t _gcry_digest_spec_crc32 =
 {
-	"CRC32", NULL, 0, NULL, 4,
-	crc32_init, crc32_write, crc32_final, crc32_read,
-	sizeof(CRC_CONTEXT)
+	.name = "CRC32",
+	.asnoid = NULL,
+	.asnlen = 0,
+	.oids = NULL,
+	.mdlen = 4,
+	.init = crc32_init,
+	.write = crc32_write,
+	.final = crc32_final,
+	.read = crc32_read,
+	.contextsize = sizeof(CRC_CONTEXT)
 };

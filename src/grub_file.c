@@ -39,12 +39,12 @@ grub_file_filter_t grub_file_filters_enabled[GRUB_FILE_FILTER_MAX];
 extern EFI_STATUS GrubErrToEFIStatus(grub_err_t err);
 
 /* Don't care about refcounts for a standalone EFI FS driver */
-int
+grub_uint64_t
 grub_dl_ref(grub_dl_t mod) {
 	return 0;
 }
 
-int
+grub_uint64_t
 grub_dl_unref(grub_dl_t mod) {
 	return 0;
 };
