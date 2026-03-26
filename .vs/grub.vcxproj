@@ -152,7 +152,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;EFI_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;EFI_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -178,7 +178,7 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;EFI_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;EFI_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -204,7 +204,7 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;EFI_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;EFI_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -230,7 +230,7 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\gnu-efi\inc\aarch64;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;EFI_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;EFI_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -256,7 +256,7 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -285,7 +285,7 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -314,7 +314,7 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\gnu-efi\inc\arm;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -343,7 +343,7 @@ call "$(SolutionDir)set_grub_cpu.cmd" $(Platform)</Command>
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\grub\include;$(SolutionDir)\gnu-efi\inc\aarch64;$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GRUB;LZO_CFG_FREESTANDING;_UNICODE;UNICODE;GRUB_FILE=__FILE__;HAVE_USE_MS_ABI;__MAKEWITH_GNUEFI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>

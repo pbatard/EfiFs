@@ -24,6 +24,10 @@ on:
       - '**.txt'
       - '**.vbs'
 
+env:
+  LOONGARCH64_TOOLCHAIN_TAG: 2025.08.08
+  LOONGARCH64_TOOLCHAIN_NAME: x86_64-cross-tools-loongarch64-binutils_2.45-gcc_15.1.0-glibc_2.42.tar.xz
+
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -53,7 +57,7 @@ jobs:
 
     steps:
     - name: Checkout repository and submodules
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
         submodules: recursive
@@ -63,8 +67,8 @@ jobs:
         sudo apt-get update
         sudo apt-get install ${{ matrix.pkg }}
         if [[ "${{ matrix.arch }}" == "loongarch64" ]]; then
-          curl -L -O https://github.com/loongson/build-tools/releases/download/2024.11.01/x86_64-cross-tools-loongarch64-binutils_2.43.1-gcc_14.2.0-glibc_2.40.tar.xz
-          tar -xJf x86_64-cross-tools-loongarch64-binutils_2.43.1-gcc_14.2.0-glibc_2.40.tar.xz
+          curl -L -O https://github.com/loongson/build-tools/releases/download/${LOONGARCH64_TOOLCHAIN_TAG}/${LOONGARCH64_TOOLCHAIN_NAME}
+          tar -xJf ${LOONGARCH64_TOOLCHAIN_NAME}
           echo "$PWD/cross-tools/bin" >> "$GITHUB_PATH"
         fi
 
@@ -78,18 +82,19 @@ jobs:
       run: make ARCH=${{ matrix.arch }} CROSS_COMPILE=${{ matrix.tuple }}
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: ${{ github.event_name == 'push' }}
       with:
         name: gcc_gnu-efi_${{ matrix.arch }}
         path: src/*.efi
 
   merge-artifacts:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     needs: build
+    if: ${{ github.event_name == 'push' }}
     steps:
       - name: Merge Artifacts
-        uses: actions/upload-artifact/merge@v4
+        uses: actions/upload-artifact/merge@v6
         with:
           name: gcc_gnu-efi
           delete-merged: true

@@ -34,7 +34,7 @@ jobs:
 
     steps:
     - name: Checkout repository and submodules
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
         submodules: recursive
@@ -46,7 +46,7 @@ jobs:
         cd ..
 
     - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v2
+      uses: microsoft/setup-msbuild@v3
 
     - name: Build drivers
       run: |
@@ -54,18 +54,19 @@ jobs:
         msbuild efifs.sln /m /p:Configuration=Release,Platform=${{ matrix.arch }}
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: ${{ github.event_name == 'push' }}
       with:
         name: msvc_gnu-efi_${{ matrix.arch }}
         path: ${{ matrix.arch }}/Release/*.efi
 
   merge-artifacts:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     needs: build
+    if: ${{ github.event_name == 'push' }}
     steps:
       - name: Merge Artifacts
-        uses: actions/upload-artifact/merge@v4
+        uses: actions/upload-artifact/merge@v6
         with:
           name: msvc_gnu-efi
           delete-merged: true

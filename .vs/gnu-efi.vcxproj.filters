@@ -119,5 +119,19 @@
     <ClCompile Include="..\gnu-efi\lib\aarch64\math.c">
       <Filter>Source Files\aarch64</Filter>
     </ClCompile>
+    <ClCompile Include="..\gnu-efi\lib\va_print.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\gnu-efi\inc\efi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\gnu-efi\inc\efilib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\gnu-efi\inc\efistdarg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
