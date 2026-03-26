@@ -76,7 +76,7 @@ jobs:
 
     - name: Set up EDK2
       run: |
-        git clone --recursive https://github.com/tianocore/edk2.git
+        git clone --recursive --depth 1 --branch edk2-stable202508.01 https://github.com/tianocore/edk2.git
         make -C edk2/BaseTools
 
     - name: Checkout repository and submodules

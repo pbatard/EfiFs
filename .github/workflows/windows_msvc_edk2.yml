@@ -67,7 +67,7 @@ jobs:
     - name: Set up EDK2
       shell: cmd
       run: |
-        git clone --recursive https://github.com/tianocore/edk2.git
+        git clone --recursive --depth 1 --branch edk2-stable202508.01 https://github.com/tianocore/edk2.git
         cd edk2
         call edksetup.bat rebuild
 
