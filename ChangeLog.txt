@@ -1,6 +1,10 @@
 For detailed information about the changes below, please see the git log or
 visit: https://github.com/pbatard/EfiFs
 
+v1.12 (2026.03.27)
+* Add support for XFS v5 features (EXCHANGE, PARENT, METADIR)
+* Update GRUB to release 2.14 (courtesy of Andrij Abyzov)
+
 v1.11 (2024.11.30)
 * Add LoongArch64 build support (with thanks to Dongyan Qian)
 * Add zstd compression support to ZFS
