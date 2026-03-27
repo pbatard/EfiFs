@@ -149,16 +149,15 @@
       <div class="tagline">Free Software EFI/UEFI file system drivers</div>
       <p>The purpose of this page is to provide <a href="http://en.wikipedia.org/wiki/Free_software">Free Software</a> UEFI components, such as a <b><u>read-only</u></b> NTFS, XFS or exFAT EFI drivers, or more exotic ones such as Amiga FFS/SFS, BFS, UFS, ZFS, courtesy of the <a href="http://www.gnu.org/software/grub/">GRUB project</a>, as well as other goodies.</p>
       <h2 style="border: 4px solid #a09a8a;"><span style="font-size: 133%">Download</span></h2>
-      <p><b>Updated 2024.06.05:</b></p>
       <p>The following links include binaries for <b>AFFS</b> (Amiga Fast FileSystem), <b>BFS</b> (BeOS FileSystem), <b>Btrfs</b>, <b>exFAT</b>, <b>ext2/ext3/ext4</b>, <b>EROFS</b>, <b>F2FS</b>, <b>HFS</b> and <b>HFS+</b> (Mac OS, including compression support), <b>ISO9660</b>, <b>JFS</b> (Journaled FileSystem), <b>nilfs2</b>, <b>NTFS</b> (including compression support), <b>ReiserFS</b>, <b>SFS</b> (Amiga Smart FileSystem), <b>UDF</b>, <b>UFS/FFS</b>, <b>UFS2/FFS2</b>, <b>XFS</b>, <b>ZFS</b> and more. These drivers were transparently compiled <a href="https://github.com/pbatard/EfiFs/actions/workflows/linux_gcc_edk2.yml">using a Linux/gcc/EDK2 environment</a>:
       <p>
       <ul>
-        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.11/x64">EFI drivers v1.11 (x64)</a></b></span></li>
-        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.11/ia32">EFI drivers v1.11 (ia32)</a></b></span></li>
-        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.11/aa64">EFI drivers v1.11 (arm64)</a></b></span></li>
-        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.11/arm">EFI drivers v1.11 (arm)</a></b></span></li>
-        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.11/riscv64">EFI drivers v1.11 (riscv64)</a></b></span></li>
-		<li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.11/loongarch64">EFI drivers v1.11 (loongarch64)</a></b></span></li>
+        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.12/x64">EFI drivers v1.12 (x64)</a></b></span></li>
+        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.12/ia32">EFI drivers v1.12 (ia32)</a></b></span></li>
+        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.12/aa64">EFI drivers v1.12 (arm64)</a></b></span></li>
+        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.12/arm">EFI drivers v1.12 (arm)</a></b></span></li>
+        <li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.12/riscv64">EFI drivers v1.12 (riscv64)</a></b></span></li>
+		<li><span style="font-size: 133%"><b><a href="/downloads/efifs-1.12/loongarch64">EFI drivers v1.12 (loongarch64)</a></b></span></li>
         <li><a href="/downloads/">Other versions</a></li>
       </ul>
       </p>
@@ -181,19 +180,19 @@ map -r</pre>
       <h2>Changelog</h2>
       <ul>
         <li>
-          <b>Version 1.11</b> (2024.11.30)
+          <b>Version 1.12</b> (2026.03.27)
           <ul>
-            <li>Add <a href="https://en.wikipedia.org/wiki/Loongson">LoongArch64</a> support (with thanks to <b>Dongyan Qian</b>)</li>
-            <li>Add ZFS <a href="https://github.com/facebook/zstd">zstd</a> compression support</li>
-            <li>Update <a href="https://www.gnu.org/software/grub/">GRUB</a> and <a href="https://github.com/ncroxon/gnu-efi">gnu-efi</a> to latest</li>
+            <li>Add XFS v5 support and update <a href="https://www.gnu.org/software/grub/">GRUB</a> to v2.14 (courtesy of <b>Andrij Abyzov</b>)</li>
+            <li>Update <a href="https://github.com/ncroxon/gnu-efi">gnu-efi</a> to latest</li>
           </ul>
+		  <p><b>NOTE</b>: This will be the last release to provide 32-bit ARM drivers. ARM64 is unaffected.</p>
         </li>
         <li><b><a href="https://github.com/pbatard/EfiFs/blob/master/ChangeLog.txt">Other Versions</a></b></li>
       </ul>
       <h2>Source Code</h2>
       <p>
       <ul>
-        <li><a href="https://github.com/pbatard/EfiFs/archive/v1.11.tar.gz">EfiFs 1.11 source</a>.</li>
+        <li><a href="https://github.com/pbatard/EfiFs/archive/v1.12.tar.gz">EfiFs 1.12 source</a>.</li>
         <li>
           Alternatively, you can clone the <a href="http://git-scm.com">git</a> repository using:
           <pre>$ git clone https://github.com/pbatard/EfiFs.git</pre>
@@ -203,7 +202,7 @@ map -r</pre>
       If you are a developer, you are very much encouraged to tinker with the sourcecode and submit patches.</p>
     </div>
     <div class="footer">
-      Copyright © 2014-2024 <a href="https://pete.akeo.ie">Pete Batard</a><br/>
+      Copyright © 2014-2026 <a href="https://pete.akeo.ie">Pete Batard</a><br/>
       Hosting by <a href="https://github.com">GitHub</a>
     </div>
     </div>
