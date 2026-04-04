@@ -161,7 +161,7 @@ typedef struct _EFI_GRUB_FILE {
 	EFI_FILE               EfiFile;
 	BOOLEAN                IsDir;
 	INT64                  DirIndex;
-	INT32                  Mtime;
+	INT64                  Mtime;
 	CHAR8                 *path;
 	CHAR8                 *basename;
 	INTN                   RefCount;
@@ -191,7 +191,7 @@ typedef struct _GRUB_DIRHOOK_INFO {
 	UINT32                 MtimeSet:1;
 	UINT32                 CaseInsensitive:1;
 	UINT32                 InodeSet:1;
-	INT32                  Mtime;
+	INT64                  Mtime;
 	UINT64                 Inode;
 } GRUB_DIRHOOK_INFO;
 
@@ -217,7 +217,7 @@ extern CHAR16 *GrubGetUuid(EFI_FS *This);
 extern BOOLEAN GrubFSProbe(EFI_FS *This);
 extern EFI_STATUS GrubDeviceInit(EFI_FS *This);
 extern EFI_STATUS GrubDeviceExit(EFI_FS *This);
-extern VOID GrubTimeToEfiTime(const INT32 t, EFI_TIME *tp);
+extern VOID GrubTimeToEfiTime(const INT64 t, EFI_TIME *tp);
 extern VOID CopyPathRelative(CHAR8 *dest, CHAR8 *src, INTN len);
 extern EFI_STATUS GrubOpen(EFI_GRUB_FILE *File);
 extern EFI_STATUS GrubDir(EFI_GRUB_FILE *File, const CHAR8 *path,
