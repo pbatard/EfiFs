@@ -41,6 +41,9 @@
   ../grub/grub-core/lib/zstd/zstd_common.c
   ../grub/grub-core/lib/zstd/zstd_decompress.c
 
+[Sources.IA32]
+  ../grub/grub-core/lib/division.c
+
 [Packages]
   EfiFsPkg/EfiFsPkg.dec
   MdePkg/MdePkg.dec
