@@ -39,6 +39,9 @@
   ../grub/grub-core/fs/squash4.c
   ../grub/grub-core/lib/posix_wrap/string.h
 
+[Sources.IA32]
+  ../grub/grub-core/lib/division.c
+
 [Packages]
   EfiFsPkg/EfiFsPkg.dec
   MdePkg/MdePkg.dec

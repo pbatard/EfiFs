@@ -240,6 +240,28 @@ GrubErrToEFIStatus(grub_err_t err)
 	}
 }
 
+STATIC inline INT64 DivS64x64(INT64 num, INT64 denom, INT64 *rem)
+{
+#if defined(i386) || defined(__i386__) || defined(__i386) || defined(_M_IX86)
+	return grub_divmod64s(num, denom, rem);
+#else
+	INT64 quot = num / denom;
+	*rem = num % denom;
+	return quot;
+#endif
+}
+
+STATIC inline INT64 ModS64x64(INT64 num, INT64 denom)
+{
+#if defined(i386) || defined(__i386__) || defined(__i386) || defined(_M_IX86)
+	grub_int64_t rem;
+	grub_divmod64s(num, denom, &rem);
+	return rem;
+#else
+	return num % denom;
+#endif
+}
+
 /* The following is adapted from glibc's (offtime.c, etc.)
  */
 
@@ -254,22 +276,30 @@ static const unsigned short int __mon_yday[2][13] = {
 /* Nonzero if YEAR is a leap year (every 4 years,
    except every 100th isn't, and every 400th is). */
 #define __isleap(year) \
-	((year) % 4 == 0 && ((year) % 100 != 0 || (year) % 400 == 0))
+	(ModS64x64(year, 4) == 0 && (ModS64x64(year, 100) != 0 || ModS64x64(year, 400) == 0))
 
 #define SECS_PER_HOUR         (60 * 60)
 #define SECS_PER_DAY          (SECS_PER_HOUR * 24)
+#if defined(i386) || defined(__i386__) || defined(__i386) || defined(_M_IX86)
+STATIC inline INT64 DIV(INT64 a, INT64 b)
+{
+	INT64 rem;
+	CONST INT64 quot = DivS64x64(a, b, &rem);
+	return quot - (rem < 0);
+}
+#else
 #define DIV(a, b)             ((a) / (b) - ((a) % (b) < 0))
+#endif
 #define LEAPS_THRU_END_OF(y)  (DIV (y, 4) - DIV (y, 100) + DIV (y, 400))
 
 /* Compute an EFI_TIME representation of a GRUB's mtime_t */
 VOID
-GrubTimeToEfiTime(const INT32 t, EFI_TIME *tp)
+GrubTimeToEfiTime(const INT64 t, EFI_TIME *tp)
 {
-	INT32 days, rem, y;
+	INT64 days, rem, y;
 	const unsigned short int *ip;
 
-	days = t / SECS_PER_DAY;
-	rem = t % SECS_PER_DAY;
+	days = DivS64x64(t, SECS_PER_DAY, &rem);
 	while (rem < 0) {
 		rem += SECS_PER_DAY;
 		--days;
@@ -278,15 +308,14 @@ GrubTimeToEfiTime(const INT32 t, EFI_TIME *tp)
 		rem -= SECS_PER_DAY;
 		++days;
 	}
-	tp->Hour = (UINT8) (rem / SECS_PER_HOUR);
-	rem %= SECS_PER_HOUR;
-	tp->Minute = (UINT8) (rem / 60);
-	tp->Second = (UINT8) (rem % 60);
+	tp->Hour = (UINT8) DivS64x64(rem, SECS_PER_HOUR, &rem);
+	tp->Minute = (UINT8) DivS64x64(rem, 60, &rem);
+	tp->Second = (UINT8) rem;
 	y = 1970;
 
 	while (days < 0 || days >= (__isleap (y) ? 366 : 365)) {
 		/* Guess a corrected year, assuming 365 days per year. */
-		INT32 yg = y + days / 365 - (days % 365 < 0);
+		CONST INT64 yg = y + DIV(days, 365);
 
 		/* Adjust DAYS and Y to match the guessed year. */
 		days -= ((yg - y) * 365

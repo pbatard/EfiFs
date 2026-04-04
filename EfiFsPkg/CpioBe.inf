@@ -30,6 +30,9 @@
   ../grub/grub-core/fs/fshelp.c
   ../grub/grub-core/fs/cpio_be.c
 
+[Sources.IA32]
+  ../grub/grub-core/lib/division.c
+
 [Packages]
   EfiFsPkg/EfiFsPkg.dec
   MdePkg/MdePkg.dec

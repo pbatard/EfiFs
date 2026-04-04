@@ -31,6 +31,9 @@
   ../grub/grub-core/fs/hfsplus.c
   ../grub/grub-core/fs/hfspluscomp.c
 
+[Sources.IA32]
+  ../grub/grub-core/lib/division.c
+
 [Packages]
   EfiFsPkg/EfiFsPkg.dec
   MdePkg/MdePkg.dec

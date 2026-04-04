@@ -161,7 +161,8 @@ ifdef DRIVERNAME
   LIBS         += -lgrub -lefi
 
   OBJS          = utf8.o path.o missing.o logging.o grub_file.o this.o file.o driver.o \
-                  $(GRUB_DIR)/grub-core/fs/fshelp.o $(GRUB_DIR)/grub-core/$(FSDIR)/$(DRIVERNAME).o
+                  $(GRUB_DIR)/grub-core/fs/fshelp.o $(GRUB_DIR)/grub-core/$(FSDIR)/$(DRIVERNAME).o \
+                  $(GRUB_DIR)/grub-core/lib/division.o
   DRIVER        = $(DRIVERNAME)_$(ARCH)
 endif
 ifdef EXTRAOBJS
@@ -221,4 +222,5 @@ clean.common:
 
 clean.driver:
 	rm -f $(GRUB_DIR)/grub-core/fs/*.o $(GRUB_DIR)/grub-core/fs/*.d $(GRUB_DIR)/grub-core/io/*.o $(GRUB_DIR)/grub-core/io/*.d \
+  $(GRUB_DIR)/grub-core/lib/*.o \
 	$(GRUB_DIR)/grub-core/fs/zfs/*.o $(GRUB_DIR)/grub-core/fs/zfs/*.d $(SRC_DIR)/*.o $(SRC_DIR)/*.d $(SRC_DIR)/*.so $(SRC_DIR)/*.efi
