@@ -298,7 +298,6 @@ DirHook(const CHAR8 *name, const GRUB_DIRHOOK_INFO *DirInfo, VOID *Data)
 		return (INT32) Status;
 	}
 
-	// Oh, and of course GRUB uses a 32 bit signed mtime value (seriously, wtf guys?!?)
 	if (DirInfo->MtimeSet)
 		GrubTimeToEfiTime(DirInfo->Mtime, &Time);
 	CopyMem(&Info->CreateTime, &Time, sizeof(Time));
