@@ -786,9 +786,7 @@ FSInstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 VOID
 FSUninstall(EFI_FS *This, EFI_HANDLE ControllerHandle)
 {
-	CHAR16* DevicePathString = ToDevicePathString(This->DevicePath);
-	PrintInfo(L"FSUninstall: %s\n", DevicePathString);
-	FreePool(DevicePathString);
+	PrintInfo(L"FSUninstall\n");
 
 	BS->UninstallMultipleProtocolInterfaces(ControllerHandle,
 			&gEfiSimpleFileSystemProtocolGuid, &This->FileIoInterface,
