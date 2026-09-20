@@ -60,7 +60,8 @@ InfoHook(const CHAR8 *name, const GRUB_DIRHOOK_INFO *Info, VOID *Data)
 	if (Info->MtimeSet)
 		File->Mtime = Info->Mtime;
 
-	return 0;
+	/* Non-zero breaks the iteration */
+	return 1;
 }
 
 /**
