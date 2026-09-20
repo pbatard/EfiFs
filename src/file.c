@@ -310,7 +310,8 @@ DirHook(const CHAR8 *name, const GRUB_DIRHOOK_INFO *DirInfo, VOID *Data)
 	if (DirInfo->Dir)
 		Info->Attribute |= EFI_FILE_DIRECTORY;
 
-	return 0;
+	/* Non-zero breaks the iteration */
+	return 1;
 }
 
 /**
