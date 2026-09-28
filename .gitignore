@@ -17,6 +17,7 @@
 *.vhd
 *.vsidx
 *.zip
+.vs/EfiFs
 arm
 aa64
 ia32

@@ -34,7 +34,7 @@ jobs:
 
     steps:
     - name: Checkout repository and submodules
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         fetch-depth: 0
         submodules: recursive
@@ -54,7 +54,7 @@ jobs:
         msbuild efifs.sln /m /p:Configuration=Release,Platform=${{ matrix.arch }}
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       if: ${{ github.event_name == 'push' }}
       with:
         name: msvc_gnu-efi_${{ matrix.arch }}
@@ -66,7 +66,7 @@ jobs:
     if: ${{ github.event_name == 'push' }}
     steps:
       - name: Merge Artifacts
-        uses: actions/upload-artifact/merge@v6
+        uses: actions/upload-artifact/merge@v7
         with:
           name: msvc_gnu-efi
           delete-merged: true

@@ -1,6 +1,6 @@
-From c1a9becec0ab6902af5a426555baaf55c17bda7b Mon Sep 17 00:00:00 2001
+From fe3f71497262a84febdcf0f3ffcb974e562c557f Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Thu, 26 Mar 2026 19:30:10 +0000
+Date: Mon, 28 Sep 2026 17:18:01 +0100
 Subject: [PATCH] GRUB fixes
 
 ---
@@ -51,12 +51,12 @@ Subject: [PATCH] GRUB fixes
  include/grub/ntfs.h                  |  2 ++
  include/grub/safemath.h              | 45 ++++++++++++++++++++++++
  include/grub/term.h                  |  4 +--
- include/grub/types.h                 | 42 +++++++++++++++-------
+ include/grub/types.h                 | 44 +++++++++++++++--------
  include/grub/unicode.h               |  2 ++
  include/grub/x86_64/types.h          |  2 +-
  include/grub/zfs/zap_leaf.h          |  2 ++
  include/grub/zfs/zio.h               |  2 ++
- 52 files changed, 305 insertions(+), 95 deletions(-)
+ 52 files changed, 306 insertions(+), 96 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
 index 520a001c7..23268812c 100644
@@ -1598,7 +1598,7 @@ index 7f1a14c84..6daa584a1 100644
  
  static inline struct grub_term_coordinate
 diff --git a/include/grub/types.h b/include/grub/types.h
-index b3ba762fc..a88e56fc1 100644
+index b3ba762fc..7cbe6e155 100644
 --- a/include/grub/types.h
 +++ b/include/grub/types.h
 @@ -27,10 +27,20 @@
@@ -1622,6 +1622,15 @@ index b3ba762fc..a88e56fc1 100644
  #ifdef GRUB_BUILD
  # define GRUB_CPU_SIZEOF_VOID_P	BUILD_SIZEOF_VOID_P
  # define GRUB_CPU_SIZEOF_LONG	BUILD_SIZEOF_LONG
+@@ -104,7 +114,7 @@ typedef unsigned short		grub_uint16_t;
+ typedef unsigned		grub_uint32_t;
+ # define PRIxGRUB_UINT32_T	"x"
+ # define PRIuGRUB_UINT32_T	"u"
+-#if GRUB_CPU_SIZEOF_LONG == 8
++#if GRUB_CPU_SIZEOF_LONG == 8 && !defined(_MSC_VER)
+ typedef unsigned long		grub_uint64_t;
+ # define PRIxGRUB_UINT64_T	"lx"
+ # define PRIuGRUB_UINT64_T	"lu"
 @@ -199,19 +209,17 @@ static inline grub_uint16_t grub_swap_bytes16(grub_uint16_t _x)
  #define grub_swap_bytes16_compile_time(x) ((grub_uint16_t)((((x) & 0xff) << 8) | (((x) & 0xff00) >> 8)))
  #define grub_swap_bytes32_compile_time(x) ((grub_uint32_t)((((x) & 0xff) << 24) | (((x) & 0xff00) << 8) | (((x) & 0xff0000) >> 8) | (((x) & 0xff000000UL) >> 24)))
@@ -1760,5 +1769,5 @@ index 997b0c4d4..88dcce269 100644
  /*
   * Gang block headers are self-checksumming and contain an array
 -- 
-2.53.0.windows.2
+2.55.0.windows.5
 

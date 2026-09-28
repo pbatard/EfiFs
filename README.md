@@ -2,7 +2,6 @@ EfiFs - EFI File System Drivers
 ===============================
 
 [![Build status](https://img.shields.io/github/actions/workflow/status/pbatard/EfiFs/windows_msvc_gnu-efi.yml?style=flat-square&label=MSVC%20(gnu-efi))](https://github.com/pbatard/EfiFs/actions/workflows/windows_msvc_gnu-efi.yml)
-[![Build status](https://img.shields.io/github/actions/workflow/status/pbatard/EfiFs/windows_msvc_edk2.yml?style=flat-square&label=MSVC%20(EDK2))](https://github.com/pbatard/EfiFs/actions/workflows/windows_msvc_edk2.yml)
 [![Build status](https://img.shields.io/github/actions/workflow/status/pbatard/EfiFs/linux_gcc_gnu-efi.yml?style=flat-square&label=gcc%20(gnu-efi))](https://github.com/pbatard/EfiFs/actions/workflows/linux_gcc_gnu-efi.yml)
 [![Build status](https://img.shields.io/github/actions/workflow/status/pbatard/EfiFs/linux_gcc_edk2.yml?style=flat-square&label=gcc%20(EDK2))](https://github.com/pbatard/EfiFs/actions/workflows/linux_gcc_edk2.yml)
 [![Github stats](https://img.shields.io/github/downloads/pbatard/EfiFs/total.svg?label=Downloads&style=flat-square)](https://github.com/pbatard/EfiFs/releases)  
@@ -16,7 +15,7 @@ For additional info as well as precompiled drivers, see https://efi.akeo.ie
 
 ## Requirements
 
-* [Visual Studio 2022](https://www.visualstudio.com/vs/community/) (Windows),
+* [Visual Studio 2026](https://www.visualstudio.com/vs/community/) (Windows),
   MinGW (Windows), gcc (Linux) or [EDK2](https://github.com/tianocore/edk2).
 * A git client able to initialize/update submodules
 * [QEMU](https://www.qemu.org) __v2.7 or later__ if debugging with Visual Studio
@@ -45,32 +44,24 @@ For additional info as well as precompiled drivers, see https://efi.akeo.ie
   `aarch64-linux-gnu-`.
   e.g. `make ARCH=aa64 CROSS_COMPILE=aarch64-linux-gnu-`
 
-### EDK2
+### EDK2 (Linux only)
 
 * Open an elevated command prompt and create a symbolic link called `EfiFsPkg`,
-  inside your EDK2 directory, to the EfiFs source. On Windows, from an elevated
-  prompt, you could run something like `mklink /D EfiFsPkg C:\efifs`, and on
-  Linux `ln -s ../efifs EfiFsPkg`.
+  inside your EDK2 directory, to the EfiFs source.
 * From a command prompt, set Grub to target the platform you are compiling for
-  by invoking:
-  * (Windows) `set_grub_cpu.cmd <arch>`
-  * (Linux) `./set_grub_cpu.sh <arch>`  
-  Where `<arch>` is one of `ia32`, `x64`, `arm`, `aarch64`, `riscv64` or `loongarch64`.
-  Note that you __MUST__ invoke the `set_grub_cpu` script __every time you
+  by invoking `./set_grub_cpu.sh <arch>` where `<arch>` is one of `ia32`, `x64`,
+  `aarch64`, `riscv64` or `loongarch64`.
+  Note that you __MUST__ invoke the `set_grub_cpu.sh` script __every time you
   switch target__.
-* After having invoked `edksetup.bat` (Windows) or `edksetup.sh` (Linux) run
-  something like:  
+* After having invoked ``edksetup.sh` run something like:  
   ```
-  build -a X64 -b RELEASE -t <toolchain> -p EfiFsPkg/EfiFsPkg.dsc
+  build -a X64 -b RELEASE -t GCC -p EfiFsPkg/EfiFsPkg.dsc
   ```  
-  where `<toolchain>` is something like `VS2022` (Windows) or `GCC5` (Linux).  
   NB: To build an individual driver, such as NTFS, you can also use something
   like:  
   ```
-  build -a X64 -b RELEASE -t <toolchain> -p EfiFsPkg/EfiFsPkg.dsc -m EfiFsPkg/EfiFsPkg/Ntfs.inf
+  build -a X64 -b RELEASE -t GCC -p EfiFsPkg/EfiFsPkg.dsc -m EfiFsPkg/EfiFsPkg/Ntfs.inf
   ```
-* A Windows script to build the drivers, using EDK2 with VS2022 is also provided
-  as `edk2_build_drivers.cmd`.
 
 ## Testing
 
@@ -89,15 +80,6 @@ Then boot into the EFI shell and run the following:
 * You should now be able to navigate and access content (in read-only mode)
 * For logging output, set the `FS_LOGGING` shell variable to 1 or more
 * To unload use the `drivers` command, then `unload` with the driver ID
-
-## Visual Studio 2022 and ARM/ARM64 support
-
-Please be mindful that, to enable ARM/ARM64 compilation support in Visual
-Studio 2022, you __MUST__ go to the _Individual components_ screen in the setup
-application and select the ARM compilers and libraries there, as they do __NOT__
-appear in the default _Workloads_ screen:
-
-![VS2022 Individual Components](https://files.akeo.ie/pics/VS2019_Individual_Components.png)
 
 ## Additional Notes
 
@@ -121,18 +103,16 @@ git clone --recurse-submodules https://github.com/pbatard/EfiFs.git EfiFsPkg
 cd EfiFsPkg/grub
 git apply ../0001-GRUB-fixes.patch
 cd -
-export GCC5_ARM_PREFIX=arm-linux-gnueabi-
-export GCC5_AARCH64_PREFIX=aarch64-linux-gnu-
-export GCC5_RISCV64_PREFIX=riscv64-linux-gnu-
+export GCC_ARM_PREFIX=arm-linux-gnueabi-
+export GCC_AARCH64_PREFIX=aarch64-linux-gnu-
+export GCC_RISCV64_PREFIX=riscv64-linux-gnu-
 source edksetup.sh --reconfig
 ./EfiFsPkg/set_grub_cpu.sh X64
-build -a X64 -b RELEASE -t GCC5 -p EfiFsPkg/EfiFsPkg.dsc
+build -a X64 -b RELEASE -t GCC -p EfiFsPkg/EfiFsPkg.dsc
 ./EfiFsPkg/set_grub_cpu.sh IA32
-build -a IA32 -b RELEASE -t GCC5 -p EfiFsPkg/EfiFsPkg.dsc
+build -a IA32 -b RELEASE -t GCC -p EfiFsPkg/EfiFsPkg.dsc
 ./EfiFsPkg/set_grub_cpu.sh AARCH64
-build -a AARCH64 -b RELEASE -t GCC5 -p EfiFsPkg/EfiFsPkg.dsc
-./EfiFsPkg/set_grub_cpu.sh ARM
-build -a ARM -b RELEASE -t GCC5 -p EfiFsPkg/EfiFsPkg.dsc
+build -a AARCH64 -b RELEASE -t GCC -p EfiFsPkg/EfiFsPkg.dsc
 ./EfiFsPkg/set_grub_cpu.sh RISCV64
-build -a RISCV64 -b RELEASE -t GCC5 -p EfiFsPkg/EfiFsPkg.dsc
+build -a RISCV64 -b RELEASE -t GCC -p EfiFsPkg/EfiFsPkg.dsc
 ```

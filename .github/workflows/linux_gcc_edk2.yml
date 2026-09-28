@@ -26,22 +26,21 @@ on:
 
 env:
   BUILD_TYPE: RELEASE
-  COMPILER: GCC5
-  GCC5_ARM_PREFIX: arm-linux-gnueabi-
-  GCC5_AARCH64_PREFIX: aarch64-linux-gnu-
-  GCC5_RISCV64_PREFIX: riscv64-linux-gnu-
-  GCC5_LOONGARCH64_PREFIX: loongarch64-unknown-linux-gnu-
+  COMPILER: GCC
+  GCC_AARCH64_PREFIX: aarch64-linux-gnu-
+  GCC_RISCV64_PREFIX: riscv64-linux-gnu-
+  GCC_LOONGARCH64_PREFIX: loongarch64-unknown-linux-gnu-
   EDK2_STABLE_TAG: edk2-stable202508.01
   LOONGARCH64_TOOLCHAIN_TAG: 2025.08.08
   LOONGARCH64_TOOLCHAIN_NAME: x86_64-cross-tools-loongarch64-binutils_2.45-gcc_15.1.0-glibc_2.42.tar.xz
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        arch: [X64, IA32, AARCH64, ARM, RISCV64, LOONGARCH64]
+        arch: [X64, IA32, AARCH64, RISCV64, LOONGARCH64]
         include:
         - arch: X64
           short: x64
@@ -52,9 +51,6 @@ jobs:
         - arch: AARCH64
           short: aa64
           pkgs: gcc-aarch64-linux-gnu python3-setuptools uuid-dev
-        - arch: ARM
-          short: arm
-          pkgs: gcc-arm-linux-gnueabi python3-setuptools uuid-dev
         - arch: RISCV64
           short: riscv64
           pkgs: gcc-riscv64-linux-gnu python3-setuptools uuid-dev
@@ -68,8 +64,8 @@ jobs:
         sudo apt-get update
         sudo apt-get install ${{ matrix.pkgs }}
         if [[ "${{ matrix.arch }}" == "LOONGARCH64" ]]; then
-          curl -L -O https://github.com/loongson/build-tools/releases/download/${LOONGARCH64_TOOLCHAIN_TAG}/${LOONGARCH64_TOOLCHAIN_NAME}
-          tar -xJf ${LOONGARCH64_TOOLCHAIN_NAME}
+          curl -L -O https://github.com/loongson/build-tools/releases/download/${{ env.LOONGARCH64_TOOLCHAIN_TAG }}/${{ env.LOONGARCH64_TOOLCHAIN_NAME }}
+          tar -xJf ${{ env.LOONGARCH64_TOOLCHAIN_NAME }}
           echo "$PWD/cross-tools/bin" >> "$GITHUB_PATH"
         fi
 
@@ -83,7 +79,7 @@ jobs:
         make -C edk2/BaseTools
 
     - name: Checkout repository and submodules
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         fetch-depth: 0
         submodules: recursive
@@ -103,7 +99,7 @@ jobs:
         for f in Build/EfiFs/${{ env.BUILD_TYPE }}_${{ env.COMPILER }}/${{ matrix.arch }}/*.efi; do mv "$f" "${f%.efi}_${{ matrix.short }}.efi"; done
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       if: ${{ github.event_name == 'push' }}
       with:
         name: gcc_edk2_${{ matrix.short }}
@@ -141,7 +137,7 @@ jobs:
         printf "<hr></pre>\n  </body>\n</html>\n" >> web/${{ matrix.short }}/index.html
 
     - name: Upload web artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       if: startsWith(github.ref, 'refs/tags/')
       with:
         name: web_files_${{ matrix.arch }}
@@ -153,14 +149,14 @@ jobs:
     if: ${{ github.event_name == 'push' }}
     steps:
       - name: Merge Artifacts
-        uses: actions/upload-artifact/merge@v6
+        uses: actions/upload-artifact/merge@v7
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         with:
           name: gcc_edk2
           delete-merged: true
 
       - name: Merge Web Artifacts
-        uses: actions/upload-artifact/merge@v6
+        uses: actions/upload-artifact/merge@v7
         if: startsWith(github.ref, 'refs/tags/')
         with:
           name: web_files

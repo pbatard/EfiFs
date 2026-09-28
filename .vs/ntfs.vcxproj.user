@@ -5,14 +5,9 @@
     <LocalDebuggerCommandArguments>//d debug.vbs "$(Configuration)" "$(ProjectName)" "$(TargetPath)" "$(PlatformShortName)"</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerCommandArgumentsHistory>//d debug.vbs "Debug" "ntfs" "D:\EfiFs\x64\Debug\ntfs_x64.efi" "x64"|</LocalDebuggerCommandArgumentsHistory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommand>$(SystemRoot)\System32\wscript</LocalDebuggerCommand>
-    <LocalDebuggerCommandArguments>//d debug.vbs "$(Configuration)" "$(ProjectName)" "$(TargetPath)" "$(PlatformShortName)"</LocalDebuggerCommandArguments>
-    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerWorkingDirectory>$(SolutionDir)</LocalDebuggerWorkingDirectory>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <LocalDebuggerCommand>$(SystemRoot)\System32\wscript</LocalDebuggerCommand>
     <LocalDebuggerCommandArguments>//d debug.vbs "$(Configuration)" "$(ProjectName)" "$(TargetPath)" "$(PlatformShortName)"</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
@@ -31,12 +26,6 @@
     <LocalDebuggerWorkingDirectory>$(SolutionDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LocalDebuggerCommand>$(SystemRoot)\System32\wscript</LocalDebuggerCommand>
-    <LocalDebuggerCommandArguments>//d debug.vbs "$(Configuration)" "$(ProjectName)" "$(TargetPath)" "$(PlatformShortName)"</LocalDebuggerCommandArguments>
-    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerWorkingDirectory>$(SolutionDir)</LocalDebuggerWorkingDirectory>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <LocalDebuggerCommand>$(SystemRoot)\System32\wscript</LocalDebuggerCommand>
     <LocalDebuggerCommandArguments>//d debug.vbs "$(Configuration)" "$(ProjectName)" "$(TargetPath)" "$(PlatformShortName)"</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
