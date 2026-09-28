@@ -1,7 +1,7 @@
 ## @file
 #  EfiFs Driver Modules
 #
-#  Copyright (c) 2017-2024, Pete Batard <pete@akeo.ie>
+#  Copyright (c) 2017-2026, Pete Batard <pete@akeo.ie>
 #
 ##
 
@@ -49,8 +49,8 @@
 [LibraryClasses.ARM, LibraryClasses.AARCH64, LibraryClasses.RISCV64, LibraryClasses.LOONGARCH64]
   NULL|MdePkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
 
-[LibraryClasses.IA32, LibraryClasses.X64]
-!if $(TOOLCHAIN) == "VS2022"
+[LibraryClasses.IA32]
+!if $(TOOLCHAIN) == "GCC"
   NULL|EfiFsPkg/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
 !endif
 
