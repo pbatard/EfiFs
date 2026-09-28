@@ -30,7 +30,7 @@ env:
   GCC_AARCH64_PREFIX: aarch64-linux-gnu-
   GCC_RISCV64_PREFIX: riscv64-linux-gnu-
   GCC_LOONGARCH64_PREFIX: loongarch64-unknown-linux-gnu-
-  EDK2_STABLE_TAG: edk2-stable202508.01
+  EDK2_STABLE_TAG: edk2-stable202608
   LOONGARCH64_TOOLCHAIN_TAG: 2025.08.08
   LOONGARCH64_TOOLCHAIN_NAME: x86_64-cross-tools-loongarch64-binutils_2.45-gcc_15.1.0-glibc_2.42.tar.xz
 
