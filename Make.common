@@ -158,7 +158,9 @@ ifdef DRIVERNAME
   CFLAGS       += -I$(GRUB_DIR) -I$(GRUB_DIR)/include -I$(GRUB_DIR)/grub-core/lib/minilzo -I$(GRUB_DIR)/grub-core/lib/zstd
   CFLAGS       += -DGRUB_FILE=\"$(subst $(srcdir)/,,$<)\"
   LDFLAGS      += -shared -L$(GNUEFI_LIBDIR) -L$(GRUB_DIR) -e $(EP_PREFIX)InitializeDriver
-  LIBS         += -lgrub -lefi
+  # You do want to link with libgcc so that the gcc intrinsics like __divmoddi4 get resolved.
+  # Note however that ligcc.a *MUST* be the very last library to appear in your invocation.
+  LIBS         += -lgrub $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
   OBJS          = utf8.o path.o missing.o logging.o grub_file.o this.o file.o driver.o \
                   $(GRUB_DIR)/grub-core/fs/fshelp.o $(GRUB_DIR)/grub-core/$(FSDIR)/$(DRIVERNAME).o

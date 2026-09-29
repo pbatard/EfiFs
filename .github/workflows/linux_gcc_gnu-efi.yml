@@ -34,14 +34,14 @@ jobs:
 
     strategy:
       matrix:
-        arch: [x64, aa64, arm, riscv64, loongarch64]
+        arch: [x64, ia32, aa64, arm, riscv64, loongarch64]
         include:
         - arch: x64
           pkg: gcc-mingw-w64-x86-64
           tuple: x86_64-w64-mingw32-
-#        - arch: ia32
-#          pkg: gcc-mingw-w64-i686
-#          tuple: i686-w64-mingw32-
+        - arch: ia32
+          pkg: gcc-mingw-w64-i686
+          tuple: i686-w64-mingw32-
         - arch: aa64
           pkg: gcc-aarch64-linux-gnu
           tuple: aarch64-linux-gnu-
