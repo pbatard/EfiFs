@@ -1,12 +1,12 @@
-From 6fd82f08dc378ff90e5fe95c593905a9cd652fc1 Mon Sep 17 00:00:00 2001
+From 81ff936ffbb5cccd2a14bc8ab978811c277c1572 Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Tue, 29 Sep 2026 12:52:36 +0100
+Date: Fri, 2 Oct 2026 19:07:58 +0100
 Subject: [PATCH] GRUB fixes
 
 ---
  grub-core/fs/affs.c                  |  2 +
  grub-core/fs/bfs.c                   | 14 +++---
- grub-core/fs/btrfs.c                 | 68 ++++++++++++++++++----------
+ grub-core/fs/btrfs.c                 | 72 ++++++++++++++++++----------
  grub-core/fs/cbfs.c                  |  2 +-
  grub-core/fs/cpio_common.c           |  2 +-
  grub-core/fs/erofs.c                 |  6 +++
@@ -15,7 +15,7 @@ Subject: [PATCH] GRUB fixes
  grub-core/fs/hfs.c                   |  6 +++
  grub-core/fs/hfsplus.c               |  2 +
  grub-core/fs/hfspluscomp.c           |  4 ++
- grub-core/fs/iso9660.c               | 38 ++++++++++------
+ grub-core/fs/iso9660.c               | 38 ++++++++++-----
  grub-core/fs/jfs.c                   |  3 +-
  grub-core/fs/nilfs2.c                |  4 +-
  grub-core/fs/ntfs.c                  |  2 +
@@ -49,14 +49,14 @@ Subject: [PATCH] GRUB fixes
  include/grub/hfsplus.h               |  6 +++
  include/grub/misc.h                  |  5 ++
  include/grub/ntfs.h                  |  2 +
- include/grub/safemath.h              | 45 ++++++++++++++++++
+ include/grub/safemath.h              | 45 +++++++++++++++++
  include/grub/term.h                  |  4 +-
- include/grub/types.h                 | 44 ++++++++++++------
+ include/grub/types.h                 | 44 +++++++++++------
  include/grub/unicode.h               |  2 +
  include/grub/x86_64/types.h          |  2 +-
  include/grub/zfs/zap_leaf.h          |  2 +
  include/grub/zfs/zio.h               |  2 +
- 52 files changed, 319 insertions(+), 99 deletions(-)
+ 52 files changed, 322 insertions(+), 100 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
 index 520a001c7..23268812c 100644
@@ -131,7 +131,7 @@ index 78aeb051f..dda47febe 100644
  }
  
 diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
-index 1cd842ec0..c33f5139b 100644
+index 1cd842ec0..cdd44ff31 100644
 --- a/grub-core/fs/btrfs.c
 +++ b/grub-core/fs/btrfs.c
 @@ -41,9 +41,11 @@
@@ -201,8 +201,8 @@ index 1cd842ec0..c33f5139b 100644
      grub_disk_addr_t addr;
 -    unsigned iter;
 -    unsigned maxiter;
-+	grub_size_t iter;
-+	grub_size_t maxiter;
++    grub_size_t iter;
++    grub_size_t maxiter;
      int leaf;
    } *data;
  };
@@ -322,7 +322,19 @@ index 1cd842ec0..c33f5139b 100644
  }
  
  static ZSTD_customMem grub_zstd_allocator (void)
-@@ -2558,6 +2572,7 @@ grub_btrfs_embed (grub_device_t device __attribute__ ((unused)),
+@@ -2331,8 +2345,10 @@ grub_btrfs_dir (grub_device_t device, const char *path,
+ 	  c = cdirel->name[grub_le_to_cpu16 (cdirel->n)];
+ 	  cdirel->name[grub_le_to_cpu16 (cdirel->n)] = 0;
+ 	  info.dir = (cdirel->type == GRUB_BTRFS_DIR_ITEM_TYPE_DIRECTORY);
+-	  if (hook (cdirel->name, &info, hook_data))
++	  if (hook (cdirel->name, &info, hook_data)) {
++	    r = 0;
+ 	    goto out;
++	  }
+ 	  cdirel->name[grub_le_to_cpu16 (cdirel->n)] = c;
+ 	}
+       r = next (data, &desc, &elemaddr, &elemsize, &key_out);
+@@ -2558,6 +2574,7 @@ grub_btrfs_embed (grub_device_t device __attribute__ ((unused)),
  }
  #endif
  
@@ -330,7 +342,7 @@ index 1cd842ec0..c33f5139b 100644
  static grub_err_t
  grub_cmd_btrfs_info (grub_command_t cmd __attribute__ ((unused)), int argc,
  		     char **argv)
-@@ -2793,12 +2808,12 @@ grub_cmd_btrfs_list_subvols (struct grub_extcmd_context *ctxt,
+@@ -2793,12 +2810,12 @@ grub_cmd_btrfs_list_subvols (struct grub_extcmd_context *ctxt,
            char *old = output;
            if (num_only)
              output = grub_xasprintf("%s%"PRIuGRUB_UINT64_T"\n",
@@ -346,7 +358,7 @@ index 1cd842ec0..c33f5139b 100644
            if (old)
              grub_free(old);
          }
-@@ -3101,6 +3116,7 @@ grub_cmd_btrfs_get_default_subvol (struct grub_extcmd_context *ctxt,
+@@ -3101,6 +3118,7 @@ grub_cmd_btrfs_get_default_subvol (struct grub_extcmd_context *ctxt,
  
    return GRUB_ERR_NONE;
  }
@@ -354,7 +366,7 @@ index 1cd842ec0..c33f5139b 100644
  
  static struct grub_fs grub_btrfs_fs = {
    .name = "btrfs",
-@@ -3117,14 +3133,17 @@ static struct grub_fs grub_btrfs_fs = {
+@@ -3117,14 +3135,17 @@ static struct grub_fs grub_btrfs_fs = {
  #endif
  };
  
@@ -372,7 +384,7 @@ index 1cd842ec0..c33f5139b 100644
    cmd_info = grub_register_command ("btrfs-info",
  				    grub_cmd_btrfs_info,
  				    "DEVICE",
-@@ -3139,12 +3158,15 @@ GRUB_MOD_INIT (btrfs)
+@@ -3139,12 +3160,15 @@ GRUB_MOD_INIT (btrfs)
  					 "[-p|-n] [-o var] DEVICE",
  					 "Print default BtrFS subvolume on "
  					 "DEVICE.", opt_default_subvol);
