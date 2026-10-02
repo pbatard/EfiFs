@@ -1,13 +1,9 @@
 DRIVER_MAKEFILE = $(CURDIR)/../Make.common
-FILESYSTEMS     = affs bfs btrfs exfat ext2 f2fs hfs hfsplus iso9660 jfs nilfs2 ntfs reiserfs sfs udf ufs2 xfs zfs
+FILESYSTEMS     = bfs btrfs exfat ext2 f2fs hfs hfsplus iso9660 jfs nilfs2 ntfs reiserfs sfs udf ufs2 xfs zfs
 
 .PHONY: all clean
 
 all: $(FILESYSTEMS)
-
-affs:
-	@rm -f this.o
-	+$(MAKE) DRIVERNAME=$@ DRIVERNAME_STR="Amiga FFS" FSDIR=fs -f $(DRIVER_MAKEFILE) driver
 
 bfs:
 	@rm -f this.o

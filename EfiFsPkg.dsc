@@ -63,7 +63,6 @@
 
 [Components]
   EfiFsPkg/EfiFsPkg/Afs.inf
-  EfiFsPkg/EfiFsPkg/Affs.inf
   EfiFsPkg/EfiFsPkg/Bfs.inf
   EfiFsPkg/EfiFsPkg/Btrfs.inf
   EfiFsPkg/EfiFsPkg/Cbfs.inf
