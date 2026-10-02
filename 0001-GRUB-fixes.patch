@@ -1,6 +1,6 @@
-From 81ff936ffbb5cccd2a14bc8ab978811c277c1572 Mon Sep 17 00:00:00 2001
+From 425cc7987b8f8bdee0a09aa63047fd7e25f10b61 Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Fri, 2 Oct 2026 19:07:58 +0100
+Date: Fri, 2 Oct 2026 19:29:35 +0100
 Subject: [PATCH] GRUB fixes
 
 ---
@@ -49,14 +49,14 @@ Subject: [PATCH] GRUB fixes
  include/grub/hfsplus.h               |  6 +++
  include/grub/misc.h                  |  5 ++
  include/grub/ntfs.h                  |  2 +
- include/grub/safemath.h              | 45 +++++++++++++++++
+ include/grub/safemath.h              | 44 +++++++++++++++++
  include/grub/term.h                  |  4 +-
  include/grub/types.h                 | 44 +++++++++++------
  include/grub/unicode.h               |  2 +
  include/grub/x86_64/types.h          |  2 +-
  include/grub/zfs/zap_leaf.h          |  2 +
  include/grub/zfs/zio.h               |  2 +
- 52 files changed, 322 insertions(+), 100 deletions(-)
+ 52 files changed, 321 insertions(+), 100 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
 index 520a001c7..23268812c 100644
@@ -1620,10 +1620,10 @@ index 77b182acf..5a40bf934 100644
  struct grub_ntfs_attr
  {
 diff --git a/include/grub/safemath.h b/include/grub/safemath.h
-index e032f63a0..ad085dff4 100644
+index e032f63a0..26704ae9a 100644
 --- a/include/grub/safemath.h
 +++ b/include/grub/safemath.h
-@@ -47,6 +47,51 @@
+@@ -47,6 +47,50 @@
    __failed;						\
  })
  
@@ -1635,7 +1635,7 @@ index e032f63a0..ad085dff4 100644
 +#include <intrin.h>
 +
 +#define grub_add(a, b, res) \
-+SUCCEEDED(_Generic(*(res), \
++FAILED(_Generic(*(res), \
 +INT:       IntAdd, \
 +UINT:      UIntAdd, \
 +USHORT:    UShortAdd, \
@@ -1643,7 +1643,7 @@ index e032f63a0..ad085dff4 100644
 +)((a), (b), (res)))
 +
 +#define grub_sub(a, b, res) \
-+SUCCEEDED(_Generic(*(res), \
++FAILED(_Generic(*(res), \
 +INT:       IntSub, \
 +UINT:      UIntSub, \
 +USHORT:    UShortSub, \
@@ -1651,7 +1651,7 @@ index e032f63a0..ad085dff4 100644
 +)((a), (b), (res)))
 +
 +#define grub_mul(a, b, res) \
-+SUCCEEDED(_Generic(*(res), \
++FAILED(_Generic(*(res), \
 +INT:       IntMult, \
 +UINT:      UIntMult, \
 +USHORT:    UShortMult, \
@@ -1663,13 +1663,12 @@ index e032f63a0..ad085dff4 100644
 +// Only used by EROFS for now...
 +static __inline bool ALIGN_UP_OVF(uintptr_t v, uintptr_t align, uintptr_t* res)
 +{
-+  bool __failed;
 +  uintptr_t __a = ((uintptr_t)(align) - 1);
 +
-+  __failed = FAILED(grub_add (v, __a, res));
-+  if (__failed == false)
-+    *(res) &= ~__a;
-+  return __failed;
++  if (grub_add (v, __a, res))
++    return false;
++  *(res) &= ~__a;
++  return true;
 +}
 +
  #else
