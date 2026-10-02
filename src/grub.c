@@ -66,6 +66,10 @@ grub_env_get(const char *var)
 	UINTN ValSize = sizeof(Val);
 	static char val[128] = { 0 };
 
+	// Special case for enabling grub debug trace
+	if (LogLevel >= FS_LOGLEVEL_TRACE && AsciiStrCmp(var, "debug") == 0)
+		return "all";
+
 	Status = Utf8ToUtf16NoAlloc((CHAR8 *) var, Var, ARRAYSIZE(Var));
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"Could not convert variable name to UTF-16");

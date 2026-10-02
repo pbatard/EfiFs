@@ -131,6 +131,7 @@
 #define FS_LOGLEVEL_INFO        3
 #define FS_LOGLEVEL_DEBUG       4
 #define FS_LOGLEVEL_EXTRA       5
+#define FS_LOGLEVEL_TRACE       6
 
 typedef UINTN (EFIAPI *Print_t)        (IN CONST CHAR16 *fmt, ... );
 extern Print_t PrintError;

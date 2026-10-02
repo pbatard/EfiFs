@@ -1,5 +1,5 @@
 ' Visual Studio QEMU debugging script.
-' Copyright © 2014-2021 Pete Batard <pete@akeo.ie>
+' Copyright © 2014-2026 Pete Batard <pete@akeo.ie>
 '
 ' This program is free software: you can redistribute it and/or modify
 ' it under the terms of the GNU General Public License as published by
@@ -25,12 +25,14 @@ QEMU_PATH  = "C:\Program Files\qemu\"
 ' You can add something like "-S -gdb tcp:127.0.0.1:1234" if you plan to use gdb to debug
 ' You can also use '-serial file:serial.log' instead of '-serial vc' to send output to a file
 QEMU_OPTS  = "-nodefaults -vga std -serial vc"
+' Default log level for debugging
+LOG_LEVEL  = 4
 ' Set to True if you need to download a file that might be cached locally
 NO_CACHE   = False
-' Set to True if you want to use drivers from the EDK2 repo instead of the VS ones
+' Set to True if you want to use drivers from an EDK2 repo instead of the VS ones
 USE_EDK2   = False
 ' Path of EDK2 for the above option
-EDK2_BASE  = "D:\edk2"
+EDK2_BASE  = "D:\EfiFs\edk2_drivers"
 
 ' You shouldn't have to mofify anything below this
 CONF       = WScript.Arguments(0)
@@ -78,15 +80,12 @@ FW_FILE    = FW_BASE & "_" & FW_ARCH & ".fd"
 FW_URL     = FW_DIR & FW_ZIP
 QEMU_EXE   = "qemu-system-" & QEMU_ARCH & "w.exe"
 
-LOG_LEVEL  = 0
-If (CONF = "Debug") Then
-  LOG_LEVEL = 4
+If Not (CONF = "Debug") Then
+  LOG_LEVEL = 0
 End If
 IMG_EXT    = ".img"
 If ((FS = "iso9660") Or (FS = "udf")) Then
   IMG_EXT  = ".iso"
-ElseIf ((FS = "ntfs") Or (FS = "exfat")) Then
-  IMG_EXT  = ".vhd"
 End If
 IMG        = FS & IMG_EXT
 IMG_ZIP    = FS & ".zip"
@@ -200,13 +199,14 @@ End If
 ' Note: Linaro's QEMU-EFI.fd firmware is very sensitive about '/' vs '\'
 Call shell.Run("%COMSPEC% /c mkdir ""image\efi\boot""", 0, True)
 If USE_EDK2 Then
-  Call fso.CopyFile(EDK2_BASE & "\Build\EfiFs\RELEASE_VS2019\" & EDK_ARCH & "\" & FS & ".efi", "image\" & DRV, True)
+  Call fso.CopyFile(EDK2_BASE & "\" & FS & "_" & EDK_ARCH & ".efi", "image\" & DRV, True)
 Else
   Call fso.CopyFile(BIN, "image\" & DRV, True)
 End If
 ' Create a startup.nsh that: sets logging, loads the driver and executes an "Hello World" app from the disk
 Set file = fso.CreateTextFile("image\efi\boot\startup.nsh", True)
 Call file.Write("set FS_LOGGING " & LOG_LEVEL & vbCrLf &_
+  "mode 100 31" & vbCrLf &_
   "load fs0:\" & DRV & vbCrLf &_
   "map -r" & vbCrLf &_
   PRE_CMD & MNT & "\EFI\Boot\bootx64.efi" & vbCrLf)
