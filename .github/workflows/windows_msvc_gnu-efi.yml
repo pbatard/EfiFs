@@ -70,3 +70,63 @@ jobs:
         with:
           name: msvc_gnu-efi
           delete-merged: true
+
+  tests:
+    runs-on: ubuntu-latest
+    needs: merge-artifacts
+
+    strategy:
+      matrix:
+        arch: [x64, ia32, aa64]
+        include:
+        - arch: x64
+          pkg: qemu-system-x86
+          qemu_arch: x86_64
+          qemu_opts: -M q35
+          fw_base: OVMF
+        - arch: ia32
+          pkg: qemu-system-x86
+          qemu_arch: i386
+          qemu_opts: -M pc
+          fw_base: OVMF
+        - arch: aa64
+          pkg: qemu-system-arm
+          qemu_arch: aarch64
+          qemu_opts: -M virt -cpu cortex-a57
+          fw_base: AAVMF
+
+    steps:
+    - name: Set up Linux environment
+      run: |
+        sudo apt-get update
+        sudo apt-get -y --no-install-recommends install ${{ matrix.pkg }}
+
+    - name: Checkout repository
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v8
+      with:
+        name: msvc_gnu-efi
+        path: image/
+
+    - name: Download UEFI firmware
+      run: |
+        fw_arch=$(echo ${{ matrix.arch }} | tr a-z A-Z)
+        fw_zip=${{ matrix.fw_base }}-${fw_arch}.zip
+        curl -O https://efi.akeo.ie/${{ matrix.fw_base }}/${fw_zip}
+        7z x ${fw_zip}
+        rm ${fw_zip}
+
+    - name: Download UEFI Shell
+      run: |
+        mkdir -p ./image/efi/boot
+        curl -L https://github.com/pbatard/UEFI-Shell/releases/download/24H2/shell${{ matrix.arch }}.efi -o ./image/efi/boot/boot${{ matrix.arch }}.efi
+
+    - name: Run tests
+      run: |
+        export UEFI_ARCH=${{ matrix.arch }}
+        export QEMU_CMD="qemu-system-${{ matrix.qemu_arch }} ${{ matrix.qemu_opts }} -nodefaults -nographic -serial stdio -net none -L . -drive if=pflash,format=raw,unit=0,file=${{ matrix.fw_base }}.fd,readonly=on -drive format=raw,file=fat:rw:image"
+        ./tests/run_tests.sh
