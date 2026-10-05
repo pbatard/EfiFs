@@ -179,12 +179,12 @@ grub_disk_native_sectors (grub_disk_t disk)
 	FS_ASSERT(FileSystem->BlockIo != NULL);
 
 	if (FileSystem->BlockIo2 != NULL) {
-		return (FileSystem->BlockIo2->Media->LastBlock + 1) *
-			FileSystem->BlockIo2->Media->BlockSize;
+		return ((FileSystem->BlockIo2->Media->LastBlock + 1) *
+			FileSystem->BlockIo2->Media->BlockSize) >> GRUB_DISK_SECTOR_BITS;
 	}
 
-	return (FileSystem->BlockIo->Media->LastBlock + 1) *
-			FileSystem->BlockIo->Media->BlockSize;
+	return ((FileSystem->BlockIo->Media->LastBlock + 1) *
+			FileSystem->BlockIo->Media->BlockSize) >> GRUB_DISK_SECTOR_BITS;
 }
 
 grub_disk_dev_t grub_disk_dev_list;

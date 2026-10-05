@@ -4,7 +4,7 @@ EfiFs - EFI File System Drivers
 [![Build status](https://img.shields.io/github/actions/workflow/status/pbatard/EfiFs/windows_msvc_gnu-efi.yml?style=flat-square&label=MSVC%20(gnu-efi))](https://github.com/pbatard/EfiFs/actions/workflows/windows_msvc_gnu-efi.yml)
 [![Build status](https://img.shields.io/github/actions/workflow/status/pbatard/EfiFs/linux_gcc_gnu-efi.yml?style=flat-square&label=gcc%20(gnu-efi))](https://github.com/pbatard/EfiFs/actions/workflows/linux_gcc_gnu-efi.yml)
 [![Build status](https://img.shields.io/github/actions/workflow/status/pbatard/EfiFs/linux_gcc_edk2.yml?style=flat-square&label=gcc%20(EDK2))](https://github.com/pbatard/EfiFs/actions/workflows/linux_gcc_edk2.yml)
-[![Github stats](https://img.shields.io/github/downloads/pbatard/EfiFs/total.svg?label=Downloads&style=flat-square)](https://github.com/pbatard/EfiFs/releases)  
+[![Github stats](https://img.shields.io/github/downloads/pbatard/EfiFs/total.svg?label=Downloads&style=flat-square)](https://github.com/pbatard/EfiFs/releases)
 [![Release](https://img.shields.io/github/release-pre/pbatard/EfiFs.svg?label=Latest%20Release&style=flat-square)](https://github.com/pbatard/EfiFs/releases)
 [![Licence](https://img.shields.io/badge/license-GPLv3-blue.svg?label=License&style=flat-square)](https://www.gnu.org/licenses/gpl-3.0.en.html)
 
