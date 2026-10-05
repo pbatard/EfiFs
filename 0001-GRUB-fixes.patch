@@ -1,6 +1,6 @@
-From 425cc7987b8f8bdee0a09aa63047fd7e25f10b61 Mon Sep 17 00:00:00 2001
+From efa85311f9f6c84a00200800547dff67641e75a1 Mon Sep 17 00:00:00 2001
 From: Pete Batard <pete@akeo.ie>
-Date: Fri, 2 Oct 2026 19:29:35 +0100
+Date: Mon, 5 Oct 2026 19:58:33 +0100
 Subject: [PATCH] GRUB fixes
 
 ---
@@ -27,7 +27,7 @@ Subject: [PATCH] GRUB fixes
  grub-core/fs/udf.c                   |  2 +
  grub-core/fs/ufs.c                   |  2 +
  grub-core/fs/xfs.c                   |  2 +
- grub-core/fs/zfs/zfs.c               |  6 ++-
+ grub-core/fs/zfs/zfs.c               | 14 ++++--
  grub-core/fs/zfs/zfs_lz4.c           |  2 +
  grub-core/kern/misc.c                | 12 ++---
  grub-core/lib/posix_wrap/limits.h    | 12 +++++
@@ -56,7 +56,7 @@ Subject: [PATCH] GRUB fixes
  include/grub/x86_64/types.h          |  2 +-
  include/grub/zfs/zap_leaf.h          |  2 +
  include/grub/zfs/zio.h               |  2 +
- 52 files changed, 321 insertions(+), 100 deletions(-)
+ 52 files changed, 328 insertions(+), 101 deletions(-)
 
 diff --git a/grub-core/fs/affs.c b/grub-core/fs/affs.c
 index 520a001c7..23268812c 100644
@@ -1081,10 +1081,32 @@ index d95fa4a66..7764905d5 100644
  struct grub_fshelp_node
  {
 diff --git a/grub-core/fs/zfs/zfs.c b/grub-core/fs/zfs/zfs.c
-index 5d0c50b69..9dad555c5 100644
+index 5d0c50b69..7f70b97ed 100644
 --- a/grub-core/fs/zfs/zfs.c
 +++ b/grub-core/fs/zfs/zfs.c
-@@ -254,8 +254,8 @@ struct grub_zfs_data
+@@ -63,6 +63,12 @@ GRUB_MOD_LICENSE ("GPLv3+");
+ 
+ #define	ZPOOL_PROP_BOOTFS		"bootfs"
+ 
++#if defined(_M_IX86) || defined(__i386__) || defined (_M_ARM) || defined(__arm__)
++#define zfs_properly_aligned_t grub_uint32_t
++#else
++#define zfs_properly_aligned_t grub_uint64_t
++#endif
++
+ /*
+  * For nvlist manipulation. (from nvpair.h)
+  */
+@@ -148,7 +154,7 @@ ZAP_LEAF_CHUNK (zap_leaf_phys_t *l, int bs, int idx)
+ {
+   grub_properly_aligned_t *l_entries;
+ 
+-  l_entries = (grub_properly_aligned_t *) ALIGN_UP((grub_addr_t)l->l_hash, sizeof (grub_properly_aligned_t));
++  l_entries = (grub_properly_aligned_t *) ALIGN_UP((grub_addr_t)l->l_hash, sizeof (zfs_properly_aligned_t));
+   return &((zap_leaf_chunk_t *) (l_entries
+ 				 + (ZAP_LEAF_HASH_NUMENTRIES(bs) * 2)
+ 				 / sizeof (grub_properly_aligned_t)))[idx];
+@@ -254,8 +260,8 @@ struct grub_zfs_data
    struct subvolume subvol;
  
    struct grub_zfs_device_desc *devices_attached;
@@ -1095,7 +1117,7 @@ index 5d0c50b69..9dad555c5 100644
    struct grub_zfs_device_desc *device_original;
  
    uberblock_t current_uberblock;
-@@ -2808,7 +2808,9 @@ dnode_get (dnode_end_t * mdn, grub_uint64_t objnum, grub_uint8_t type,
+@@ -2808,7 +2814,9 @@ dnode_get (dnode_end_t * mdn, grub_uint64_t objnum, grub_uint8_t type,
    return GRUB_ERR_NONE;
  }
  
