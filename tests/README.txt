@@ -1,0 +1,1 @@
+This directory contains the support files and information used to generate and run the EfiFs tests.

@@ -1,0 +1,5 @@
+dd if=/dev/zero of=reiserfs.img bs=1M count=64
+mkfs.reiserfs -f reiserfs.img
+mount reiserfs.img hd
+cp -r boot/EFI hd/
+umount hd

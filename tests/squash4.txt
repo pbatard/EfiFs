@@ -1,0 +1,2 @@
+mksquashfs boot/ squash4.img -comp xz
+truncate -s 128K squash4.img

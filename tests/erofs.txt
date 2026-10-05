@@ -1,0 +1,2 @@
+mkfs.erofs erofs.img ./boot/
+truncate -s 512K erofs.img

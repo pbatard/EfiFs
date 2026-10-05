@@ -1,0 +1,5 @@
+dd if=/dev/zero of=jfs.img bs=1M count=16
+mkfs. jfs.img
+mount jfs.img hd
+cp -r boot/EFI hd/
+umount hd

@@ -1,0 +1,5 @@
+dd if=/dev/zero of=f2fs.img bs=1M count=64
+mkfs.f2fs f2fs.img
+mount f2fs.img hd
+cp -r boot/EFI hd/
+umount hd

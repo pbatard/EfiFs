@@ -43,35 +43,24 @@ TARGET     = WScript.Arguments(3)
 If (TARGET = "x86") Then
   UEFI_EXT  = "ia32"
   QEMU_ARCH = "i386"
-  PRE_CMD   = "dir "
   FW_BASE   = "OVMF"
   EDK_ARCH  = "IA32"
 ElseIf (TARGET = "x64") Then
   UEFI_EXT  = "x64"
   QEMU_ARCH = "x86_64"
   FW_BASE   = "OVMF"
-  PRE_CMD   = ""
   EDK_ARCH  = "X64"
-ElseIf (TARGET = "ARM") Then
-  UEFI_EXT  = "arm"
-  QEMU_ARCH = "arm"
-  ' You can also add '-device VGA' to the options below, to get graphics output.
-  ' But if you do, be mindful that the keyboard input may not work... :(
-  QEMU_OPTS = "-M virt -cpu cortex-a15 " & QEMU_OPTS
-  PRE_CMD   = "dir "
-  FW_BASE   = "QEMU_EFI"
-  EDK_ARCH  = "ARM"
 ElseIf (TARGET = "ARM64") Then
   UEFI_EXT  = "aa64"
   QEMU_ARCH = "aarch64"
   QEMU_OPTS = "-M virt -cpu cortex-a57 " & QEMU_OPTS
-  PRE_CMD   = "dir "
   FW_BASE   = "QEMU_EFI"
   EDK_ARCH  = "AARCH64"
 Else
   MsgBox("Unsupported debug target: " & TARGET)
   Call WScript.Quit(1)
 End If
+BOOT_DIR   = "FS1:\EFI\Boot\"
 BOOT_NAME  = "boot" & UEFI_EXT & ".efi"
 FW_ARCH    = UCase(UEFI_EXT)
 FW_DIR     = "https://efi.akeo.ie/" & FW_BASE & "/"
@@ -89,14 +78,40 @@ If ((FS = "iso9660") Or (FS = "udf")) Then
 End If
 IMG        = FS & IMG_EXT
 IMG_ZIP    = FS & ".zip"
-IMG_URL    = "https://efi.akeo.ie/test/" & IMG_ZIP
 DRV        = FS & "_" & UEFI_EXT & ".efi"
-MNT        = "fs1:"
 If (FS = "zfs") Then
-  ' No idea why we get an '@' directory on ZFS, but it's "working" if we proceed from there
-  MNT      =  MNT & "\@"
+  ' No idea why we get an extra '@' directory on ZFS, but it's "working" if we add it
+  BOOT_DIR = "FS1:\EFI\@\Boot\"
 End If
 
+' Friendly name to display (usually the uppercase of the driver name but now always)
+Dim FRIENDLY_NAMES
+Set FRIENDLY_NAMES = CreateDictionary(Array( _
+  "bfs", "BeFS", _
+  "btrfs", "Btrfs", _
+  "exfat", "exFAT", _
+  "ext2", "ext4", _
+  "hfsplus", "HFS+", _
+  "iso9660", "ISO-9660", _
+  "reiserfs", "ReiserFS", _
+  "squash4", "SquashFS" _
+))
+
+Function CreateDictionary(pairs)
+  Dim d, i
+  Set d = CreateObject("Scripting.Dictionary")
+  d.CompareMode = vbTextCompare
+  For i = 0 To UBound(pairs) Step 2
+    d(pairs(i)) = pairs(i + 1)
+  Next
+  Set CreateDictionary = d
+End Function
+
+If FRIENDLY_NAMES.Exists(FS) Then
+    FS_FRIENDLY = FRIENDLY_NAMES(FS)
+Else
+    FS_FRIENDLY = UCase(FS)
+End If
 
 ' Globals
 Set fso = CreateObject("Scripting.FileSystemObject")
@@ -155,11 +170,10 @@ Sub Unzip(Archive, File)
   Next
 End Sub
 
-
 ' Check that QEMU is available
 If Not fso.FileExists(QEMU_PATH & QEMU_EXE) Then
   Call WScript.Echo("'" & QEMU_PATH & QEMU_EXE & "' was not found." & vbCrLf &_
-    "Please make sure QEMU is installed or edit the path in '.msvc\debug.vbs'.")
+    "Please make sure QEMU is installed or edit the path in 'debug.vbs'.")
   Call WScript.Quit(1)
 End If
 
@@ -184,14 +198,16 @@ If Not fso.FileExists(FW_FILE) Then
   Call WScript.Quit(1)
 End If
 
-' Fetch the VHD image
-If Not fso.FileExists(IMG) Then
-  Call DownloadHttp(IMG_URL, IMG_ZIP)
+' Unzip the disk image
+If Not fso.FileExists("tests\" & IMG) Then
+  Set objScript = CreateObject("Wscript.Shell")
+  CUR_DIR = objScript.CurrentDirectory
+  objScript.CurrentDirectory = "tests"
   Call Unzip(IMG_ZIP, IMG)
-  Call fso.DeleteFile(IMG_ZIP)
+  objScript.CurrentDirectory = CUR_DIR
 End If
-If Not fso.FileExists(IMG) Then
-  Call WScript.Echo("There was a problem downloading or unzipping the " & FS & " image.")
+If Not fso.FileExists("tests\" & IMG) Then
+  Call WScript.Echo("There was a problem unzipping the " & FS & " image.")
   Call WScript.Quit(1)
 End If
 
@@ -205,10 +221,10 @@ Else
 End If
 ' Create a startup.nsh that: sets logging, loads the driver and executes an "Hello World" app from the disk
 Set file = fso.CreateTextFile("image\efi\boot\startup.nsh", True)
-Call file.Write("set FS_LOGGING " & LOG_LEVEL & vbCrLf &_
+Call file.Write("set -v FS_LOGGING " & LOG_LEVEL & vbCrLf &_
   "mode 100 31" & vbCrLf &_
   "load fs0:\" & DRV & vbCrLf &_
   "map -r" & vbCrLf &_
-  PRE_CMD & MNT & "\EFI\Boot\bootx64.efi" & vbCrLf)
+  BOOT_DIR & "boot" & UEFI_EXT & ".efi " & FS_FRIENDLY & vbCrLf)
 Call file.Close()
-Call shell.Run("""" & QEMU_PATH & QEMU_EXE & """ " & QEMU_OPTS & " -L . -bios " & FW_FILE & " -hda fat:rw:image -hdb " & IMG, 1, True)
+Call shell.Run("""" & QEMU_PATH & QEMU_EXE & """ " & QEMU_OPTS & " -L . -bios " & FW_FILE & " -drive format=raw,file=fat:rw:image -drive format=raw,file=tests/" & IMG, 1, True)

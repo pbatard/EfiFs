@@ -1,0 +1,2 @@
+find EFI | cpio -o -F cpio.img
+truncate -s 512K cpio.img
