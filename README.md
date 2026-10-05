@@ -16,7 +16,7 @@ For additional info as well as precompiled drivers, see https://efi.akeo.ie
 ## Requirements
 
 * [Visual Studio 2026](https://www.visualstudio.com/vs/community/) (Windows),
-  MinGW (Windows), gcc (Linux) or [EDK2](https://github.com/tianocore/edk2).
+  MinGW (Windows), gcc (Linux) or [EDK2](https://github.com/tianocore/edk2) (Linux).
 * A git client able to initialize/update submodules
 * [QEMU](https://www.qemu.org) __v2.7 or later__ if debugging with Visual Studio
   (NB: You can find QEMU Windows binaries [here](https://qemu.weilnetz.de/w64/))
@@ -30,7 +30,7 @@ For additional info as well as precompiled drivers, see https://efi.akeo.ie
 * Apply `0001-GRUB-fixes.patch` to the `grub\` subdirectory. This applies the
   changes that are required for successful compilation of GRUB.
 
-### Visual Studio (non EDK2)
+### Visual Studio
 
 * Open the solution file and hit `F5` to compile and debug the default driver.
 

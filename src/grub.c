@@ -57,36 +57,14 @@ grub_xputs_dumb(const char *str)
 
 void (*grub_xputs)(const char *str) = grub_xputs_dumb;
 
-/* Read an EFI shell variable */
+/* 
+ * Read an EFI shell variable
+ * This is only ever used by grub to get the "debug" level.
+ */
 const char *
 grub_env_get(const char *var)
 {
-	EFI_STATUS Status;
-	CHAR16 Var[64], Val[128];
-	UINTN ValSize = sizeof(Val);
-	static char val[128] = { 0 };
-
-	// Special case for enabling grub debug trace
-	if (LogLevel >= FS_LOGLEVEL_TRACE && AsciiStrCmp(var, "debug") == 0)
-		return "all";
-
-	Status = Utf8ToUtf16NoAlloc((CHAR8 *) var, Var, ARRAYSIZE(Var));
-	if (EFI_ERROR(Status)) {
-		PrintStatusError(Status, L"Could not convert variable name to UTF-16");
-		return NULL;
-	}
-
-	Status = RT->GetVariable(Var, &ShellVariable, NULL, &ValSize, Val);
-	if (EFI_ERROR(Status))
-		return NULL;
-
-	Status = Utf16ToUtf8NoAlloc(Val, (CHAR8 *) val, sizeof(val));
-	if (EFI_ERROR(Status)) {
-		PrintStatusError(Status, L"Could not convert value '%s' to UTF-8", Val);
-		return NULL;
-	}
-
-	return val;
+	return (LogLevel >= FS_LOGLEVEL_TRACE && AsciiStrCmp(var, "debug") == 0) ? "all" : NULL;
 }
 
 /* Memory management
@@ -146,12 +124,14 @@ grub_realloc(void *p, grub_size_t new_size)
 {
 	grub_size_t *ptr = (grub_size_t *) p;
 
-	if (ptr != NULL) {
-		ptr = &ptr[-1];
-		ptr = ReallocatePool((UINTN)*ptr, (UINTN)(new_size + sizeof(grub_size_t)), ptr);
-		if (ptr != NULL)
-			*ptr++ = new_size;
-	}
+	// NB: The GRUB implementation allows grub_realloc(NULL, new_size) to alloc a new buffer
+	if (ptr == NULL)
+		return grub_malloc(new_size);
+
+	ptr = &ptr[-1];
+	ptr = ReallocatePool((UINTN)*ptr, (UINTN)(new_size + sizeof(grub_size_t)), ptr);
+	if (ptr != NULL)
+		*ptr++ = new_size;
 	return ptr;
 }
 
