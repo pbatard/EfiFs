@@ -1,0 +1,2 @@
+genromfs -d ./boot/ -f romfs.img
+truncate -s 512K romfs.img

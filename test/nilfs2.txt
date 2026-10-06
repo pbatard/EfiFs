@@ -1,0 +1,5 @@
+dd if=/dev/zero of=nilfs.img bs=1M count=16
+mkfs.nilfs2 nilfs.img -B 128
+mount nilfs.img hd
+cp -r boot/EFI hd/
+umount hd

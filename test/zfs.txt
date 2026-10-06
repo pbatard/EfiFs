@@ -1,0 +1,7 @@
+dd if=/dev/zero of=zfs.img bs=1M count=64
+zpool create test ./zfs.img
+zfs create test/EFI
+zfs set mountpoint=/root/hd test
+cp -r boot/EFI hd/
+zfs unmount /root/hd
+zpool export test

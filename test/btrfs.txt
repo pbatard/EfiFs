@@ -1,0 +1,7 @@
+dd if=/dev/zero of=btrfs.img bs=1M count=16
+mkfs.btrfs --mixed btrfs.img
+mkdir hd
+mount btrfs.img hd
+cp -r boot/EFI hd
+umount hd
+

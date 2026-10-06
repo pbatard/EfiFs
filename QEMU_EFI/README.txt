@@ -11,9 +11,9 @@
   Debian firmware image from:
   http://ftp.ie.debian.org/debian/pool/main/e/edk2/qemu-efi-riscv64_2024.02-2_all.deb
 
-* QEMU_EFI_LOONGARCH64 is the default LoongArchQemu firmware from EDK2, built on 2024.11.29
-  from the latest edk2/edk2-platforms and using the 2024.11.01 toolchain from:
-  https://github.com/loongson/build-tools/releases
+* QEMU_EFI_LOONGARCH64 is a repackaged version of the unmodified QEMU_EFI.fd
+  Debian firmware image from:
+  http://ftp.us.debian.org/debian/pool/main/e/edk2/qemu-efi-loongarch64_2026.08+ds-2_all.deb
 
 * The NTFS versions are the same firmwares, but with the Fat driver replaced with a
   read-only NTFS driver. These are meant to be used for testing the EBC Fat module.
