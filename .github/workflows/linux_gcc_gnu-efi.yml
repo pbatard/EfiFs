@@ -30,7 +30,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     strategy:
       matrix:
@@ -89,7 +89,7 @@ jobs:
         path: src/*.efi
 
   merge-artifacts:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: build
     if: ${{ github.event_name == 'push' }}
     steps:

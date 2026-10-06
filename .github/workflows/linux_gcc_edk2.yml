@@ -36,7 +36,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     strategy:
       matrix:
@@ -144,7 +144,7 @@ jobs:
         path: web/*/index.html
 
   merge-artifacts:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: build
     if: ${{ github.event_name == 'push' }}
     steps:
@@ -161,3 +161,79 @@ jobs:
         with:
           name: web_files
           delete-merged: true
+
+  tests:
+    runs-on: ubuntu-26.04
+    needs: merge-artifacts
+
+    strategy:
+      matrix:
+        arch: [x64, ia32, aa64, riscv64, loongarch64]
+        include:
+        - arch: x64
+          pkg: qemu-system-x86-hwe
+          qemu_arch: x86_64
+          qemu_opts: -M q35
+          fw_base: OVMF
+        - arch: ia32
+          pkg: qemu-system-x86-hwe
+          qemu_arch: i386
+          qemu_opts: -M pc
+          fw_base: OVMF
+        - arch: aa64
+          pkg: qemu-system-arm-hwe
+          qemu_arch: aarch64
+          qemu_opts: -M virt -cpu cortex-a57
+          fw_base: AAVMF
+        - arch: riscv64
+          pkg: qemu-system-riscv-hwe
+          qemu_arch: riscv64
+          qemu_opts: -M virt,pflash0=pflash0
+          fw_base: QEMU_EFI
+        - arch: loongarch64
+          pkg: qemu-system-misc-hwe
+          qemu_arch: loongarch64
+          qemu_opts: -M virt -cpu la464
+          fw_base: QEMU_EFI
+
+    steps:
+    - name: Set up Linux environment
+      run: |
+        sudo apt-get update
+        sudo apt-get -y --no-install-recommends install ${{ matrix.pkg }}
+
+    - name: Checkout repository
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v8
+      with:
+        name: gcc_edk2
+        path: image/
+
+    - name: Download UEFI firmware
+      run: |
+        fw_arch=$(echo ${{ matrix.arch }} | tr a-z A-Z)
+        fw_zip=${{ matrix.fw_base }}-${fw_arch}.zip
+        curl -O https://efi.akeo.ie/${{ matrix.fw_base }}/${fw_zip}
+        7z x ${fw_zip}
+        rm ${fw_zip}
+
+    - name: Download UEFI Shell
+      run: |
+        mkdir -p ./image/efi/boot
+        curl -L https://github.com/pbatard/UEFI-Shell/releases/download/26H2/shell${{ matrix.arch }}.efi -o ./image/efi/boot/boot${{ matrix.arch }}.efi
+
+    - name: Run tests
+      run: |
+        export UEFI_ARCH=${{ matrix.arch }}
+        if [ "$UEFI_ARCH" = "riscv64" ]; then
+          export QEMU_CMD="qemu-system-${{ matrix.qemu_arch }} ${{ matrix.qemu_opts }} -nodefaults -nographic -serial stdio -net none -L . -blockdev node-name=pflash0,driver=file,read-only=on,filename=${{ matrix.fw_base }}.fd -drive format=raw,file=fat:rw:image,id=drv1,if=none -device virtio-blk-device,drive=drv1"
+        elif [ "$UEFI_ARCH" = "loongarch64" ]; then
+          export QEMU_CMD="qemu-system-${{ matrix.qemu_arch }} ${{ matrix.qemu_opts }} -nodefaults -nographic -serial stdio -net none -L . -bios ${{ matrix.fw_base }}.fd -drive format=raw,file=fat:rw:image"
+        else
+          export QEMU_CMD="qemu-system-${{ matrix.qemu_arch }} ${{ matrix.qemu_opts }} -nodefaults -nographic -serial stdio -net none -L . -drive if=pflash,format=raw,unit=0,file=${{ matrix.fw_base }}.fd,readonly=on -drive format=raw,file=fat:rw:image"
+        fi
+        ./tests/run_tests.sh

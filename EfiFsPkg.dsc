@@ -16,13 +16,9 @@
   SKUID_IDENTIFIER               = DEFAULT
 
 [BuildOptions]
-  GCC:RELEASE_*_*_CC_FLAGS       = -DMDEPKG_NDEBUG
-  INTEL:RELEASE_*_*_CC_FLAGS     = -DMDEPKG_NDEBUG
-  MSFT:RELEASE_*_*_CC_FLAGS      = -DMDEPKG_NDEBUG
-  RVCT:RELEASE_*_*_CC_FLAGS      = -DMDEPKG_NDEBUG
+  RELEASE_*_*_CC_FLAGS           = -DMDEPKG_NDEBUG
+  GCC:*_*_X64_CC_FLAGS           = -march=x86-64 -mtune=generic
   *_*_*_CC_FLAGS                 = -DDISABLE_NEW_DEPRECATED_INTERFACES
-  MSFT:*_*_ARM_CC_FLAGS          = /GS-
-  MSFT:*_*_AARCH64_CC_FLAGS      = /GS-
 
 !include MdePkg/MdeLibs.dsc.inc
 

@@ -61,7 +61,7 @@ jobs:
         path: ${{ matrix.arch }}/Release/*.efi
 
   merge-artifacts:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: build
     if: ${{ github.event_name == 'push' }}
     steps:
@@ -72,7 +72,7 @@ jobs:
           delete-merged: true
 
   tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: merge-artifacts
 
     strategy:
@@ -80,17 +80,17 @@ jobs:
         arch: [x64, ia32, aa64]
         include:
         - arch: x64
-          pkg: qemu-system-x86
+          pkg: qemu-system-x86-hwe
           qemu_arch: x86_64
           qemu_opts: -M q35
           fw_base: OVMF
         - arch: ia32
-          pkg: qemu-system-x86
+          pkg: qemu-system-x86-hwe
           qemu_arch: i386
           qemu_opts: -M pc
           fw_base: OVMF
         - arch: aa64
-          pkg: qemu-system-arm
+          pkg: qemu-system-arm-hwe
           qemu_arch: aarch64
           qemu_opts: -M virt -cpu cortex-a57
           fw_base: AAVMF
@@ -123,7 +123,7 @@ jobs:
     - name: Download UEFI Shell
       run: |
         mkdir -p ./image/efi/boot
-        curl -L https://github.com/pbatard/UEFI-Shell/releases/download/24H2/shell${{ matrix.arch }}.efi -o ./image/efi/boot/boot${{ matrix.arch }}.efi
+        curl -L https://github.com/pbatard/UEFI-Shell/releases/download/26H2/shell${{ matrix.arch }}.efi -o ./image/efi/boot/boot${{ matrix.arch }}.efi
 
     - name: Run tests
       run: |

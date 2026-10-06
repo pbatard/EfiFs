@@ -14,6 +14,7 @@ TIMEOUT=2m
 NUM_PASS=0
 NUM_FAIL=0
 NUM_ERROR=0
+BOOT_DRIVE="FS1:"
 
 fs_names=(bfs btrfs cbfs cpio erofs exfat ext2 f2fs hfs hfsplus iso9660 jfs minix minix2 minix3 newc nilfs2 ntfs odc reiserfs romfs squash4 tar udf ufs1 ufs2 xfs zfs)
 
@@ -24,15 +25,19 @@ fi
 if [[ -z "$UEFI_ARCH" ]]; then
   UEFI_ARCH=x64
 fi
+# The RISC-V 64 firmware inverts the drives...
+if [[ "$UEFI_ARCH" == "riscv64" ]]; then
+  BOOT_DRIVE="FS0:"
+fi
 
 i=1
 for fs_name in ${fs_names[@]}; do
-  boot_dir='FS1:\EFI\Boot\'
+  boot_dir='\EFI\Boot\'
   ext="img"
   if [[ "$fs_name" == "iso9660" ||  "$fs_name" == "udf" ]]; then
     ext="iso"
   elif [[ "$fs_name" == "zfs" ]]; then
-    boot_dir='FS1:\EFI\@\Boot\'
+    boot_dir='\EFI\@\Boot\'
   fi
 
   # Only test the file systems for which we have a driver in ./image/
@@ -69,8 +74,8 @@ for fs_name in ${fs_names[@]}; do
 @echo -off
 load FS0:\\${fs_name}_${UEFI_ARCH}.efi
 map -r
-${boot_dir}boot${UEFI_ARCH}.efi -test
-reset -s
+${BOOT_DRIVE}${boot_dir}boot${UEFI_ARCH}.efi -test
+reset -s > NUL
 EOF
   timeout --foreground $TIMEOUT bash -c "${QEMU_CMD} -drive format=raw,file=tests/${fs_name}.${ext} 1>output.txt 2>error.txt"
 
@@ -83,8 +88,7 @@ EOF
     cat error.txt
     NUM_ERROR=$((NUM_ERROR + 1))
   else
-    res=$(tail -n 1 output.txt)
-    if [[ $res =~ "Test Passed" ]]; then
+    if grep -aq 'Test Passed' output.txt; then
       echo "[PASS]"
       NUM_PASS=$((NUM_PASS + 1))
     else
