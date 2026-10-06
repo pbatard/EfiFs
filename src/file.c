@@ -24,6 +24,7 @@
  */
 
 #include "driver.h"
+#include "diskcache.h"
 
 /**
  * Get EFI file name (for debugging)
@@ -224,6 +225,8 @@ FileClose(EFI_FILE_HANDLE This)
 
 	PrintInfo(L"Close(" PERCENT_P L"|'%s') %s\n", (UINTN) This, FileName(File),
 		IS_ROOT(File)?L"<ROOT>":L"");
+
+	DiskCachePrintStats();
 
 	/* Nothing to do it this is the root */
 	if (IS_ROOT(File))

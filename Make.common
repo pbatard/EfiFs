@@ -150,7 +150,7 @@ ifdef DRIVERNAME
   # Note however that ligcc.a *MUST* be the very last library to appear in your invocation.
   LIBS         += -lgrub $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
-  OBJS          = utf8.o path.o missing.o logging.o grub_file.o this.o file.o driver.o \
+  OBJS          = utf8.o path.o missing.o logging.o grub_file.o diskcache.o this.o file.o driver.o \
                   $(GRUB_DIR)/grub-core/fs/fshelp.o $(GRUB_DIR)/grub-core/$(FSDIR)/$(DRIVERNAME).o
   DRIVER        = $(DRIVERNAME)_$(ARCH)
 endif

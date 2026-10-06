@@ -26,6 +26,7 @@
 #include <grub/file.h>
 
 #include "driver.h"
+#include "diskcache.h"
 
 /* The file system list should only ever contain one element */
 grub_fs_t grub_fs_list = NULL;
@@ -139,28 +140,18 @@ grub_disk_read(grub_disk_t disk, grub_disk_addr_t sector,
 {
 	EFI_STATUS Status;
 	EFI_FS* FileSystem = (EFI_FS *) disk->data;
-	EFI_BLOCK_IO_MEDIA *Media;
 
 	FS_ASSERT(FileSystem != NULL);
 	FS_ASSERT(FileSystem->DiskIo != NULL);
 	FS_ASSERT(FileSystem->BlockIo != NULL);
 
-	if (FileSystem->BlockIo2 != NULL) {
-		Media = FileSystem->BlockIo2->Media;
-	} else {
-		Media = FileSystem->BlockIo->Media;
-	}
-
 	/* NB: We could get the actual blocksize through FileSystem->BlockIo->Media->BlockSize
 	 * but GRUB uses the fixed GRUB_DISK_SECTOR_SIZE, so we follow suit
+	 *
+	 * Cached; see src/diskcache.c.
 	 */
-	if (FileSystem->DiskIo2 != NULL) {
-		Status = FileSystem->DiskIo2->ReadDiskEx(FileSystem->DiskIo2, Media->MediaId,
-			sector * GRUB_DISK_SECTOR_SIZE + offset, &(FileSystem->DiskIo2Token), size, buf);
-	} else {
-		Status = FileSystem->DiskIo->ReadDisk(FileSystem->DiskIo, Media->MediaId,
-			sector * GRUB_DISK_SECTOR_SIZE + offset, (UINTN)size, buf);
-	}
+	Status = DiskCacheRead(FileSystem, (UINT64)sector * GRUB_DISK_SECTOR_SIZE + offset,
+		(UINTN)size, buf);
 
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"Could not read block at address %08x", sector);
@@ -259,6 +250,9 @@ GrubDeviceInit(EFI_FS *FileSystem)
 {
 	FS_ASSERT(FileSystem->DevicePath != NULL);
 
+	/* A MediaId can be reused for a different medium. */
+	DiskCacheFlush();
+
 	/* Insert this filesystem in our list */
 	InsertTailList(&FsListHead, (LIST_ENTRY *) FileSystem);
 
@@ -275,6 +269,8 @@ GrubDeviceInit(EFI_FS *FileSystem)
 EFI_STATUS
 GrubDeviceExit(EFI_FS *FileSystem)
 {
+	DiskCachePrintStats();
+	DiskCacheFlush();
 	grub_device_close((grub_device_t) FileSystem->GrubDevice);
 	RemoveEntryList((LIST_ENTRY *)FileSystem);
 

@@ -27,6 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\diskcache.c" />
     <ClCompile Include="..\src\driver.c" />
     <ClCompile Include="..\src\file.c" />
     <ClCompile Include="..\src\grub_file.c" />
@@ -36,6 +37,7 @@
     <ClCompile Include="..\src\utf8.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\diskcache.h" />
     <ClInclude Include="..\src\driver.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
