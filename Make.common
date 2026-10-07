@@ -18,9 +18,6 @@ ifeq ($(shell uname -o),Msys)
 else
   ifeq ($(shell uname -m),x86_64)
     ARCH        = x64
-  else ifeq ($(shell uname -m),arm)
-    ARCH        = arm
-    CROSS_COMPILE =
   else ifeq ($(shell uname -m),aa64)
     ARCH        = aarch64
     CROSS_COMPILE =
@@ -50,7 +47,7 @@ ifeq ($(ARCH),x64)
   CPU_ARCH      = x86_64
   CROSS_COMPILE = $(GCC_ARCH)-$(MINGW_HOST)-mingw32-
   EP_PREFIX     =
-  CFLAGS        = -m64 -mno-red-zone
+  CFLAGS        = -m64 -mno-red-zone -march=x86-64 -mtune=generic
   LDFLAGS       = -Wl,-dll -Wl,--subsystem,$(SUBSYSTEM)
 else ifeq ($(ARCH),ia32)
   GNUEFI_ARCH   = ia32
@@ -60,15 +57,6 @@ else ifeq ($(ARCH),ia32)
   EP_PREFIX     = _
   CFLAGS        = -m32 -mno-red-zone -Wno-pointer-to-int-cast
   LDFLAGS       = -Wl,-dll -Wl,--subsystem,$(SUBSYSTEM)
-else ifeq ($(ARCH),arm)
-  GNUEFI_ARCH   = arm
-  GCC_ARCH      = arm
-  CPU_ARCH      = arm
-  CROSS_COMPILE = $(GCC_ARCH)-linux-gnueabihf-
-  EP_PREFIX     =
-  CFLAGS        = -marm -fpic -fshort-wchar -Wno-pointer-to-int-cast
-  LDFLAGS       = -Wl,--no-wchar-size-warning -Wl,--defsym=EFI_SUBSYSTEM=$(SUBSYSTEM)
-  CRT0_LIBS     = -lgnuefi
 else ifeq ($(ARCH),aa64)
   GNUEFI_ARCH   = aarch64
   GCC_ARCH      = aarch64
@@ -76,8 +64,8 @@ else ifeq ($(ARCH),aa64)
   CRT0_ARCH     = aarch64
   CROSS_COMPILE = $(GCC_ARCH)-linux-gnu-
   EP_PREFIX     =
-  CFLAGS        = -fpic -fshort-wchar -Wno-pointer-to-int-cast
-  LDFLAGS       = -Wl,--no-wchar-size-warning -Wl,--defsym=EFI_SUBSYSTEM=$(SUBSYSTEM)
+  CFLAGS        = -fPIC -fPIE -ffreestanding -fshort-wchar -Wno-pointer-to-int-cast -fno-strict-aliasing -fno-merge-all-constants
+  LDFLAGS       = -Wl,-nostdlib -Wl,--no-wchar-size-warning -Wl,--defsym=EFI_SUBSYSTEM=$(SUBSYSTEM)
   CRT0_LIBS     = -lgnuefi
 else ifeq ($(ARCH),riscv64)
   GNUEFI_ARCH   = riscv64
@@ -86,8 +74,8 @@ else ifeq ($(ARCH),riscv64)
   CRT0_ARCH     = riscv64
   CROSS_COMPILE = $(GCC_ARCH)-linux-gnu-
   EP_PREFIX     =
-  CFLAGS        = -fpic -fshort-wchar -Wno-pointer-to-int-cast
-  LDFLAGS       = -Wl,--defsym=EFI_SUBSYSTEM=$(SUBSYSTEM)
+  CFLAGS        = -fPIC -fPIE -ffreestanding -fshort-wchar -Wno-pointer-to-int-cast -fno-strict-aliasing -fno-merge-all-constants
+  LDFLAGS       = -Wl,-nostdlib -Wl,--defsym=EFI_SUBSYSTEM=$(SUBSYSTEM)
   CRT0_LIBS     = -lgnuefi
 else ifeq ($(ARCH),loongarch64)
   GNUEFI_ARCH   = loongarch64
@@ -96,8 +84,8 @@ else ifeq ($(ARCH),loongarch64)
   CRT0_ARCH     = loongarch64
   CROSS_COMPILE = $(GCC_ARCH)-linux-gnu-
   EP_PREFIX     =
-  CFLAGS        = -fpic -fshort-wchar -Wno-pointer-to-int-cast
-  LDFLAGS       = -Wl,--defsym=EFI_SUBSYSTEM=$(SUBSYSTEM)
+  CFLAGS        = -fPIC -fPIE -ffreestanding -fshort-wchar -Wno-pointer-to-int-cast -fno-strict-aliasing -fno-merge-all-constants -mno-lsx -mno-lasx
+  LDFLAGS       = -Wl,-nostdlib -Wl,--defsym=EFI_SUBSYSTEM=$(SUBSYSTEM)
   CRT0_LIBS     = -lgnuefi
 endif
 
@@ -113,7 +101,7 @@ GNUEFI_LIB      = $(GNUEFI_LIBDIR)/libefi.a
 # If the compiler produces an elf binary, we need to fiddle with a PE crt0
 ifneq ($(CRT0_LIBS),)
   CRT0_DIR      = $(GNUEFI_DIR)/$(GNUEFI_ARCH)/gnuefi
-  LDFLAGS      += -L$(CRT0_DIR) -T $(GNUEFI_DIR)/gnuefi/elf_$(CRT0_ARCH)_efi.lds $(CRT0_DIR)/crt0-efi-$(CRT0_ARCH).o
+  LDFLAGS      += -L$(CRT0_DIR) -T $(GNUEFI_DIR)/gnuefi/elf_$(CRT0_ARCH)_efi_local.lds $(CRT0_DIR)/crt0-efi-$(CRT0_ARCH)-local.o
   GNUEFI_LIBS  += gnuefi
 endif
 
@@ -207,7 +195,7 @@ ifeq ($(CRT0_LIBS),)
 else
 	$(HIDE)$(CC) $(LDFLAGS) $(OBJS) -o $(DRIVER).elf $(LIBS)
 	$(HIDE)$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel* \
-	                  -j .rela* -j .reloc -j .eh_frame -O binary $(DRIVER).elf $@
+	                  -j .rela* -j .reloc -j .rodata -j .eh_frame -O binary $(DRIVER).elf $@
 	$(HIDE)rm -f $(DRIVER).elf
 endif
 	@chmod a-x $(DRIVER).efi
