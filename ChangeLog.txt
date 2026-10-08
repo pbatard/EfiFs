@@ -1,6 +1,16 @@
 For detailed information about the changes below, please see the git log or
 visit: https://github.com/pbatard/EfiFs
 
+v1.13 (2026.10.08)
+* Update GRUB to release 2.16
+* Add disk caching, which grealy improves performance (courtesy of IO-ZetZor)
+* Switch to 64-bit epoch, since GRUB now supports it (courtesy of liushuyu)
+* Update project files to latest Visual Studio/EDK2/gnu-efi
+* Fix gnu-efi builds for non x86 platforms
+* Fix romfs and cbfs issues
+* Add comprehensive CI testing for all toolchains
+* Drop ARM (32-bit) support as well as MSVC+EDK2 support, due to toolchain depreciation
+
 v1.12 (2026.03.27)
 * Add support for XFS v5 features (EXCHANGE, PARENT, METADIR)
 * Update GRUB to release 2.14 (courtesy of Andrij Abyzov)
