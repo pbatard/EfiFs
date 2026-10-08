@@ -88,23 +88,12 @@ jobs:
       uses: actions/upload-artifact@v7
       if: ${{ github.event_name == 'push' }}
       with:
-        name: gcc_gnu-efi_${{ matrix.arch }}
+        name: ${{ matrix.arch }}
         path: src/*.efi
-
-  merge-artifacts:
-    runs-on: ubuntu-26.04
-    needs: build
-    if: ${{ github.event_name == 'push' }}
-    steps:
-      - name: Merge Artifacts
-        uses: actions/upload-artifact/merge@v7
-        with:
-          name: gcc_gnu-efi
-          delete-merged: true
 
   tests:
     runs-on: ubuntu-26.04
-    needs: merge-artifacts
+    needs: build
 
     strategy:
       matrix:
@@ -150,7 +139,7 @@ jobs:
     - name: Download artifacts
       uses: actions/download-artifact@v8
       with:
-        name: gcc_gnu-efi
+        name: ${{ matrix.arch }}
         path: image/
 
     - name: Download UEFI firmware
