@@ -75,12 +75,6 @@ jobs:
         git apply ../0001-GRUB-fixes.patch
         cd ..
 
-    - name: Patch gnu-efi
-      run: |
-        cd gnu-efi
-        git apply ../0001-gnu-efi-fixes.patch
-        cd ..
-
     - name: Build drivers
       run: make ARCH=${{ matrix.arch }} CROSS_COMPILE=${{ matrix.tuple }}
 

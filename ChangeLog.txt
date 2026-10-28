@@ -3,7 +3,7 @@ visit: https://github.com/pbatard/EfiFs
 
 v1.13 (2026.10.08)
 * Update GRUB to release 2.16
-* Add disk caching, which grealy improves performance (courtesy of IO-ZetZor)
+* Add disk caching, which greatly improves performance (courtesy of IO-ZetZor)
 * Switch to 64-bit epoch, since GRUB now supports it (courtesy of liushuyu)
 * Update project files to latest Visual Studio/EDK2/gnu-efi
 * Fix gnu-efi builds for non x86 platforms
